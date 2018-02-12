@@ -1,0 +1,53 @@
+@startuml
+
+namespace Main{
+    class Application << (S,#CC0000) Singleton >>{
+        +getExchange() : Main.Exchange
+        +getAdministration() : Main.Administration
+        +getAPI() : Main.API
+    }
+
+    class Singltone << (T,#00CC00) Trait >>{
+        -instance
+        +{static}getInstance()
+    }
+}
+
+namespace Main.Exchange{
+    class Exchange << (S,#CC0000) Singleton >>{
+        +run() : void
+    }
+}
+
+namespace Main.Administration{
+    class Administration << (S,#CC0000) Singleton >>{
+        +run() : void
+    }
+}
+
+namespace Main.API{
+    class API << (S,#CC0000) Singleton >>{
+        +run() : void
+    }
+}
+
+namespace Main.Helpers{
+    class Loger{
+        +__construct(string $rootFolder)
+        +addNote(string $note) : void
+        +addError(string error) : void
+        +write() : void
+    }
+
+    class Config << (S,#CC0000) Singleton >>{
+        +getParam(string $paramName) : string
+    }
+}
+
+Main.Application .. Main.Exchange.Exchange
+Main.Application .. Main.Administration.Administration
+Main.Application .. Main.API.API
+Main.Application .. Main.Helpers.Loger
+Main.Application .. Main.Helpers.Config
+
+@enduml

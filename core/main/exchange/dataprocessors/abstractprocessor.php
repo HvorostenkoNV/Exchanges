@@ -1,37 +1,21 @@
 <?php
 namespace Main\Exchange\DataProcessors;
 
-use
-	Main\Exchange\
-	{
-		DataProcessors\Results\Result,
-		Procedures\Procedure
-	};
+use Main\Exchange\Procedures\Procedure;
 
 abstract class AbstractProcessor implements Processor
 {
-	private
-		$procedure  = NULL,
-		$result     = NULL;
+	private $procedure = NULL;
 
 	final public function __construct(Procedure $procedure)
 	{
+		// TODO
 		$this->procedure = $procedure;
 	}
 
 	final public function getProcedure() : Procedure
 	{
 		return $this->procedure;
-	}
-
-	final public function getResult() : ?Result
-	{
-		return $this->result;
-	}
-
-	final protected function setResult(Result $result) : void
-	{
-		$this->result = $result;
 	}
 
 	abstract public function process() : void;

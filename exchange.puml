@@ -8,48 +8,42 @@ namespace Main.Exchange{
 
 namespace Main.Exchange.DataProcessors{
     class Manager{
-        +{static}getProcessor(string $processorName) : Processor
-        +{static}getProcessorsList() : array|Processor
+        +{static}getCollector(Procedure $procedure) : Collector
+        +{static}getMatcher(Procedure $procedure) : Matcher
+        +{static}getCombiner(Procedure $procedure) : Combiner
+        +{static}getProvider(Procedure $procedure) : Provider
     }
 
     interface Processor{
-        +__construct(Main.Exchange.Procedures.Procedure $procedure)
-        +getProcedure() : Main.Exchange.Procedures.Procedure
-        +getResult() : Main.Exchange.DataProcessors.Results.Result
-        +setResult(Main.Exchange.DataProcessors.Results.Result $result) : void
+        +__construct(Procedures.Procedure $procedure)
+        +getProcedure() : Procedures.Procedure
         +process() : void
     }
 
     abstract AbstractProcessor{
-        +__construct(Main.Exchange.Procedures.Procedure $procedure)
-        +getProcedure() : Main.Exchange.Procedures.Procedure
-        +getResult() : Main.Exchange.DataProcessors.Results.Result
-        #setResult(Main.Exchange.DataProcessors.Results.Result $result) : void
+        +__construct(Procedures.Procedure $procedure)
+        +getProcedure() : Procedures.Procedure
         +{abstract}process() : void
     }
 
     class Collector{
-        -result : CollectorResult
         +process() : void
+        +getCollectedData() : Results.CollectorResult
     }
 
     class Matcher{
-        -result : MatcherResult
-        -collectedData : CollectorResult
         +setCollectedData(CollectorResult $data) : void
         +process() : void
+        +getMatchedData() : Results.MatcherResult
     }
 
     class Combiner{
-        -result : CombinerResult
-        -matchedData : MatcherResult
         +setMatchedData(MatcherResult $data) : void
         +process() : void
+        +getCombinedData() : Results.CombinerResult
     }
 
     class Provider{
-        -result : ProviderResult
-        -combinedData : CombinerResult
         +setCombinedData(CombinerResult $data) : void
         +process() : void
     }
@@ -82,14 +76,9 @@ namespace Main.Exchange.DataProcessors.Results{
         +getData() : array
     }
 
-    class ProviderResult{
-
-    }
-
     Result <|-- CollectorResult
     Result <|-- MatcherResult
     Result <|-- CombinerResult
-    Result <|-- ProviderResult
 
     note bottom of CollectorResult
         data structure:
@@ -136,52 +125,29 @@ namespace Main.Exchange.DataProcessors.Results{
             ]
         ]
     endnote
-
-    note bottom of ProviderResult
-        ???
-    endnote
 }
 
 namespace Main.Exchange.Procedures{
     class Manager{
         +{static}getProcedure(string $procedureName) : Procedure
         +{static}getProceduresList() : array|Procedure
-        +{static}addProcedure(Params $params) : boolean
-        +{static}deleteProcedure(string $procedureName) : boolean
-        +{static}changeProcedure(string $procedureName, Params $params) : boolean
     }
 
     interface Procedure{
-        +__construct(array $participants, Params $params)
-        +getParticipants() : array|Main.Exchange.Participants.Participant
-        +getParams() : Params
+        +getParticipants() : array|Participants.Participant
     }
 
     abstract AbstractProcedure{
-        -participants : array|Main.Exchange.Participants.Participant
-        -params : Params
-        +__construct(array $participants, Params $params)
-        +getParticipants() : array|Main.Exchange.Participants.Participant
-        +getParams() : Params
+        +getParticipants() : array|Participants.Participant
     }
 
-    class UsersExchangeProcedure{
+    class UsersExchange{
 
-    }
-
-    class Params{
-        -name : array
-        -fieldsMatching : array
-        +__construct(array $data)
-        +getName() : string
-        +getFieldsMatching() : array
     }
 
     Manager - Procedure
     Procedure <|-- AbstractProcedure
-    AbstractProcedure <|-- UsersExchangeProcedure
-
-    Procedure *-- "one" Params
+    AbstractProcedure <|-- UsersExchange
 }
 
 namespace Main.Exchange.Participants{
@@ -190,10 +156,7 @@ namespace Main.Exchange.Participants{
         +getFieldsParams() : Data.FieldsParams
         +getMatchingRules() : Data.MatchingRules
         +getCombiningRules() : Data.CombiningRules
-        +provideData(Data.DeliveredData $data) : boolean
-
-        -readProvidedData() : Data.ProvidedData
-        -writeDeliveredData(Data.DeliveredData $data) : boolean
+        +provideData(Data.DeliveredData $data) : bool
     }
 
     abstract AbstractParticipants{
@@ -201,34 +164,34 @@ namespace Main.Exchange.Participants{
         +getFieldsParams() : Data.FieldsParams
         +getMatchingRules() : Data.MatchingRules
         +getCombiningRules() : Data.CombiningRules
-        +provideData(Data.DeliveredData $data) : boolean
+        +provideData(Data.DeliveredData $data) : bool
 
         -readXml(string $path) : Data.ProvidedData
         -readBD(array $connectionParams) : Data.ProvidedData
 
         -{abstract}readProvidedData() : Data.ProvidedData
-        -{abstract}writeDeliveredData(Data.DeliveredData $data) : boolean
+        -{abstract}writeDeliveredData(Data.DeliveredData $data) : bool
     }
 
-    class 1CUsers{
+    class Users1C{
         -readProvidedData() : ProvidedData
-        -writeDeliveredData(DeliveredData $data) : boolean
+        -writeDeliveredData(DeliveredData $data) : bool
     }
 
-    class ADUsers{
+    class UsersAD{
         -readProvidedData() : ProvidedData
-        -writeDeliveredData(DeliveredData $data) : boolean
+        -writeDeliveredData(DeliveredData $data) : bool
     }
 
-    class BitrixUsers{
+    class UsersBitrix{
         -readProvidedData() : ProvidedData
-        -writeDeliveredData(DeliveredData $data) : boolean
+        -writeDeliveredData(DeliveredData $data) : bool
     }
 
     Participant <|-- AbstractParticipants
-    AbstractParticipants <|-- 1CUsers
-    AbstractParticipants <|-- ADUsers
-    AbstractParticipants <|-- BitrixUsers
+    AbstractParticipants <|-- Users1C
+    AbstractParticipants <|-- UsersAD
+    AbstractParticipants <|-- UsersBitrix
 }
 
 namespace Main.Exchange.Participants.Data{
@@ -256,35 +219,25 @@ namespace Main.Exchange.Participants.Data{
 
     }
 
-    class 1CUsersFieldsParams{
-
-    }
-
-    class ADUsersFieldsParams{
-
-    }
-
-    class BitrixUsersFieldsParams{
-
-    }
-
     Data <|-- ProvidedData
     Data <|-- DeliveredData
     Data <|-- FieldsParams
     Data <|-- MatchingRules
     Data <|-- CombiningRules
+}
 
-    FieldsParams <|-- 1CUsersFieldsParams
-    FieldsParams <|-- ADUsersFieldsParams
-    FieldsParams <|-- BitrixUsersFieldsParams
+namespace Main.Exchange.Participants.Data.Users1C{
+    class FieldsParams{
 
-    MatchingRules <|-- 1CUsersMatchingRules
-    MatchingRules <|-- ADUsersMatchingRules
-    MatchingRules <|-- BitrixUsersMatchingRules
+    }
 
-    CombiningRules <|-- 1CUsersCombiningRules
-    CombiningRules <|-- ADUsersCombiningRules
-    CombiningRules <|-- BitrixUsersCombiningRules
+    class MatchingRules{
+
+    }
+
+    class CombiningRules{
+
+    }
 }
 
 Main.Exchange.Exchange .. Main.Exchange.DataProcessors.Manager
@@ -294,5 +247,9 @@ Main.Exchange.DataProcessors.Processor *-- "one" Main.Exchange.DataProcessors.Re
 Main.Exchange.DataProcessors.Processor *-- "one" Main.Exchange.Procedures.Procedure
 Main.Exchange.Procedures.Procedure *-- "many" Main.Exchange.Participants.Participant
 Main.Exchange.Participants.Participant *-- "Many" Main.Exchange.Participants.Data.Data
+
+Main.Exchange.Participants.Data.FieldsParams <|-- Main.Exchange.Participants.Data.Users1C.FieldsParams
+Main.Exchange.Participants.Data.MatchingRules <|-- Main.Exchange.Participants.Data.Users1C.MatchingRules
+Main.Exchange.Participants.Data.CombiningRules <|-- Main.Exchange.Participants.Data.Users1C.CombiningRules
 
 @enduml

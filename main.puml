@@ -32,22 +32,25 @@ namespace Main.API{
 }
 
 namespace Main.Helpers{
-    class Loger{
-        +__construct(string $rootFolder)
-        +addNote(string $note) : void
+    class Config << (S,#CC0000) Singleton >>{
+        +getParam(string $paramName) : string
+    }
+
+    class Logger << (S,#CC0000) Singleton >>{
+        +addNotice(string $notice) : void
+        +addWarning(string $warning) : void
         +addError(string error) : void
         +write() : void
     }
 
-    class Config << (S,#CC0000) Singleton >>{
-        +getParam(string $paramName) : string
+    class Localization{
+        +__construct(string $lang)
+        +getMessage(string $message) : string
     }
 }
 
 Main.Application .. Main.Exchange.Exchange
 Main.Application .. Main.Administration.Administration
 Main.Application .. Main.API.API
-Main.Application .. Main.Helpers.Loger
-Main.Application .. Main.Helpers.Config
 
 @enduml

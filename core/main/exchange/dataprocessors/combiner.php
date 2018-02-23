@@ -1,20 +1,26 @@
 <?php
 namespace Main\Exchange\DataProcessors;
 
-use Main\Exchange\DataProcessors\Results\MatcherResult;
+use Main\Exchange\DataProcessors\Results\
+	{
+		MatcherResult,
+		CombinerResult
+	};
 
 class Combiner
 {
-	protected
-		$matchedData = NULL;
-
 	public function setMatchedData(MatcherResult $data) : void
 	{
-		$this->matchedData = $data;
+		// TODO
 	}
 
 	public function process() : void
 	{
+		// TODO
+	}
 
+	public function getCombinedData() : CombinerResult
+	{
+		// TODO
 	}
 }

@@ -1,23 +1,29 @@
 <?php
+declare(strict_types=1);
+
 use
 	PHPUnit\Framework\Error\Error as FatalError,
 	Main\Helpers\Config;
-
+/**************************************************************************************************
+ * Test Main\Helpers\Config class
+ * @author Hvorostenko
+ *************************************************************************************************/
 final class ConfigTest extends ExchangeTestCase
 {
 	private
 		$paramsFolderPermissions    = '540',
 		$paramsFilesPermissions     = '440',
-		$paramTestFolder            = 'unittest',
-		$paramTestFile              = 'paramstest',
+		$paramTestFolder            = 'unit_test',
+		$paramTestFile              = 'params_test',
+		$paramRenamedFolder         = 'params_unit_test',
 		$testParams                 =
 		[
 			['param1', 'value1'],
 			['param2', 'value2']
 		];
-	/* -------------------------------------------------------------------- */
-	/* -------------------------- is singletone --------------------------- */
-	/* -------------------------------------------------------------------- */
+	/*************************************************************************
+	 * Config is singletone
+	 ************************************************************************/
 	public function testIsSingletone() : void
 	{
 		self::assertTrue
@@ -26,9 +32,10 @@ final class ConfigTest extends ExchangeTestCase
 			$this->getMessage('SINGLETONE_IMPLEMENTATION_FAILED', ['CLASS_NAME' => Config::class])
 		);
 	}
-	/* -------------------------------------------------------------------- */
-	/* ------------------- params folder constant exist ------------------- */
-	/* -------------------------------------------------------------------- */
+	/*************************************************************************
+	 * test params folder constant exist
+	 * @return  string  params folder constant value
+	 ************************************************************************/
 	public function testParamsFolderConstantExist() : string
 	{
 		self::assertTrue
@@ -43,10 +50,12 @@ final class ConfigTest extends ExchangeTestCase
 		);
 		return PARAMS_FOLDER;
 	}
-	/* -------------------------------------------------------------------- */
-	/* --------------------- params folder full check --------------------- */
-	/* -------------------------------------------------------------------- */
-	/** @depends testParamsFolderConstantExist */
+	/** **********************************************************************
+	 * params folder full test
+	 * @param   string  $paramsConstantValue    params folder constant value
+	 * @depends testParamsFolderConstantExist
+	 * @return  string                          params folder path
+	 ************************************************************************/
 	public function testParamsFolderFullCheck(string $paramsConstantValue) : string
 	{
 		$dirPermissions = $this->getPermissions($paramsConstantValue);
@@ -99,13 +108,12 @@ final class ConfigTest extends ExchangeTestCase
 
 		return $paramsConstantValue;
 	}
-	/* -------------------------------------------------------------------- */
-	/* -------------------------- can read params ------------------------- */
-	/* -------------------------------------------------------------------- */
-	/**
-	@depends testParamsFolderFullCheck
-	@depends testIsSingletone
-	*/
+	/** **********************************************************************
+	 * check Config can read params
+	 * @param   string  $paramsPath         params folder path
+	 * @depends testParamsFolderFullCheck
+	 * @depends testIsSingletone
+	 ************************************************************************/
 	public function testCanReadParams(string $paramsPath) : void
 	{
 		if( $this->createTestParams($paramsPath) )
@@ -130,21 +138,17 @@ final class ConfigTest extends ExchangeTestCase
 		else
 			self::markTestSkipped('Unable to create test param file for testing');
 	}
-	/* -------------------------------------------------------------------- */
-	/* ------------------- crushed without params folder ------------------ */
-	/* -------------------------------------------------------------------- */
-	/**
-	@depends testParamsFolderFullCheck
-	@depends testIsSingletone
-	*/
+	/** **********************************************************************
+	 * expecting app crush with unavailable params folder
+	 * @param   string  $paramsPath         params folder path
+	 * @depends testParamsFolderFullCheck
+	 * @depends testIsSingletone
+	 ************************************************************************/
 	public function testCrushedWithoutParamsFolder(string $paramsPath) : void
 	{
-		$paramsOriginPath   = $paramsPath;
-		$paramsTestPath     = $paramsPath.'_phpunit_testing';
-
-		if( rename($paramsOriginPath, $paramsTestPath) )
+		if( rename($paramsPath, $this->paramRenamedFolder) )
 		{
-			$this->resetConfigInstance();
+			$this->resetSingletoneInstance(Config::class);
 
 			try
 			{
@@ -156,27 +160,16 @@ final class ConfigTest extends ExchangeTestCase
 				self::assertTrue(true);
 			}
 
-			rename($paramsTestPath, $paramsOriginPath);
+			rename($this->paramRenamedFolder, $paramsPath);
 		}
 		else
 			self::markTestSkipped('Unable to rename param folder for testing');
 	}
-	/* -------------------------------------------------------------------- */
-	/* ------------------- reset new instance of config ------------------- */
-	/* -------------------------------------------------------------------- */
-	private function resetConfigInstance() : void
-	{
-		$config         = Config::getInstance();
-		$reflection     = new ReflectionClass($config);
-		$instanceProp   = $reflection->getProperty('instanceArray');
-
-		$instanceProp->setAccessible(true);
-		$instanceProp->setValue([], []);
-		$instanceProp->setAccessible(false);
-	}
-	/* -------------------------------------------------------------------- */
-	/* ------------------------ create test params ------------------------ */
-	/* -------------------------------------------------------------------- */
+	/** **********************************************************************
+	 * creating test params
+	 * @param   string  $paramsPath         params folder path
+	 * @return  bool
+	 ************************************************************************/
 	private function createTestParams(string $paramsPath) : bool
 	{
 		$paramsTestFolderPath   = $paramsPath.DS.$this->paramTestFolder;
@@ -200,9 +193,10 @@ final class ConfigTest extends ExchangeTestCase
 
 		return file_exists($paramsTestParamFile);
 	}
-	/* -------------------------------------------------------------------- */
-	/* ------------------------ delete test params ------------------------ */
-	/* -------------------------------------------------------------------- */
+	/** **********************************************************************
+	 * deleting test params
+	 * @param   string  $paramsPath         params folder path
+	 ************************************************************************/
 	private function deleteTestParams(string $paramsPath) : void
 	{
 		$paramsTestFolderPath   = $paramsPath.DS.$this->paramTestFolder;

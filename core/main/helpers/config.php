@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 namespace Main\Helpers;
 
 use
@@ -7,7 +9,11 @@ use
 	RecursiveIteratorIterator,
 	RecursiveDirectoryIterator,
 	Main\Singltone;
-
+/**************************************************************************************************
+ * Config class
+ * @method static Config getInstance
+ * @author Hvorostenko
+ *************************************************************************************************/
 class Config
 {
 	use Singltone;

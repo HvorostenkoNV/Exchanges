@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 use
 	PHPUnit\Framework\Error\Error as FatalError,
 	Main\Helpers\Logger;
@@ -13,7 +15,7 @@ final class LoggerTest extends ExchangeTestCase
 		self::assertTrue
 		(
 			$this->singletoneImplemented(Logger::class),
-			str_replace('#CLASS_NAME#', Logger::class, $this->messages['SINGLETONE_IMPLEMENTATION_FAILED'])
+			$this->getMessage('SINGLETONE_IMPLEMENTATION_FAILED', ['CLASS_NAME' => Logger::class])
 		);
 	}
 	/* -------------------------------------------------------------------- */
@@ -21,8 +23,16 @@ final class LoggerTest extends ExchangeTestCase
 	/* -------------------------------------------------------------------- */
 	public function testLogsFolderConstantExist() : string
 	{
-		self::assertTrue(defined('LOGS_FOLDER'), 'Logs constant is not defined');
-		self::assertNotEquals($this->documentRoot, LOGS_FOLDER, 'Logs constant equals document root');
+		self::assertTrue
+		(
+			defined('LOGS_FOLDER'),
+			$this->getMessage('CONSTANT_NOT_DEFINED', ['CONSTANT_NAME' => 'LOGS_FOLDER'])
+		);
+		self::assertNotEquals
+		(
+			$this->documentRoot, LOGS_FOLDER,
+			'Logs constant equals document root'
+		);
 		return LOGS_FOLDER;
 	}
 	/* -------------------------------------------------------------------- */
@@ -31,16 +41,33 @@ final class LoggerTest extends ExchangeTestCase
 	/** @depends testLogsFolderConstantExist */
 	public function testLogsFolderFullCheck(string $logsConstantValue) : string
 	{
-		self::assertDirectoryIsReadable($logsConstantValue, 'Logs folder is not readable');
-		self::assertDirectoryIsWritable($logsConstantValue, 'Logs folder is not writable');
+		self::assertDirectoryIsReadable
+		(
+			$logsConstantValue,
+			$this->getMessage('NOT_READABLE', ['PATH' => $logsConstantValue])
+		);
+		self::assertDirectoryIsWritable
+		(
+			$logsConstantValue,
+			$this->getMessage('NOT_WRITABLE', ['PATH' => $logsConstantValue])
+		);
 
-		foreach( new RecursiveIteratorIterator(new RecursiveDirectoryIterator($logsConstantValue)) as $file )
-			if( $file->isFile() )
-				self::assertEquals
-				(
-					'txt', $file->getExtension(),
-					'Not txt file found in logs folder by path '.$file->getPathname()
-				);
+		foreach( $this->findAllFiles($logsConstantValue) as $file )
+		{
+			$filePath       = $file->getPathname();
+			$fileExtension  = $file->getExtension();
+
+			self::assertEquals
+			(
+				'txt', $fileExtension,
+				$this->getMessage('WRONG_EXTENSION',
+				[
+					'PATH'      => $filePath,
+					'NEED'      => 'txt',
+					'CURRENT'   => $fileExtension
+				])
+			);
+		}
 
 		return $logsConstantValue;
 	}
@@ -53,22 +80,18 @@ final class LoggerTest extends ExchangeTestCase
 	*/
 	public function testLogFileCreating(string $logsFolder) : void
 	{
-		$loger          = Logger::getInstance();
-		$logsCountStart = 0;
-		$logsCountEnd   = 0;
+		$logger         = Logger::getInstance();
+		$logsCountStart = count($this->findAllFiles($logsFolder));
 
-		foreach( scandir($logsFolder) as $file )
-			if( is_file($logsFolder.DS.$file) )
-				$logsCountStart++;
+		$logger->addNotice('Unit testing');
+		$logger->write();
 
-		$loger->addNotice('Unit testing');
-		$loger->write();
-
-		foreach( scandir($logsFolder) as $file )
-			if( is_file($logsFolder.DS.$file) )
-				$logsCountEnd++;
-
-		self::assertEquals($logsCountStart + 1, $logsCountEnd, 'Expected new created log file not found');
+		self::assertEquals
+		(
+			$logsCountStart + 1,
+			count($this->findAllFiles($logsFolder)),
+			'Expected new created log file not found'
+		);
 	}
 	/* -------------------------------------------------------------------- */
 	/* ----------------- seted messages exists in log file ---------------- */
@@ -79,14 +102,14 @@ final class LoggerTest extends ExchangeTestCase
 	*/
 	public function testSetedMessagesExistsInLogFile(string $logsFolder) : void
 	{
-		$loger              = Logger::getInstance();
+		$logger             = Logger::getInstance();
 		$testMessageNotice  = 'This is test notice';
 		$testMessageWarning = 'This is test warning';
 		$logContent         = '';
 
-		$loger->addNotice($testMessageNotice);
-		$loger->addWarning($testMessageWarning);
-		$loger->write();
+		$logger->addNotice($testMessageNotice);
+		$logger->addWarning($testMessageWarning);
+		$logger->write();
 
 		foreach( scandir($logsFolder, SCANDIR_SORT_DESCENDING) as $file )
 		{
@@ -94,12 +117,13 @@ final class LoggerTest extends ExchangeTestCase
 			break;
 		}
 
-		$this->assertContains($testMessageNotice,   $logContent, 'Failed to find log with seted mesages');
-		$this->assertContains($testMessageWarning,  $logContent, 'Failed to find log with seted mesages');
+		foreach( [$testMessageNotice, $testMessageWarning] as $message )
+			self::assertContains($message, $logContent, 'Failed to find log file with seted test message');
 	}
 	/* -------------------------------------------------------------------- */
 	/* ------------------- seting error stops executing ------------------- */
 	/* -------------------------------------------------------------------- */
+	/** @depends testIsSingletone */
 	public function testSetingErrorStopsExecuting() : void
 	{
 		try

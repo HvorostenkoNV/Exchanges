@@ -2,25 +2,25 @@
 declare(strict_types=1);
 
 use PHPUnit\Framework\TestCase;
-/**************************************************************************************************
+/** ***********************************************************************************************
  * Main Exchange TestCase to inherit
- * @author Hvorostenko
+ * @package exchange_unit_tests
+ * @author  Hvorostenko
  *************************************************************************************************/
 abstract class ExchangeTestCase extends TestCase
 {
-	protected
-		$documentRoot   = DOCUMENT_ROOT_BY_UT,
-		$messages       =
-		[
-			'SINGLETONE_IMPLEMENTATION_FAILED'  => 'There is a possibility to create more than one instance of #CLASS_NAME# class',
-			'CONSTANT_NOT_DEFINED'              => 'Constant "#CONSTANT_NAME#" is not defined',
-			'WRONG_PERMISSIONS'                 => 'File/dir has wrong permissions by path "#PATH#". Need - #NEED#. Current - #CURRENT#',
-			'WRONG_EXTENSION'                   => 'File has wrong extension by path "#PATH#". Need - #NEED#. Current - #CURRENT#',
-			'FILE_MUST_RETURN_ARRAY'            => 'File must return array by path "#PATH#',
-			'NOT_READABLE'                      => 'File/dir is not readable by path "#PATH#"',
-			'NOT_WRITABLE'                      => 'File/dir is not writable by path "#PATH#"'
-		];
-	/*************************************************************************
+	protected $messages =
+	[
+		'SINGLETON_IMPLEMENTATION_FAILED'   => 'There is a possibility to create more than one instance of #CLASS_NAME# class',
+		'CONSTANT_NOT_DEFINED'              => 'Constant "#CONSTANT_NAME#" is not defined',
+		'WRONG_PERMISSIONS'                 => 'File/dir has wrong permissions by path "#PATH#". Need - #NEED#. Current - #CURRENT#',
+		'WRONG_EXTENSION'                   => 'File has wrong extension by path "#PATH#". Need - #NEED#. Current - #CURRENT#',
+		'FILE_MUST_RETURN_ARRAY'            => 'File must return array by path "#PATH#',
+		'NOT_EXIST'                         => 'File/dir is not exist by path "#PATH#"',
+		'NOT_READABLE'                      => 'File/dir is not readable by path "#PATH#"',
+		'NOT_WRITABLE'                      => 'File/dir is not writable by path "#PATH#"'
+	];
+	/** **********************************************************************
 	 * get message
 	 * @param   string  $type       message index
 	 * @param   array   $changing   array of replacements index => value
@@ -44,12 +44,12 @@ abstract class ExchangeTestCase extends TestCase
 
 		return $result;
 	}
-	/*************************************************************************
-	 * check class is singletone
+	/** **********************************************************************
+	 * check class is singleton
 	 * @param   string  $className  full class name
 	 * @return  bool
 	 ************************************************************************/
-	protected function singletoneImplemented(string $className) : bool
+	protected function singletonImplemented(string $className) : bool
 	{
 		$hasCallMethod  = method_exists($className, 'getInstance');
 		$objectCreated  = NULL;
@@ -67,11 +67,11 @@ abstract class ExchangeTestCase extends TestCase
 
 		return $hasCallMethod && !$objectCreated && !$objectCloned;
 	}
-	/*************************************************************************
-	 * reset singletone instance of class
+	/** **********************************************************************
+	 * reset singleton instance of class
 	 * @param   string  $className  full class name
 	 ************************************************************************/
-	protected function resetSingletoneInstance(string $className) : void
+	protected function resetSingletonInstance(string $className) : void
 	{
 		$instance       = call_user_func([$className, 'getInstance']);
 		$reflection     = new ReflectionClass($instance);
@@ -81,7 +81,7 @@ abstract class ExchangeTestCase extends TestCase
 		$instanceProp->setValue([], []);
 		$instanceProp->setAccessible(false);
 	}
-	/*************************************************************************
+	/** **********************************************************************
 	 * get file/dir permissions
 	 * @param   string  $path   full file/dir path
 	 * @return  string          file/dir permissions
@@ -91,7 +91,7 @@ abstract class ExchangeTestCase extends TestCase
 	{
 		return substr(sprintf('%o', fileperms($path)), -3);
 	}
-	/*************************************************************************
+	/** **********************************************************************
 	 * get all files in dir
 	 * @param   string  $path   full dir path
 	 * @return  SplFileInfo[]   array of SplFileInfo objects
@@ -100,9 +100,23 @@ abstract class ExchangeTestCase extends TestCase
 	{
 		$result = [];
 
-		foreach( new RecursiveIteratorIterator(new RecursiveDirectoryIterator($path)) as $file )
-			if( $file->isFile() )
-				$result[] = $file;
+		try
+		{
+			$directory  = new RecursiveDirectoryIterator($path);
+			$iterator   = new RecursiveIteratorIterator($directory);
+
+			while( $iterator->valid() )
+			{
+				if( $iterator->current()->isFile() )
+					$result[] = $iterator->current();
+
+				$iterator->next();
+			}
+		}
+		catch( Throwable $error )
+		{
+
+		}
 
 		return $result;
 	}

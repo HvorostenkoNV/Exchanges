@@ -1,23 +1,32 @@
 <?php
+declare(strict_types=1);
+
 namespace Main\Helpers;
 
 use
 	RuntimeException,
 	PDOException,
 	PDO,
-	Main\Singltone;
-
+	Iterator,
+	SplQueue,
+	Main\Singleton;
+/**************************************************************************************************
+ * DB class, provides methods to work with db
+ * @package exchange_helpers
+ * @method  static DB getInstance
+ * @author  Hvorostenko
+ *************************************************************************************************/
 class DB
 {
-	use Singltone;
+	use Singleton;
 
 	private
-		$PDO                = NULL,
+		$pdo                = NULL,
 		$preparedQueries    = [],
 		$lastError          = '';
-	/* -------------------------------------------------------------------- */
-	/* ---------------------------- construct ----------------------------- */
-	/* -------------------------------------------------------------------- */
+	/** **********************************************************************
+	 * constructor
+	 ************************************************************************/
 	private function __construct()
 	{
 		$config     = Config::getInstance();
@@ -34,7 +43,7 @@ class DB
 
 		try
 		{
-			$this->PDO = new PDO
+			$this->pdo = new PDO
 			(
 				'mysql:dbname='.$dbName.';host='.$dbHost,
 				$dbLogin,
@@ -43,7 +52,7 @@ class DB
 					PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES UTF8'
 				]
 			);
-			$this->PDO->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+			$this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 		}
 		catch( PDOException $exception )
 		{
@@ -52,13 +61,16 @@ class DB
 
 		Logger::getInstance()->addNotice('DB object created, connection success');
 	}
-	/* -------------------------------------------------------------------- */
-	/* ------------------------------ query ------------------------------- */
-	/* -------------------------------------------------------------------- */
-	public function query(string $sqlQuery, array $params) : array
+	/** **********************************************************************
+	 * query
+	 * @param   string  $sqlQuery   sql query string
+	 * @param   array   $params     query params for preparing
+	 * @return  Iterator            query result in rows
+	 ************************************************************************/
+	public function query(string $sqlQuery, array $params = []) : Iterator
 	{
 		$preparedQuery  = NULL;
-		$result         = [];
+		$result         = new SplQueue;
 
 		$this->lastError = '';
 		if( array_key_exists($sqlQuery, $this->preparedQueries) )
@@ -67,7 +79,7 @@ class DB
 		{
 			try
 			{
-				$this->preparedQueries[$sqlQuery] = $preparedQuery = $this->PDO->prepare($sqlQuery);
+				$this->preparedQueries[$sqlQuery] = $preparedQuery = $this->pdo->prepare($sqlQuery);
 			}
 			catch( PDOException $exception )
 			{
@@ -80,7 +92,8 @@ class DB
 			try
 			{
 				$preparedQuery->execute($params);
-				$result = $preparedQuery->fetchAll(PDO::FETCH_ASSOC);
+				foreach( $preparedQuery->fetchAll(PDO::FETCH_OBJ) as $rowObject )
+					$result->push($rowObject);
 			}
 			catch( PDOException $exception )
 			{
@@ -90,16 +103,42 @@ class DB
 
 		return $result;
 	}
-	/* -------------------------------------------------------------------- */
-	/* ------------------------------ errors ------------------------------ */
-	/* -------------------------------------------------------------------- */
+	/** **********************************************************************
+	 * save item
+	 * @param   string  $sqlQuery   sql query string
+	 * @param   array   $params     query params for preparing
+	 * @return  int                 created item id
+	 ************************************************************************/
+	public function save(string $sqlQuery, array $params = []) : int
+	{
+		$this->query($sqlQuery, $params);
+		return intval($this->pdo->lastInsertId());
+	}
+	/** **********************************************************************
+	 * delete item
+	 * @param   string  $sqlQuery   sql query string
+	 * @param   array   $params     query params for preparing
+	 * @return  bool                deleting result
+	 * TODO
+	 ************************************************************************/
+	public function delete(string $sqlQuery, array $params = []) : bool
+	{
+		return false;
+	}
+	/** **********************************************************************
+	 * check if has last error
+	 * @return  bool
+	 ************************************************************************/
 	public function hasLastError() : bool
 	{
 		return strlen($this->lastError) > 0;
 	}
+	/** **********************************************************************
+	 * get last error message
+	 * @return  string
+	 ************************************************************************/
 	public function getLastError() : string
 	{
 		return $this->lastError;
 	}
-	// TODO
 }

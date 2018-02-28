@@ -4,11 +4,12 @@ declare(strict_types=1);
 use
 	PHPUnit\Framework\Error\Error as FatalError,
 	Main\Helpers\Config;
-/**************************************************************************************************
+/** ***********************************************************************************************
  * Test Main\Helpers\Config class
- * @author Hvorostenko
+ * @package exchange_unit_tests
+ * @author  Hvorostenko
  *************************************************************************************************/
-final class ConfigTest extends ExchangeTestCase
+final class ConfigClassTest extends ExchangeTestCase
 {
 	private
 		$paramsFolderPermissions    = '540',
@@ -21,18 +22,18 @@ final class ConfigTest extends ExchangeTestCase
 			['param1', 'value1'],
 			['param2', 'value2']
 		];
-	/*************************************************************************
-	 * Config is singletone
+	/** **********************************************************************
+	 * Config is singleton
 	 ************************************************************************/
-	public function testIsSingletone() : void
+	public function testIsSingleton() : void
 	{
 		self::assertTrue
 		(
-			$this->singletoneImplemented(Config::class),
-			$this->getMessage('SINGLETONE_IMPLEMENTATION_FAILED', ['CLASS_NAME' => Config::class])
+			$this->singletonImplemented(Config::class),
+			$this->getMessage('SINGLETON_IMPLEMENTATION_FAILED', ['CLASS_NAME' => Config::class])
 		);
 	}
-	/*************************************************************************
+	/** **********************************************************************
 	 * test params folder constant exist
 	 * @return  string  params folder constant value
 	 ************************************************************************/
@@ -45,7 +46,7 @@ final class ConfigTest extends ExchangeTestCase
 		);
 		self::assertNotEquals
 		(
-			$this->documentRoot, PARAMS_FOLDER,
+			$_SERVER['APPLICATION_ROOT'], PARAMS_FOLDER,
 			'Params constant equals document root'
 		);
 		return PARAMS_FOLDER;
@@ -112,13 +113,13 @@ final class ConfigTest extends ExchangeTestCase
 	 * check Config can read params
 	 * @param   string  $paramsPath         params folder path
 	 * @depends testParamsFolderFullCheck
-	 * @depends testIsSingletone
+	 * @depends testIsSingleton
 	 ************************************************************************/
 	public function testCanReadParams(string $paramsPath) : void
 	{
 		if( $this->createTestParams($paramsPath) )
 		{
-			$this->resetSingletoneInstance(Config::class);
+			$this->resetSingletonInstance(Config::class);
 
 			$checkingParams =
 			[
@@ -142,13 +143,13 @@ final class ConfigTest extends ExchangeTestCase
 	 * expecting app crush with unavailable params folder
 	 * @param   string  $paramsPath         params folder path
 	 * @depends testParamsFolderFullCheck
-	 * @depends testIsSingletone
+	 * @depends testIsSingleton
 	 ************************************************************************/
 	public function testCrushedWithoutParamsFolder(string $paramsPath) : void
 	{
 		if( rename($paramsPath, $this->paramRenamedFolder) )
 		{
-			$this->resetSingletoneInstance(Config::class);
+			$this->resetSingletonInstance(Config::class);
 
 			try
 			{

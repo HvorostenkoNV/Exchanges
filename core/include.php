@@ -1,6 +1,11 @@
 <?php
-use Main\Helpers\Logger;
+declare(strict_types=1);
 
+use Main\Helpers\Logger;
+/** ***********************************************************************************************
+ * main include file
+ * @package exchange_main
+ *************************************************************************************************/
 $dirPathExplode = explode(DIRECTORY_SEPARATOR, __DIR__);
 unset($dirPathExplode[count($dirPathExplode) - 1]);
 

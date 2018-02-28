@@ -4,23 +4,28 @@ declare(strict_types=1);
 use
 	PHPUnit\Framework\Error\Error as FatalError,
 	Main\Helpers\Logger;
-
+/** ***********************************************************************************************
+ * Test Main\Helpers\Logger class
+ * @package exchange_unit_tests
+ * @author  Hvorostenko
+ *************************************************************************************************/
 final class LoggerTest extends ExchangeTestCase
 {
-	/* -------------------------------------------------------------------- */
-	/* -------------------------- is singletone --------------------------- */
-	/* -------------------------------------------------------------------- */
-	public function testIsSingletone() : void
+	/** **********************************************************************
+	 * Logger is singleton
+	 ************************************************************************/
+	public function testIsSingleton() : void
 	{
 		self::assertTrue
 		(
-			$this->singletoneImplemented(Logger::class),
-			$this->getMessage('SINGLETONE_IMPLEMENTATION_FAILED', ['CLASS_NAME' => Logger::class])
+			$this->singletonImplemented(Logger::class),
+			$this->getMessage('SINGLETON_IMPLEMENTATION_FAILED', ['CLASS_NAME' => Logger::class])
 		);
 	}
-	/* -------------------------------------------------------------------- */
-	/* -------------------- logs folder constant exist -------------------- */
-	/* -------------------------------------------------------------------- */
+	/** **********************************************************************
+	 * test logs folder constant exist
+	 * @return  string  logs folder constant value
+	 ************************************************************************/
 	public function testLogsFolderConstantExist() : string
 	{
 		self::assertTrue
@@ -30,15 +35,17 @@ final class LoggerTest extends ExchangeTestCase
 		);
 		self::assertNotEquals
 		(
-			$this->documentRoot, LOGS_FOLDER,
+			$_SERVER['APPLICATION_ROOT'], LOGS_FOLDER,
 			'Logs constant equals document root'
 		);
 		return LOGS_FOLDER;
 	}
-	/* -------------------------------------------------------------------- */
-	/* ---------------------- logs folder full check ---------------------- */
-	/* -------------------------------------------------------------------- */
-	/** @depends testLogsFolderConstantExist */
+	/** **********************************************************************
+	 * logs folder full test
+	 * @param   string  $logsConstantValue      logs folder constant value
+	 * @depends testLogsFolderConstantExist
+	 * @return  string                          logs folder path
+	 ************************************************************************/
 	public function testLogsFolderFullCheck(string $logsConstantValue) : string
 	{
 		self::assertDirectoryIsReadable
@@ -71,13 +78,12 @@ final class LoggerTest extends ExchangeTestCase
 
 		return $logsConstantValue;
 	}
-	/* -------------------------------------------------------------------- */
-	/* ------------------------ log file creating ------------------------- */
-	/* -------------------------------------------------------------------- */
-	/**
-	@depends testLogsFolderFullCheck
-	@depends testIsSingletone
-	*/
+	/** **********************************************************************
+	 * test if new log file creates on call need method
+	 * @param   string  $logsFolder     logs folder path
+	 * @depends testLogsFolderFullCheck
+	 * @depends testIsSingleton
+	 ************************************************************************/
 	public function testLogFileCreating(string $logsFolder) : void
 	{
 		$logger         = Logger::getInstance();
@@ -93,13 +99,12 @@ final class LoggerTest extends ExchangeTestCase
 			'Expected new created log file not found'
 		);
 	}
-	/* -------------------------------------------------------------------- */
-	/* ----------------- seted messages exists in log file ---------------- */
-	/* -------------------------------------------------------------------- */
-	/**
-	@depends testLogsFolderFullCheck
-	@depends testIsSingletone
-	*/
+	/** **********************************************************************
+	 * test if new log file contains messages, that was seted
+	 * @param   string  $logsFolder     logs folder path
+	 * @depends testLogsFolderFullCheck
+	 * @depends testIsSingleton
+	 ************************************************************************/
 	public function testSetedMessagesExistsInLogFile(string $logsFolder) : void
 	{
 		$logger             = Logger::getInstance();
@@ -120,10 +125,10 @@ final class LoggerTest extends ExchangeTestCase
 		foreach( [$testMessageNotice, $testMessageWarning] as $message )
 			self::assertContains($message, $logContent, 'Failed to find log file with seted test message');
 	}
-	/* -------------------------------------------------------------------- */
-	/* ------------------- seting error stops executing ------------------- */
-	/* -------------------------------------------------------------------- */
-	/** @depends testIsSingletone */
+	/** **********************************************************************
+	 * test system shut down on seting ERROR
+	 * @depends testIsSingleton
+	 ************************************************************************/
 	public function testSetingErrorStopsExecuting() : void
 	{
 		try

@@ -17,10 +17,12 @@
     <orderEntry type="module-library">
       <library name="PHARS">
         <CLASSES>
-          <root url="phar://$MODULE_DIR$/phpunit.phar/" />
+          <root url="phar://$MODULE_DIR$/unittests/phpunit.phar/" />
+          <root url="phar://$MODULE_DIR$/unittests/dbunit.phar/" />
         </CLASSES>
         <SOURCES>
-          <root url="phar://$MODULE_DIR$/phpunit.phar/" />
+          <root url="phar://$MODULE_DIR$/unittests/phpunit.phar/" />
+          <root url="phar://$MODULE_DIR$/unittests/dbunit.phar/" />
         </SOURCES>
       </library>
     </orderEntry>

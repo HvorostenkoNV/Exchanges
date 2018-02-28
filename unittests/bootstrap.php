@@ -1,8 +1,8 @@
 <?php
-$dirPathExplode = explode(DIRECTORY_SEPARATOR, __DIR__);
-unset($dirPathExplode[count($dirPathExplode) - 1]);
-
-define('DOCUMENT_ROOT_BY_UT', implode(DIRECTORY_SEPARATOR, $dirPathExplode));
-
+declare(strict_types=1);
+/** ***********************************************************************************************
+ * unit tests bootstrap file
+ * @package exchange_unit_tests
+ *************************************************************************************************/
 require 'ExchangeTestCase.php';
-require DOCUMENT_ROOT_BY_UT.DIRECTORY_SEPARATOR.'core'.DIRECTORY_SEPARATOR.'include.php';
+require $_SERVER['APPLICATION_ROOT'].DIRECTORY_SEPARATOR.'core'.DIRECTORY_SEPARATOR.'include.php';

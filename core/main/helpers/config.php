@@ -8,39 +8,50 @@ use
 	UnexpectedValueException,
 	RecursiveIteratorIterator,
 	RecursiveDirectoryIterator,
-	Main\Singltone;
+	Main\Singleton;
 /**************************************************************************************************
- * Config class
- * @method static Config getInstance
- * @author Hvorostenko
+ * Config class, provides access to system configs params
+ * @package exchange_helpers
+ * @method  static Config getInstance
+ * @author  Hvorostenko
  *************************************************************************************************/
 class Config
 {
-	use Singltone;
+	use Singleton;
 
 	private $params = [];
-	/* -------------------------------------------------------------------- */
-	/* ---------------------------- construct ----------------------------- */
-	/* -------------------------------------------------------------------- */
+	/** **********************************************************************
+	 * constructor
+	 ************************************************************************/
 	private function __construct()
 	{
 		try
 		{
-			foreach( new RecursiveIteratorIterator(new RecursiveDirectoryIterator(PARAMS_FOLDER)) as $file )
-				if( $file->isFile() && $file->isReadable() && $file->getExtension() == 'php' )
+			$directory  = new RecursiveDirectoryIterator(PARAMS_FOLDER);
+			$iterator   = new RecursiveIteratorIterator($directory);
+
+			while( $iterator->valid() )
+			{
+				$item = $iterator->current();
+
+				if( $item->isFile() && $item->isReadable() && $item->getExtension() == 'php' )
 				{
-					$libraryContent = include $file->getPathname();
+					$filePath       = $item->getPathname();
+					$fileContent    = include $filePath;
 					$libraryName    = str_replace
 					(
-						[PARAMS_FOLDER.DS,    '.php', DS],
+						[PARAMS_FOLDER.DS,  '.php', DS],
 						['',                '',     '.'],
-						$file->getPathname()
+						$filePath
 					);
 
-					if( is_array($libraryContent) )
-						foreach( $libraryContent as $index => $value )
+					if( is_array($fileContent) )
+						foreach( $fileContent as $index => $value )
 							$this->params[$libraryName.'.'.$index] = $value;
 				}
+
+				$iterator->next();
+			}
 		}
 		catch( UnexpectedValueException|RuntimeException $exception )
 		{
@@ -49,9 +60,13 @@ class Config
 
 		Logger::getInstance()->addNotice('Config object created');
 	}
-	/* -------------------------------------------------------------------- */
-	/* ----------------------------- getParam ----------------------------- */
-	/* -------------------------------------------------------------------- */
+	/** **********************************************************************
+	 * get parameter
+	 * @param   string  $paramName  parameter name
+	 * @return  string              parameter value
+	 * @example                     $config->getParam('main.someImportantParameter')
+	 * @example                     $config->getParam('users.connectionAD.login')
+	 ************************************************************************/
 	public function getParam(string $paramName) : string
 	{
 		if( array_key_exists($paramName, $this->params) )

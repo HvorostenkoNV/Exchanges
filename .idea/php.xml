@@ -272,8 +272,8 @@
   <component name="PhpProjectSharedConfiguration" php_language_level="7.1" />
   <component name="PhpUnit">
     <phpunit_settings>
-      <PhpUnitSettings load_method="PHPUNIT_PHAR" custom_loader_path="" phpunit_phar_path="$PROJECT_DIR$/phpunit.phar" />
-      <phpunit_by_interpreter interpreter_id="d5360887-3986-4d44-876c-14556403cba4" load_method="PHPUNIT_PHAR" bootstrap_file_path="/var/www/unittests/bootstrap.php" custom_loader_path="" phpunit_phar_path="/var/www/phpunit.phar" use_bootstrap_file="true" />
+      <PhpUnitSettings load_method="PHPUNIT_PHAR" bootstrap_file_path="$PROJECT_DIR$/unittests/bootstrap.php" custom_loader_path="" phpunit_phar_path="$PROJECT_DIR$/unittests/phpunit.phar" />
+      <phpunit_by_interpreter interpreter_id="d5360887-3986-4d44-876c-14556403cba4" load_method="PHPUNIT_PHAR" bootstrap_file_path="/var/www/unittests/bootstrap.php" configuration_file_path="/var/www/unittests/phpunit.xml" custom_loader_path="" phpunit_phar_path="/var/www/unittests/phpunit.phar" use_configuration_file="true" />
     </phpunit_settings>
   </component>
 </project>

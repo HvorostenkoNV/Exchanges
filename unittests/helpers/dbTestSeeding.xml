@@ -1,0 +1,5 @@
+<?xml version="1.0" ?>
+<dataset>
+    <testtable id="1" name="Test Item 1" code="test_item_1" />
+    <testtable id="2" name="Test Item 2" code="test_item_2" />
+</dataset>

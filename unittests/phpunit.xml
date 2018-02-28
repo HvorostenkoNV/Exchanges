@@ -1,0 +1,17 @@
+<phpunit
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/6.0/phpunit.xsd"
+    bootstrap="bootstrap.php"
+    convertErrorsToExceptions="true"
+    convertNoticesToExceptions="true"
+    convertWarningsToExceptions="true"
+    extensionsDirectory="/var/www/unittests"
+>
+    <php>
+        <server name="APPLICATION_ROOT" value="/var/www" />
+        <var    name="DB_HOST"          value="localhost" />
+        <var    name="DB_LOGIN"         value="root" />
+        <var    name="DB_PASSWORD"      value="RooT987456@#" />
+        <var    name="DB_DBNAME"        value="exchange" />
+    </php>
+</phpunit>

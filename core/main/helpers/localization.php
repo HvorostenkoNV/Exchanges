@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 namespace Main\Helpers;
 
 use
@@ -8,15 +10,22 @@ use
 	InvalidArgumentException,
 	RecursiveIteratorIterator,
 	RecursiveDirectoryIterator;
-
+/**************************************************************************************************
+ * Localization class, helps with application localization
+ * @package exchange_helpers
+ * @author  Hvorostenko
+ *************************************************************************************************/
 class Localization
 {
 	private
 		$lang       = '',
 		$messages   = [];
-	/* -------------------------------------------------------------------- */
-	/* ---------------------------- construct ----------------------------- */
-	/* -------------------------------------------------------------------- */
+	/** **********************************************************************
+	 * constructor
+	 * @param   string  $lang               language code
+	 * @throws  InvalidArgumentException    language code not exist
+	 * @throws  DomainException             need files resources unreachable
+	 ************************************************************************/
 	public function __construct(string $lang)
 	{
 		$folder             = Config::getInstance()->getParam('main.localizationFolder');
@@ -27,21 +36,31 @@ class Localization
 
 		try
 		{
-			foreach( new RecursiveIteratorIterator(new RecursiveDirectoryIterator($localizationPath)) as $file )
-				if( $file->isFile() && $file->isReadable() && $file->getExtension() == 'php' )
+			$directory  = new RecursiveDirectoryIterator($localizationPath);
+			$iterator   = new RecursiveIteratorIterator($directory);
+
+			while( $iterator->valid() )
+			{
+				$item = $iterator->current();
+
+				if( $item->isFile() && $item->isReadable() && $item->getExtension() == 'php' )
 				{
-					$libraryContent = include $file->getPathname();
+					$filePath       = $item->getPathname();
+					$fileContent    = include $filePath;
 					$libraryName    = str_replace
 					(
 						[$localizationPath.DS,  '.php', DS],
 						['',                    '',     '.'],
-						$file->getPathname()
+						$filePath
 					);
 
-					if( is_array($libraryContent) )
-						foreach( $libraryContent as $index => $value )
+					if( is_array($fileContent) )
+						foreach( $fileContent as $index => $value )
 							$this->messages[$libraryName.'.'.$index] = $value;
 				}
+
+				$iterator->next();
+			}
 		}
 		catch( UnexpectedValueException|RuntimeException $exception )
 		{
@@ -51,9 +70,13 @@ class Localization
 		$this->lang = $lang;
 		Logger::getInstance()->addNotice('Localization object for "'.$lang.'" language created');
 	}
-	/* -------------------------------------------------------------------- */
-	/* ---------------------------- getMessage ---------------------------- */
-	/* -------------------------------------------------------------------- */
+	/** **********************************************************************
+	 * get message
+	 * @param   string  $message    need message full name
+	 * @return  string              message value
+	 * @example                     $loc->getMessage('errors.someErrorType')
+	 * @example                     $loc->getMessage('main.important.someImportantMessage')
+	 ************************************************************************/
 	public function getMessage(string $message) : string
 	{
 		if( array_key_exists($message, $this->messages) )

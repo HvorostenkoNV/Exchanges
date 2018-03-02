@@ -9,12 +9,13 @@ use
  * @package exchange_unit_tests
  * @author  Hvorostenko
  *************************************************************************************************/
-final class LoggerTest extends ExchangeTestCase
+final class LoggerClassTest extends ExchangeTestCase
 {
 	/** **********************************************************************
 	 * Logger is singleton
+	 * @test
 	 ************************************************************************/
-	public function testIsSingleton() : void
+	public function isSingleton() : void
 	{
 		self::assertTrue
 		(
@@ -24,9 +25,10 @@ final class LoggerTest extends ExchangeTestCase
 	}
 	/** **********************************************************************
 	 * test logs folder constant exist
-	 * @return  string  logs folder constant value
+	 * @test
+	 * @return  string      logs folder constant value
 	 ************************************************************************/
-	public function testLogsFolderConstantExist() : string
+	public function logsFolderConstantExist() : string
 	{
 		self::assertTrue
 		(
@@ -35,18 +37,19 @@ final class LoggerTest extends ExchangeTestCase
 		);
 		self::assertNotEquals
 		(
-			$_SERVER['APPLICATION_ROOT'], LOGS_FOLDER,
+			DOCUMENT_ROOT, LOGS_FOLDER,
 			'Logs constant equals document root'
 		);
 		return LOGS_FOLDER;
 	}
 	/** **********************************************************************
 	 * logs folder full test
-	 * @param   string  $logsConstantValue      logs folder constant value
-	 * @depends testLogsFolderConstantExist
-	 * @return  string                          logs folder path
+	 * @test
+	 * @depends logsFolderConstantExist
+	 * @param   string  $logsConstantValue  logs folder constant value
+	 * @return  string                      logs folder path
 	 ************************************************************************/
-	public function testLogsFolderFullCheck(string $logsConstantValue) : string
+	public function logsFolderFullCheck(string $logsConstantValue) : string
 	{
 		self::assertDirectoryIsReadable
 		(
@@ -80,11 +83,12 @@ final class LoggerTest extends ExchangeTestCase
 	}
 	/** **********************************************************************
 	 * test if new log file creates on call need method
+	 * @test
+	 * @depends logsFolderFullCheck
+	 * @depends isSingleton
 	 * @param   string  $logsFolder     logs folder path
-	 * @depends testLogsFolderFullCheck
-	 * @depends testIsSingleton
 	 ************************************************************************/
-	public function testLogFileCreating(string $logsFolder) : void
+	public function logFileCreating(string $logsFolder) : void
 	{
 		$logger         = Logger::getInstance();
 		$logsCountStart = count($this->findAllFiles($logsFolder));
@@ -101,11 +105,12 @@ final class LoggerTest extends ExchangeTestCase
 	}
 	/** **********************************************************************
 	 * test if new log file contains messages, that was seted
+	 * @test
+	 * @depends logsFolderFullCheck
+	 * @depends isSingleton
 	 * @param   string  $logsFolder     logs folder path
-	 * @depends testLogsFolderFullCheck
-	 * @depends testIsSingleton
 	 ************************************************************************/
-	public function testSetedMessagesExistsInLogFile(string $logsFolder) : void
+	public function setedMessagesExistsInLogFile(string $logsFolder) : void
 	{
 		$logger             = Logger::getInstance();
 		$testMessageNotice  = 'This is test notice';
@@ -123,22 +128,20 @@ final class LoggerTest extends ExchangeTestCase
 		}
 
 		foreach( [$testMessageNotice, $testMessageWarning] as $message )
-			self::assertContains($message, $logContent, 'Failed to find log file with seted test message');
+			self::assertContains
+			(
+				$message, $logContent,
+				'Failed to find log file with seted test message'
+			);
 	}
 	/** **********************************************************************
 	 * test system shut down on seting ERROR
-	 * @depends testIsSingleton
+	 * @test
+	 * @depends isSingleton
 	 ************************************************************************/
-	public function testSetingErrorStopsExecuting() : void
+	public function setingErrorStopsExecuting() : void
 	{
-		try
-		{
-			Logger::getInstance()->addError('UNIT TEST');
-			self::fail('No crush on setting error');
-		}
-		catch( FatalError $error )
-		{
-			self::assertTrue(true);
-		}
+		$this->expectException(FatalError::class);
+		Logger::getInstance()->addError('UNIT TEST');
 	}
 }

@@ -21,34 +21,54 @@ final class LocalizationClassTest extends ExchangeTestCase
 		];
 	/** **********************************************************************
 	 * test loc folder param exist
+	 * @test
 	 * @return  string  loc folder param value
 	 ************************************************************************/
-	public function testLocFolderParamExist() : string
+	public function locFolderParamExist() : string
 	{
 		$locFolderParam = Config::getInstance()->getParam('main.localizationFolder');
-		self::assertNotEmpty($locFolderParam, 'Loc folder param is not defined');
+
+		self::assertNotEmpty
+		(
+			$locFolderParam,
+			'Loc folder param is not defined'
+		);
+
 		return $locFolderParam;
 	}
 	/** **********************************************************************
 	 * test default loc folder param exist
+	 * @test
 	 * @return  string  default loc folder param value
 	 ************************************************************************/
-	public function testDefaultLocFolderParamExist() : string
+	public function defaultLocFolderParamExist() : string
 	{
 		$defaultLangParam = Config::getInstance()->getParam('main.defaultLang');
-		self::assertNotEmpty($defaultLangParam, 'Default loc folder param is not defined');
+
+		self::assertNotEmpty
+		(
+			$defaultLangParam,
+			'Default loc folder param is not defined'
+		);
+
 		return $defaultLangParam;
 	}
 	/** **********************************************************************
 	 * loc folder full test
-	 * @param   string  $locFolderParam         loc folder param value
-	 * @depends testLocFolderParamExist
-	 * @return  string                          loc folder path
+	 * @test
+	 * @depends locFolderParamExist
+	 * @param   string  $locFolderParam     loc folder param value
+	 * @return  string                      loc folder path
 	 ************************************************************************/
-	public function testLocFolderFullCheck(string $locFolderParam) : string
+	public function locFolderFullCheck(string $locFolderParam) : string
 	{
 		$locFolder = DOCUMENT_ROOT.DS.$locFolderParam;
-		self::assertDirectoryIsReadable($locFolder, 'Loc folder is not readable');
+
+		self::assertDirectoryIsReadable
+		(
+			$locFolder,
+			'Loc folder is not readable'
+		);
 
 		foreach( $this->findAllFiles($locFolder) as $file )
 		{
@@ -82,13 +102,14 @@ final class LocalizationClassTest extends ExchangeTestCase
 	}
 	/** **********************************************************************
 	 * default loc folder full test
+	 * @test
+	 * @depends locFolderFullCheck
+	 * @depends defaultLocFolderParamExist
 	 * @param   string  $locFolder              loc folder path
 	 * @param   string  $defaultLangParam       default loc folder param value
-	 * @depends testLocFolderFullCheck
-	 * @depends testDefaultLocFolderParamExist
 	 * @return  string                          default loc folder path
 	 ************************************************************************/
-	public function testDefaultLocFolderFullCheck(string $locFolder, string $defaultLangParam) : string
+	public function defaultLocFolderFullCheck(string $locFolder, string $defaultLangParam) : string
 	{
 		$defaultLangFolder = $locFolder.DS.$defaultLangParam;
 
@@ -102,18 +123,20 @@ final class LocalizationClassTest extends ExchangeTestCase
 	}
 	/** **********************************************************************
 	 * test on throwing exception while construct with incorrect params
+	 * @test
 	 ************************************************************************/
-	public function testExceptionWithIncorrectParams() : void
+	public function exceptionWithIncorrectParams() : void
 	{
 		$this->expectException(InvalidArgumentException::class);
 		new Localization('');
 	}
 	/** **********************************************************************
 	 * test on throwing exception while construct when folder not exist
+	 * @test
+	 * @depends locFolderFullCheck
 	 * @param   string  $locFolder  loc folder path
-	 * @depends testLocFolderFullCheck
 	 ************************************************************************/
-	public function testExceptionWithFolderNotExist(string $locFolder) : void
+	public function exceptionWithFolderNotExist(string $locFolder) : void
 	{
 		$wrongLocFolder = 'test';
 		while( is_dir($locFolder.DS.$wrongLocFolder) )
@@ -124,10 +147,11 @@ final class LocalizationClassTest extends ExchangeTestCase
 	}
 	/** **********************************************************************
 	 * test localization class can read params, added to loc folder
+	 * @test
+	 * @depends locFolderFullCheck
 	 * @param   string  $locFolder  loc folder path
-	 * @depends testLocFolderFullCheck
 	 ************************************************************************/
-	public function testCanReadParams(string $locFolder) : void
+	public function canReadParams(string $locFolder) : void
 	{
 		if( $this->createTestLocParams($locFolder) )
 		{
@@ -152,7 +176,7 @@ final class LocalizationClassTest extends ExchangeTestCase
 	}
 	/** **********************************************************************
 	 * creating test loc params
-	 * @param   string  $locFolder         loc folder path
+	 * @param   string  $locFolder  loc folder path
 	 * @return  bool
 	 ************************************************************************/
 	private function createTestLocParams(string $locFolder) : bool
@@ -180,7 +204,7 @@ final class LocalizationClassTest extends ExchangeTestCase
 	}
 	/** **********************************************************************
 	 * deleting test loc params
-	 * @param   string  $locFolder         loc folder path
+	 * @param   string  $locFolder  loc folder path
 	 ************************************************************************/
 	private function deleteTestLoc(string $locFolder) : void
 	{

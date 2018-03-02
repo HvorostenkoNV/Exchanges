@@ -52,13 +52,13 @@ class Config
 
 				$iterator->next();
 			}
+
+			Logger::getInstance()->addNotice('Config object created');
 		}
 		catch( UnexpectedValueException|RuntimeException $exception )
 		{
 			Logger::getInstance()->addError('Params folder was not founded');
 		}
-
-		Logger::getInstance()->addNotice('Config object created');
 	}
 	/** **********************************************************************
 	 * get parameter

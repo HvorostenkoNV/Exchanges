@@ -61,14 +61,14 @@ class Localization
 
 				$iterator->next();
 			}
+
+			$this->lang = $lang;
+			Logger::getInstance()->addNotice('Localization object for "'.$lang.'" language created');
 		}
 		catch( UnexpectedValueException|RuntimeException $exception )
 		{
 			throw new DomainException($exception->getMessage());
 		}
-
-		$this->lang = $lang;
-		Logger::getInstance()->addNotice('Localization object for "'.$lang.'" language created');
 	}
 	/** **********************************************************************
 	 * get message

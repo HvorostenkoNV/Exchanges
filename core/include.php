@@ -5,26 +5,23 @@ use Main\Helpers\Logger;
 /** ***********************************************************************************************
  * main include file
  * @package exchange_main
+ * @author  Hvorostenko
  *************************************************************************************************/
-$dirPathExplode = explode(DIRECTORY_SEPARATOR, __DIR__);
-unset($dirPathExplode[count($dirPathExplode) - 1]);
-
-define('DOCUMENT_ROOT', implode(DIRECTORY_SEPARATOR, $dirPathExplode));
-define('DS',            DIRECTORY_SEPARATOR);
-define('PARAMS_FOLDER', DOCUMENT_ROOT.DS.'params');
-define('LOGS_FOLDER',   DOCUMENT_ROOT.DS.'logs');
+define('DOCUMENT_ROOT',     $_SERVER['DOCUMENT_ROOT']);
+define('DS',                DIRECTORY_SEPARATOR);
+define('PARAMS_FOLDER',     DOCUMENT_ROOT.DS.'params');
+define('LOGS_FOLDER',       DOCUMENT_ROOT.DS.'logs');
+define('CLASSES_FOLDER',    DOCUMENT_ROOT.DS.'core');
 
 spl_autoload_register(function($className)
 {
-	$className          = strtolower($className);
-	$classesFolder      = 'core';
-	$classNameExplode   = explode('\\', $className);
-	$classFilePathArray = array_merge([$classesFolder], $classNameExplode);
-	$classFilePath      = DOCUMENT_ROOT.DS.implode(DS, $classFilePathArray).'.php';
+	$classNameString    = strtolower($className);
+	$classNameString    = str_replace('\\', DS, $classNameString);
+	$classFilePath      = CLASSES_FOLDER.DS.$classNameString.'.php';
 	$file               = new SplFileInfo($classFilePath);
 
 	if( $file->isFile() && $file->getExtension() == 'php' )
-		include $classFilePath;
+		include $file->getPathname();
 	else
 		Logger::getInstance()->addWarning('Trying to load unfounded class "'.$className.'"');
 });

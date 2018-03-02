@@ -11,8 +11,9 @@ final class ApplicationClassTest extends ExchangeTestCase
 {
 	/** **********************************************************************
 	 * Application is singleton
+	 * @test
 	 ************************************************************************/
-	public function testIsSingleton() : void
+	public function isSingleton() : void
 	{
 		self::assertTrue
 		(

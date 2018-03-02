@@ -2,7 +2,6 @@
 declare(strict_types=1);
 
 use
-	PHPUnit\DbUnit\TestCaseTrait as DbTestCaseTrait,
 	Main\Helpers\Config,
 	Main\Helpers\DB;
 /** ***********************************************************************************************
@@ -10,36 +9,58 @@ use
  * @package exchange_unit_tests
  * @author  Hvorostenko
  *************************************************************************************************/
-final class DBClassTest extends ExchangeTestCase
+final class DBClassTest extends DBExchangeTestCase
 {
-	use DbTestCaseTrait;
+	private static $testTableSchema =
+	[
+		'name'      => 'phpunit_test_table',
+		'columns'   =>
+		[
+			'item_id'   => 'ID',
+			'item_name' => 'NAME',
+			'item_code' => 'CODE'
+		]
+	];
 	/** **********************************************************************
-	 * get temp connection
-	 * @return  PHPUnit\DbUnit\Database\Connection
+	 * construct, create test db table
 	 ************************************************************************/
-	protected function getConnection()
+	public static function setUpBeforeClass() : void
 	{
-		$pdo = new PDO
-		(
-			'mysql:dbname='.$GLOBALS['DB_DBNAME'].';host='.$GLOBALS['DB_HOST'],
-			$GLOBALS['DB_LOGIN'],
-			$GLOBALS['DB_PASSWORD']
-		);
+		$tableName      = self::$testTableSchema['name'];
+		$tableColumns   = self::$testTableSchema['columns'];
+		$sqlQuery       =
+		'
+			CREATE TABLE #TABLE_NAME#
+			(
+				#ID# 	INT 			AUTO_INCREMENT,
+				#NAME#	VARCHAR(255),
+				#CODE#	VARCHAR(255),
+				PRIMARY KEY (#ID#)
+			)
+		';
 
-		return $this->createDefaultDBConnection($pdo, ':memory:');
+		$sqlQuery = str_replace('#TABLE_NAME#', $tableName,                 $sqlQuery);
+		$sqlQuery = str_replace('#ID#',         $tableColumns['item_id'],   $sqlQuery);
+		$sqlQuery = str_replace('#NAME#',       $tableColumns['item_name'], $sqlQuery);
+		$sqlQuery = str_replace('#CODE#',       $tableColumns['item_code'], $sqlQuery);
+
+		self::getPDO()->query($sqlQuery);
 	}
 	/** **********************************************************************
-	 * get data set
-	 * @return  PHPUnit\DbUnit\DataSet\IDataSet
+	 * destruct, drop test db table
 	 ************************************************************************/
-	protected function getDataSet()
+	public static function tearDownAfterClass() : void
 	{
-		return $this->createFlatXMLDataSet(__DIR__.'/dbTestSeeding.xml');
+		$sqlQuery = 'DROP TABLE #TABLE_NAME#';
+		$sqlQuery = str_replace('#TABLE_NAME#', self::$testTableSchema['name'], $sqlQuery);
+
+		self::getPDO()->query($sqlQuery);
 	}
 	/** **********************************************************************
 	 * DB is singleton
+	 * @test
 	 ************************************************************************/
-	public function testIsSingleton() : void
+	public function isSingleton() : void
 	{
 		self::assertTrue
 		(
@@ -49,26 +70,37 @@ final class DBClassTest extends ExchangeTestCase
 	}
 	/** **********************************************************************
 	 * test PDO extension available
+	 * @test
 	 ************************************************************************/
-	public function testPDOAvailable() : void
+	public function pdoAvailable() : void
 	{
-		self::assertTrue(extension_loaded('PDO'), 'PDO extension is unavailable');
+		self::assertTrue
+		(
+			extension_loaded('PDO'),
+			'PDO extension is unavailable'
+		);
 	}
 	/** **********************************************************************
 	 * test params file exist
+	 * @test
 	 * @return  string  params file path
 	 ************************************************************************/
-	public function testParamsFileExist() : string
+	public function paramsFileExist() : string
 	{
 		$paramsFilePath = PARAMS_FOLDER.DS.'db.php';
-		self::assertFileIsReadable($paramsFilePath);
+		self::assertFileIsReadable
+		(
+			$paramsFilePath,
+			$this->getMessage('NOT_READABLE', ['PATH' => $paramsFilePath])
+		);
 		return $paramsFilePath;
 	}
 	/** **********************************************************************
 	 * test db connection params exist
+	 * @test
 	 * @return  array   connection params array
 	 ************************************************************************/
-	public function testDBConnectionParamsExist() : array
+	public function dbConnectionParamsExist() : array
 	{
 		$config     = Config::getInstance();
 		$dbName     = $config->getParam('db.name');
@@ -90,11 +122,12 @@ final class DBClassTest extends ExchangeTestCase
 		];
 	}
 	/** **********************************************************************
-	 * test db connection params exist
+	 * test db connection params workable
+	 * @test
+	 * @depends dbConnectionParamsExist
 	 * @param   array   $connectionParams   connection params
-	 * @depends testDBConnectionParamsExist
 	 ************************************************************************/
-	public function testDBConnectionParamsWorkable(array $connectionParams) : void
+	public function dbConnectionParamsWorkable(array $connectionParams) : void
 	{
 		try
 		{
@@ -114,12 +147,14 @@ final class DBClassTest extends ExchangeTestCase
 	}
 	/** **********************************************************************
 	 * check Exception with incomplete connection params
+	 * @test
+	 * @depends paramsFileExist
+	 * @depends dbConnectionParamsExist
+	 * @depends isSingleton
 	 * @param   string  $paramsFilePath     params file path
 	 * @param   array   $connectionParams   connection params
-	 * @depends testParamsFileExist
-	 * @depends testDBConnectionParamsExist
 	 ************************************************************************/
-	public function testExceptionOnIncompleteConnParams(string $paramsFilePath, array $connectionParams) : void
+	public function exceptionOnIncompleteConnParams(string $paramsFilePath, array $connectionParams) : void
 	{
 		if( is_writable($paramsFilePath) )
 		{
@@ -147,42 +182,177 @@ final class DBClassTest extends ExchangeTestCase
 	}
 	/** **********************************************************************
 	 * test providing correct query
-	 * TODO
+	 * @test
+	 * @depends isSingleton
+	 * @depends pdoAvailable
+	 * @depends dbConnectionParamsWorkable
 	 ************************************************************************/
-	public function testProvidingCorrectQuery() : void
+	public function providingCorrectQuery() : void
 	{
-		self::markTestIncomplete('This test has not been implemented yet');
+		$pdo                = self::getPDO();
+		$db                 = DB::getInstance();
+		$tableName          = self::$testTableSchema['name'];
+		$columns            = self::$testTableSchema['columns'];
+		$tempData           = self::getTempData()[$tableName];
+		$demoDataRandomItem = $tempData[array_rand($tempData)];
+		$sqlQueries         =
+		[
+			'SELECT * 			FROM #TABLE_NAME#',
+			'SELECT #COLUMNS# 	FROM #TABLE_NAME#',
+			'SELECT *			FROM #TABLE_NAME#	WHERE 		#ID_COLUMN# = ? AND #CODE_COLUMN# = ?',
+			'SELECT #COLUMNS#	FROM #TABLE_NAME# 	WHERE 		#ID_COLUMN#		IN (?, ?)',
+			'SELECT *			FROM #TABLE_NAME# 	ORDER BY	#NAME_COLUMN#	ASC',
+			'SELECT *			FROM #TABLE_NAME# 	ORDER BY	#CODE_COLUMN#	DESC'
+		];
+		$sqlQueriesValues   =
+		[
+			2   => [$demoDataRandomItem[$columns['item_id']], $demoDataRandomItem[$columns['item_code']]],
+			3   => [2, rand(3, count($tempData))]
+		];
+
+		foreach( $sqlQueries as $index => $string )
+		{
+			$string = str_replace('#TABLE_NAME#',   self::$testTableSchema['name'],                                 $string);
+			$string = str_replace('#COLUMNS#',      implode(', ', [$columns['item_id'], $columns['item_name']]),    $string);
+			$string = str_replace('#ID_COLUMN#',    $columns['item_id'],                                            $string);
+			$string = str_replace('#NAME_COLUMN#',  $columns['item_name'],                                          $string);
+			$string = str_replace('#CODE_COLUMN#',  $columns['item_code'],                                          $string);
+			$string = str_replace("\t",             ' ',                                                            $string);
+			$string = preg_replace('/\s+/', ' ', trim($string));
+
+			$sqlQueries[$index] = $string;
+		}
+
+		foreach( $sqlQueries as $index => $sqlString )
+		{
+			$queryValues    = array_key_exists($index, $sqlQueriesValues) ? $sqlQueriesValues[$index] : [];
+			$queryNative    = [];
+			$queryByDBClass = [];
+
+			$statement = $pdo->prepare($sqlString);
+			$statement->execute($queryValues);
+			foreach( $statement->fetchAll(PDO::FETCH_ASSOC) as $itemInfo )
+				$queryNative[] = $itemInfo;
+
+			$dbClassQuery = $db->query($sqlString, $queryValues);
+			while( !$dbClassQuery->isEmpty() )
+				$queryByDBClass[] = get_object_vars($dbClassQuery->dequeue());
+
+			self::assertEquals
+			(
+				$queryNative, $queryByDBClass,
+				'Different query results on "'.$sqlString.'"'
+			);
+		}
 	}
 	/** **********************************************************************
 	 * test providing query last error
-	 * TODO
+	 * @test
+	 * @depends providingCorrectQuery
 	 ************************************************************************/
-	public function testProvidingQueryLastError() : void
+	public function providingQueryLastError() : void
 	{
-		self::markTestIncomplete('This test has not been implemented yet');
-	}
-	/** **********************************************************************
-	 * test providing query result structure
-	 * TODO
-	 ************************************************************************/
-	public function testProvidingQueryResultStructure() : void
-	{
-		self::markTestIncomplete('This test has not been implemented yet');
+		$db = DB::getInstance();
+		$db->query('Some incorrect sql query string');
+
+		self::assertTrue
+		(
+			$db->hasLastError() && strlen($db->getLastError()) > 0,
+			'No error provided with incorrect query'
+		);
 	}
 	/** **********************************************************************
 	 * test saving
-	 * TODO
+	 * @test
+	 * @depends providingCorrectQuery
+	 * @return  int     created test item id
 	 ************************************************************************/
-	public function testSave() : void
+	public function providingCorrectSaving() : int
 	{
-		self::markTestIncomplete('This test has not been implemented yet');
+		$db                 = DB::getInstance();
+		$lastTestItemId     = 0;
+		$newTestItemId      = 0;
+		$columns            = self::$testTableSchema['columns'];
+		$sqlGetLastItem     = 'SELECT #ID_COLUMN# FROM #TABLE_NAME# ORDER BY #ID_COLUMN# DESC LIMIT 1';
+		$sqlCreateNewItem   = 'insert INTO #TABLE_NAME# (#NAME_COLUMN#, #CODE_COLUMN#) VALUES (?, ?)';
+
+		$sqlGetLastItem     = str_replace('#ID_COLUMN#',    $columns['item_id'],            $sqlGetLastItem);
+		$sqlGetLastItem     = str_replace('#TABLE_NAME#',   self::$testTableSchema['name'], $sqlGetLastItem);
+
+		$sqlCreateNewItem   = str_replace('#TABLE_NAME#',   self::$testTableSchema['name'], $sqlCreateNewItem);
+		$sqlCreateNewItem   = str_replace('#NAME_COLUMN#',  $columns['item_name'],          $sqlCreateNewItem);
+		$sqlCreateNewItem   = str_replace('#CODE_COLUMN#',  $columns['item_code'],          $sqlCreateNewItem);
+
+		foreach( self::getPDO()->query($sqlGetLastItem)->fetchAll(PDO::FETCH_ASSOC) as $itemInfo )
+			$lastTestItemId = intval($itemInfo[self::$testTableSchema['columns']['item_id']]);
+
+		if( $lastTestItemId > 0 )
+			$newTestItemId = $db->save($sqlCreateNewItem, ['Test name', 'Test code']);
+
+		if( $newTestItemId <= 0 )
+			self::fail('Saving process failed. Error: '.$db->getLastError());
+		else
+			self::assertEquals
+			(
+				$lastTestItemId + 1, $newTestItemId,
+				'New created item has unexpected id. Error: '.$db->getLastError()
+			);
+
+		return $newTestItemId;
 	}
 	/** **********************************************************************
 	 * test deleting
-	 * TODO
+	 * @test
+	 * @param   int $itemId     created test item
+	 * @depends providingCorrectSaving
 	 ************************************************************************/
-	public function testDelete() : void
+	public function providingCorrectDeleting(int $itemId) : void
 	{
-		self::markTestIncomplete('This test has not been implemented yet');
+		$pdo                = self::getPDO();
+		$db                 = DB::getInstance();
+		$columns            = self::$testTableSchema['columns'];
+		$sqlDropNewItem     = 'DELETE FROM #TABLE_NAME# WHERE #ID_COLUMN# = ?';
+		$sqlGetDeletedItem  = 'SELECT #ID_COLUMN# FROM #TABLE_NAME# WHERE #ID_COLUMN# = ?';
+
+		$sqlDropNewItem     = str_replace('#TABLE_NAME#',   self::$testTableSchema['name'], $sqlDropNewItem);
+		$sqlDropNewItem     = str_replace('#ID_COLUMN#',    $columns['item_id'],            $sqlDropNewItem);
+
+		$sqlGetDeletedItem  = str_replace('#TABLE_NAME#',   self::$testTableSchema['name'], $sqlGetDeletedItem);
+		$sqlGetDeletedItem  = str_replace('#ID_COLUMN#',    $columns['item_id'],            $sqlGetDeletedItem);
+
+		self::assertTrue
+		(
+			$db->delete($sqlDropNewItem, [$itemId]),
+			'Delete process failed. Error: '.$db->getLastError()
+		);
+
+		$statement = $pdo->prepare($sqlGetDeletedItem);
+		$statement->execute([$itemId]);
+		foreach( $statement->fetchAll(PDO::FETCH_ASSOC) as $itemInfo )
+			self::assertFalse
+			(
+				$itemInfo[$columns['item_id']] == $itemId,
+				'Item was not deleted'
+			);
+	}
+	/** **********************************************************************
+	 * get temp data set
+	 * @return  array   temp data
+	 ************************************************************************/
+	protected static function prepareTempData() : array
+	{
+		$data           = [];
+		$tableName      = self::$testTableSchema['name'];
+		$tableColumns   = self::$testTableSchema['columns'];
+
+		for( $index = 1; $index <= 10; $index++ )
+			$data[] =
+			[
+				$tableColumns['item_id']    => $index,
+				$tableColumns['item_name']  => str_replace('#INDEX#', $index, 'Item name #INDEX#'),
+				$tableColumns['item_code']  => str_replace('#INDEX#', $index, 'item_code_#INDEX#')
+			];
+
+		return [$tableName => $data];
 	}
 }

@@ -7,7 +7,6 @@ use
 	RuntimeException,
 	PDOException,
 	PDO,
-	Iterator,
 	SplQueue,
 	Main\Singleton;
 /**************************************************************************************************
@@ -26,6 +25,7 @@ class DB
 		$lastError          = '';
 	/** **********************************************************************
 	 * constructor
+	 * @throws  RuntimeException    db connection error
 	 ************************************************************************/
 	private function __construct()
 	{
@@ -53,26 +53,26 @@ class DB
 				]
 			);
 			$this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+			Logger::getInstance()->addNotice('DB object created, connection success');
 		}
 		catch( PDOException $exception )
 		{
 			throw new RuntimeException($exception->getMessage());
 		}
-
-		Logger::getInstance()->addNotice('DB object created, connection success');
 	}
 	/** **********************************************************************
 	 * query
 	 * @param   string  $sqlQuery   sql query string
 	 * @param   array   $params     query params for preparing
-	 * @return  Iterator            query result in rows
+	 * @return  SplQueue            query result in rows
 	 ************************************************************************/
-	public function query(string $sqlQuery, array $params = []) : Iterator
+	public function query(string $sqlQuery, array $params = []) : SplQueue
 	{
-		$preparedQuery  = NULL;
-		$result         = new SplQueue;
+		$preparedQuery      = NULL;
+		$result             = new SplQueue;
+		$this->lastError    = '';
 
-		$this->lastError = '';
 		if( array_key_exists($sqlQuery, $this->preparedQueries) )
 			$preparedQuery = $this->preparedQueries[$sqlQuery];
 		else
@@ -93,7 +93,7 @@ class DB
 			{
 				$preparedQuery->execute($params);
 				foreach( $preparedQuery->fetchAll(PDO::FETCH_OBJ) as $rowObject )
-					$result->push($rowObject);
+					$result->enqueue($rowObject);
 			}
 			catch( PDOException $exception )
 			{
@@ -105,25 +105,57 @@ class DB
 	}
 	/** **********************************************************************
 	 * save item
-	 * @param   string  $sqlQuery   sql query string
 	 * @param   array   $params     query params for preparing
+	 * @param   string  $sqlQuery   sql query string
 	 * @return  int                 created item id
 	 ************************************************************************/
 	public function save(string $sqlQuery, array $params = []) : int
 	{
-		$this->query($sqlQuery, $params);
-		return intval($this->pdo->lastInsertId());
+		$insertOperation = false;
+		foreach( ['INSERT', 'insert'] as $string )
+			if( strpos($sqlQuery, $string) !== false )
+			{
+				$insertOperation = true;
+				break;
+			}
+
+		if( $insertOperation )
+		{
+			$this->query($sqlQuery, $params);
+			return intval($this->pdo->lastInsertId());
+		}
+		else
+		{
+			$this->lastError = 'No insert operation detected';
+			return 0;
+		}
 	}
 	/** **********************************************************************
 	 * delete item
 	 * @param   string  $sqlQuery   sql query string
 	 * @param   array   $params     query params for preparing
 	 * @return  bool                deleting result
-	 * TODO
 	 ************************************************************************/
 	public function delete(string $sqlQuery, array $params = []) : bool
 	{
-		return false;
+		$deleteOperation = false;
+		foreach( ['DELETE', 'delete'] as $string )
+			if( strpos($sqlQuery, $string) !== false )
+			{
+				$deleteOperation = true;
+				break;
+			}
+
+		if( $deleteOperation )
+		{
+			$this->query($sqlQuery, $params);
+			return $this->hasLastError();
+		}
+		else
+		{
+			$this->lastError = 'No delete operation detected';
+			return false;
+		}
 	}
 	/** **********************************************************************
 	 * check if has last error
@@ -135,7 +167,7 @@ class DB
 	}
 	/** **********************************************************************
 	 * get last error message
-	 * @return  string
+	 * @return  string      last error message
 	 ************************************************************************/
 	public function getLastError() : string
 	{

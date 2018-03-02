@@ -24,8 +24,9 @@ final class ConfigClassTest extends ExchangeTestCase
 		];
 	/** **********************************************************************
 	 * Config is singleton
+	 * @test
 	 ************************************************************************/
-	public function testIsSingleton() : void
+	public function isSingleton() : void
 	{
 		self::assertTrue
 		(
@@ -35,9 +36,10 @@ final class ConfigClassTest extends ExchangeTestCase
 	}
 	/** **********************************************************************
 	 * test params folder constant exist
+	 * @test
 	 * @return  string  params folder constant value
 	 ************************************************************************/
-	public function testParamsFolderConstantExist() : string
+	public function paramsFolderConstantExist() : string
 	{
 		self::assertTrue
 		(
@@ -46,18 +48,19 @@ final class ConfigClassTest extends ExchangeTestCase
 		);
 		self::assertNotEquals
 		(
-			$_SERVER['APPLICATION_ROOT'], PARAMS_FOLDER,
+			DOCUMENT_ROOT, PARAMS_FOLDER,
 			'Params constant equals document root'
 		);
 		return PARAMS_FOLDER;
 	}
 	/** **********************************************************************
 	 * params folder full test
+	 * @test
+	 * @depends paramsFolderConstantExist
 	 * @param   string  $paramsConstantValue    params folder constant value
-	 * @depends testParamsFolderConstantExist
 	 * @return  string                          params folder path
 	 ************************************************************************/
-	public function testParamsFolderFullCheck(string $paramsConstantValue) : string
+	public function paramsFolderFullCheck(string $paramsConstantValue) : string
 	{
 		$dirPermissions = $this->getPermissions($paramsConstantValue);
 
@@ -111,11 +114,12 @@ final class ConfigClassTest extends ExchangeTestCase
 	}
 	/** **********************************************************************
 	 * check Config can read params
-	 * @param   string  $paramsPath         params folder path
-	 * @depends testParamsFolderFullCheck
-	 * @depends testIsSingleton
+	 * @test
+	 * @depends paramsFolderFullCheck
+	 * @depends isSingleton
+	 * @param   string  $paramsPath     params folder path
 	 ************************************************************************/
-	public function testCanReadParams(string $paramsPath) : void
+	public function canReadParams(string $paramsPath) : void
 	{
 		if( $this->createTestParams($paramsPath) )
 		{
@@ -141,11 +145,12 @@ final class ConfigClassTest extends ExchangeTestCase
 	}
 	/** **********************************************************************
 	 * expecting app crush with unavailable params folder
-	 * @param   string  $paramsPath         params folder path
-	 * @depends testParamsFolderFullCheck
-	 * @depends testIsSingleton
+	 * @test
+	 * @depends paramsFolderFullCheck
+	 * @depends isSingleton
+	 * @param   string  $paramsPath     params folder path
 	 ************************************************************************/
-	public function testCrushedWithoutParamsFolder(string $paramsPath) : void
+	public function crushedWithoutParamsFolder(string $paramsPath) : void
 	{
 		if( rename($paramsPath, $this->paramRenamedFolder) )
 		{
@@ -168,7 +173,7 @@ final class ConfigClassTest extends ExchangeTestCase
 	}
 	/** **********************************************************************
 	 * creating test params
-	 * @param   string  $paramsPath         params folder path
+	 * @param   string  $paramsPath     params folder path
 	 * @return  bool
 	 ************************************************************************/
 	private function createTestParams(string $paramsPath) : bool
@@ -196,7 +201,7 @@ final class ConfigClassTest extends ExchangeTestCase
 	}
 	/** **********************************************************************
 	 * deleting test params
-	 * @param   string  $paramsPath         params folder path
+	 * @param   string  $paramsPath     params folder path
 	 ************************************************************************/
 	private function deleteTestParams(string $paramsPath) : void
 	{

@@ -7,12 +7,12 @@ declare(strict_types=1);
  *************************************************************************************************/
 class SystemTest extends ExchangeTestCase
 {
-	private
-		$needPhpVersion = 7.2;
+	private $needPhpVersion = 7.2;
 	/** **********************************************************************
 	 * check PHP version
+	 * @test
 	 ************************************************************************/
-	public function testPhpVersion() : void
+	public function phpVersion() : void
 	{
 		$phpVersionExplode  = explode('.', phpversion());
 		$phpVersion         = floatval($phpVersionExplode[0].'.'.$phpVersionExplode[1]);

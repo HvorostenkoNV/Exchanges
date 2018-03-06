@@ -1,22 +1,30 @@
 <?php
+declare(strict_types=1);
+
 namespace Main\Exchange\Procedures;
 
 use
 	Throwable,
 	RuntimeException,
+	SplQueue,
 	Main\Helpers\DB,
 	Main\Helpers\Logger;
-
+/** ***********************************************************************************************
+ * Procedures manager. Provides procedures ability work with.
+ * @package exchange_exchange
+ * @author  Hvorostenko
+ *************************************************************************************************/
 class Manager
 {
-	private static
-		$DB             = NULL,
-		$dbUnavailable  = false;
-	/* -------------------------------------------------------------------- */
-	/* ------------------------ get procedures list ----------------------- */
-	/* -------------------------------------------------------------------- */
-	public static function getProceduresList() : array
+	/** **********************************************************************
+	 * get procedures array
+	 * @return  SplQueue    procedures array
+	 * TODO
+	 ************************************************************************/
+	public static function getProceduresList() : SplQueue
 	{
+		$result = new SplQueue();
+		/*
 		$DB     = self::getDB();
 		$result = [];
 
@@ -35,12 +43,17 @@ class Manager
 			}
 
 		return $result;
+		*/
+		return $result;
 	}
-	/* -------------------------------------------------------------------- */
-	/* --------------------------- get procedure -------------------------- */
-	/* -------------------------------------------------------------------- */
+	/** **********************************************************************
+	 * get procedure by name
+	 * @return  Procedure|NULL  procedure or NULL if not found
+	 * TODO
+	 ************************************************************************/
 	public static function getProcedure(string $name) : ?Procedure
 	{
+		/*
 		$DB = self::getDB();
 
 		if( $DB && strlen($name) > 0 )
@@ -58,10 +71,10 @@ class Manager
 			}
 
 		return NULL;
+		*/
+		return NULL;
 	}
-	/* -------------------------------------------------------------------- */
-	/* ------------------------------ get DB ------------------------------ */
-	/* -------------------------------------------------------------------- */
+/*
 	private static function getDB() : ?DB
 	{
 		if( self::$DB || self::$dbUnavailable ) return self::$DB;
@@ -78,9 +91,7 @@ class Manager
 
 		return self::$DB;
 	}
-	/* -------------------------------------------------------------------- */
-	/* --------------------- get procedure class name --------------------- */
-	/* -------------------------------------------------------------------- */
+
 	private static function getProcedureClassName(string $procedureName) : string
 	{
 		$result = str_replace('_', ' ', $procedureName);
@@ -88,4 +99,5 @@ class Manager
 		$result = implode('', explode(' ', $result));
 		return '\\Main\\Exchange\\Procedures\\'.$result;
 	}
+*/
 }

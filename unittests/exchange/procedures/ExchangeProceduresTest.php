@@ -1,26 +1,19 @@
 <?php
 declare(strict_types=1);
 /** ***********************************************************************************************
- * Test system
+ * Test Main\Exchange\Procedures\Procedure classes
  * @package exchange_unit_tests
  * @author  Hvorostenko
+ * TODO
  *************************************************************************************************/
-final class SystemTest extends ExchangeTestCase
+final class ExchangeProceduresTest extends ExchangeTestCase
 {
-	private $needPhpVersion = 7.2;
 	/** **********************************************************************
-	 * check PHP version
+	 * some test
 	 * @test
 	 ************************************************************************/
-	public function phpVersion() : void
+	public function test() : void
 	{
-		$phpVersionExplode  = explode('.', phpversion());
-		$phpVersion         = floatval($phpVersionExplode[0].'.'.$phpVersionExplode[1]);
-
-		self::assertTrue
-		(
-			$phpVersion >= $this->needPhpVersion,
-			'PHP version have to be '.$this->needPhpVersion.' or higher'
-		);
+		self::assertTrue(true);
 	}
 }

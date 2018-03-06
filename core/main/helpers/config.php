@@ -9,7 +9,7 @@ use
 	RecursiveIteratorIterator,
 	RecursiveDirectoryIterator,
 	Main\Singleton;
-/**************************************************************************************************
+/** ***********************************************************************************************
  * Config class, provides access to system configs params
  * @package exchange_helpers
  * @method  static Config getInstance

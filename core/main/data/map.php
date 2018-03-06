@@ -1,45 +1,41 @@
 <?php
 declare(strict_types=1);
 
-namespace Main\Exchange\Participants;
+namespace Main\Data;
 
-use
-	Main\Exchange\Participants\Data\ProvidedData,
-	Main\Exchange\Participants\Data\FieldsParams,
-	Main\Exchange\Participants\Data\MatchingRules,
-	Main\Exchange\Participants\Data\CombiningRules,
-	Main\Exchange\Participants\Data\DeliveredData;
+use Countable;
 /** ***********************************************************************************************
- * Participants interface
- * @package exchange_exchange
+ * Map data interface, collection of key => values
+ * @package exchange_main
  * @author  Hvorostenko
  *************************************************************************************************/
-interface Participant
+interface Map extends Data, Countable
 {
 	/** **********************************************************************
-	 * get provided data
-	 * @return  ProvidedData   provided data
+	 * construct
+	 * @param   array   $data   data
 	 ************************************************************************/
-	public function getProvidedData() : ProvidedData;
+	public function __construct(array $data = []);
 	/** **********************************************************************
-	 * get fields params
-	 * @return  FieldsParams   fields params
+	 * delete value by index
+	 * @param   mixed   $key    value index
 	 ************************************************************************/
-	public function getFieldsParams() : FieldsParams;
+	public function delete($key) : void;
 	/** **********************************************************************
-	 * get matching rules
-	 * @return  MatchingRules   matching rules
+	 * get value by index
+	 * @param   mixed   $key    value index
+	 * @return  mixed           value
 	 ************************************************************************/
-	public function getMatchingRules() : MatchingRules;
+	public function get($key);
 	/** **********************************************************************
-	 * get combining rules
-	 * @return  CombiningRules   combining rules
+	 * get value by index
+	 * @return  Queue           keys queue
 	 ************************************************************************/
-	public function getCombiningRules() : CombiningRules;
+	public function getKeys() : Queue;
 	/** **********************************************************************
-	 * provide data
-	 * @param   DeliveredData   $data   provided data
-	 * @return  bool                    providing data result
+	 * attach value to index
+	 * @param   mixed   $key    value index
+	 * @param   mixed   $value  value
 	 ************************************************************************/
-	public function provideData(DeliveredData $data) : bool;
+	public function set($key, $value) : void;
 }

@@ -10,7 +10,7 @@ use
 	InvalidArgumentException,
 	RecursiveIteratorIterator,
 	RecursiveDirectoryIterator;
-/**************************************************************************************************
+/** ***********************************************************************************************
  * Localization class, helps with application localization
  * @package exchange_helpers
  * @author  Hvorostenko

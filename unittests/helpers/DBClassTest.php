@@ -26,6 +26,8 @@ final class DBClassTest extends DBExchangeTestCase
 	 ************************************************************************/
 	public static function setUpBeforeClass() : void
 	{
+		parent::setUpBeforeClass();
+
 		$tableName      = self::$testTableSchema['name'];
 		$tableColumns   = self::$testTableSchema['columns'];
 		$sqlQuery       =
@@ -51,6 +53,8 @@ final class DBClassTest extends DBExchangeTestCase
 	 ************************************************************************/
 	public static function tearDownAfterClass() : void
 	{
+		parent::tearDownAfterClass();
+
 		$sqlQuery = 'DROP TABLE #TABLE_NAME#';
 		$sqlQuery = str_replace('#TABLE_NAME#', self::$testTableSchema['name'], $sqlQuery);
 
@@ -339,7 +343,7 @@ final class DBClassTest extends DBExchangeTestCase
 	 * get temp data set
 	 * @return  array   temp data
 	 ************************************************************************/
-	protected static function prepareTempData() : array
+	protected static function prepareDBTempData() : array
 	{
 		$data           = [];
 		$tableName      = self::$testTableSchema['name'];

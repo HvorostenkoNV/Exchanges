@@ -8,7 +8,7 @@ use
 	Main\Exchange\Exchange,
 	Main\Administration\Administration,
 	Main\API\API;
-/**************************************************************************************************
+/** ***********************************************************************************************
  * Application class, application entrance point
  * @package exchange_main
  * @method  static Application getInstance

@@ -18,7 +18,23 @@ abstract class DBExchangeTestCase extends ExchangeTestCase
 		$connection = NULL;
 	private static
 		$pdo        = NULL,
-		$tempData   = [];
+		$tempData   = [],
+		$nativeData = [];
+	/** **********************************************************************
+	 * construct
+	 ************************************************************************/
+	public static function setUpBeforeClass() : void
+	{
+		self::$tempData     = static::prepareDBTempData();
+		self::$nativeData   = static::prepareDBCurrentData(array_keys(self::$tempData));
+	}
+	/** **********************************************************************
+	 * destruct
+	 ************************************************************************/
+	public static function tearDownAfterClass() : void
+	{
+		static::removeDBTempData();
+	}
 	/** **********************************************************************
 	 * get temp connection
 	 * @return  DbConnection
@@ -35,8 +51,18 @@ abstract class DBExchangeTestCase extends ExchangeTestCase
 	 ************************************************************************/
 	final protected function getDataSet() : DbDataSet
 	{
-		self::$tempData = static::prepareTempData();
-		return $this->createArrayDataSet(self::$tempData);
+		$data       = [];
+		$workTables = array_merge(array_keys(self::$nativeData), array_keys(self::$tempData));
+
+		if( count($workTables) > 0 )
+			foreach( $workTables as $tableName)
+			{
+				$nativeData = array_key_exists($tableName, self::$nativeData)   ? self::$nativeData[$tableName] : [];
+				$tempData   = array_key_exists($tableName, self::$tempData)     ? self::$tempData[$tableName]   : [];
+				$data[$tableName] = array_merge($nativeData, $tempData);
+			}
+
+		return $this->createArrayDataSet($data);
 	}
 	/** **********************************************************************
 	 * get PDO statement
@@ -55,26 +81,77 @@ abstract class DBExchangeTestCase extends ExchangeTestCase
 		return self::$pdo;
 	}
 	/** **********************************************************************
-	 * get temp data
-	 * @return  array   temp data
-	 * @example
-			[
-				$tableName =>
-				[
-					[ id => 1, name => Test1 ],
-					[ id => 2, name => Test2 ]
-				]
-			]
+	 * get db temp data for testing
+	 * @return  array   seted temp data
 	 ************************************************************************/
 	final protected static function getTempData() : array
 	{
-		if( count(self::$tempData) <= 0 )
-			self::$tempData = self::prepareTempData();
 		return self::$tempData;
+	}
+	/** **********************************************************************
+	 * prepare db current data for testing
+	 * @param   string[]    $workTables array of tables names to query current data
+	 * @return  array   current data
+	 ************************************************************************/
+	private static function prepareDBCurrentData(array $workTables = []) : array
+	{
+		$data = [];
+
+		if( count($workTables) > 0 )
+			foreach( $workTables as $tableName )
+			{
+				$sqlQuery = 'SELECT * FROM #TABLE_NAME#';
+				$sqlQuery = str_replace('#TABLE_NAME#', $tableName, $sqlQuery);
+
+				try
+				{
+					$queryResult = self::getPDO()->query($sqlQuery)->fetchAll(PDO::FETCH_ASSOC);
+					if( count($queryResult) > 0 ) $data[$tableName] = $queryResult;
+				}
+				catch( Throwable $error )
+				{
+
+				}
+			}
+
+		return $data;
+	}
+	/** **********************************************************************
+	 * remove db temp data for testing
+	 ************************************************************************/
+	private static function removeDBTempData() : void
+	{
+		if( count(self::$tempData) > 0 )
+			foreach( self::$tempData as $tableName => $itemsArray )
+				foreach( $itemsArray as $itemInfo )
+				{
+					$sqlQuery       = 'DELETE FROM #TABLE_NAME# WHERE #CONDITION#';
+					$sqlCondition   = [];
+					$queryValues    = [];
+
+					foreach( $itemInfo as $index => $value )
+					{
+						$sqlCondition[] = $index.' = ?';
+						$queryValues[]  = $value;
+					}
+
+					$sqlQuery = str_replace('#TABLE_NAME#', $tableName,                              $sqlQuery);
+					$sqlQuery = str_replace('#CONDITION#',  implode(' AND ', $sqlCondition),    $sqlQuery);
+
+					self::getPDO()->prepare($sqlQuery)->execute($queryValues);
+				}
 	}
 	/** **********************************************************************
 	 * prepare temp data for testing
 	 * @return  array   temp data
+	 * @example
+		[
+			$tableName =>
+			[
+				[ id => 1, name => Test1 ],
+				[ id => 2, name => Test2 ]
+			]
+		]
 	 ************************************************************************/
-	abstract protected static function prepareTempData() : array;
+	abstract protected static function prepareDBTempData() : array;
 }

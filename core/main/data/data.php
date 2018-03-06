@@ -1,19 +1,21 @@
 <?php
 declare(strict_types=1);
 
-namespace Main\Exchange\Procedures;
-
-use Main\Exchange\Participants\Participant;
+namespace Main\Data;
 /** ***********************************************************************************************
- * Procedures interface
- * @package exchange_exchange
+ * Data interface, base data interface
+ * @package exchange_main
  * @author  Hvorostenko
  *************************************************************************************************/
-interface Procedure
+interface Data
 {
 	/** **********************************************************************
-	 * get participants array
-	 * @return  Participant[]   participants array
+	 * clear data
 	 ************************************************************************/
-	public function getParticipants() : array;
+	public function clear() : void;
+	/** **********************************************************************
+	 * check data is empty
+	 * @return  bool    collection is empty
+	 ************************************************************************/
+	public function isEmpty() : bool;
 }

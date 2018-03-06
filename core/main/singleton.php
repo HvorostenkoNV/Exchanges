@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 namespace Main;
-/**************************************************************************************************
+/** ***********************************************************************************************
  * Singleton trait, provides singleton functional
  * @package exchange_main
  * @author  Hvorostenko

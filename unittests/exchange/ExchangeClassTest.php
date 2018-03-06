@@ -1,26 +1,24 @@
 <?php
 declare(strict_types=1);
+
+use Main\Exchange\Exchange;
 /** ***********************************************************************************************
- * Test system
+ * Test Main\Exchange\Exchange class
  * @package exchange_unit_tests
  * @author  Hvorostenko
  *************************************************************************************************/
-final class SystemTest extends ExchangeTestCase
+final class ExchangeClassTest extends ExchangeTestCase
 {
-	private $needPhpVersion = 7.2;
 	/** **********************************************************************
-	 * check PHP version
+	 * Exchange is singleton
 	 * @test
 	 ************************************************************************/
-	public function phpVersion() : void
+	public function isSingleton() : void
 	{
-		$phpVersionExplode  = explode('.', phpversion());
-		$phpVersion         = floatval($phpVersionExplode[0].'.'.$phpVersionExplode[1]);
-
 		self::assertTrue
 		(
-			$phpVersion >= $this->needPhpVersion,
-			'PHP version have to be '.$this->needPhpVersion.' or higher'
+			$this->singletonImplemented(Exchange::class),
+			$this->getMessage('SINGLETON_IMPLEMENTATION_FAILED', ['CLASS_NAME' => Exchange::class])
 		);
 	}
 }

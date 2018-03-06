@@ -8,7 +8,7 @@ use
 	DateInterval,
 	SplFileInfo,
 	Main\Singleton;
-/**************************************************************************************************
+/** ***********************************************************************************************
  * Logger class, provides logging functional
  * @package exchange_helpers
  * @method  static Logger getInstance

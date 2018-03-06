@@ -9,7 +9,7 @@ use
 	PDO,
 	SplQueue,
 	Main\Singleton;
-/**************************************************************************************************
+/** ***********************************************************************************************
  * DB class, provides methods to work with db
  * @package exchange_helpers
  * @method  static DB getInstance

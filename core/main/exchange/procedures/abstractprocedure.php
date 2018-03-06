@@ -1,17 +1,25 @@
 <?php
+declare(strict_types=1);
+
 namespace Main\Exchange\Procedures;
 
 use
 	Throwable,
-	DomainException;
-
+	DomainException,
+	Main\Exchange\Participants\Participant;
+/** ***********************************************************************************************
+ * Procedures abstract class
+ * @package exchange_exchange
+ * @author  Hvorostenko
+ *************************************************************************************************/
 abstract class AbstractProcedure implements Procedure
 {
 	protected   $participantsClasses    = [];
 	private     $participants           = [];
-	/* -------------------------------------------------------------------- */
-	/* ---------------------------- construct ----------------------------- */
-	/* -------------------------------------------------------------------- */
+	/** **********************************************************************
+	 * construct
+	 * @throws  DomainException     problems with getting participants
+	 ************************************************************************/
 	final public function __construct()
 	{
 		if( count($this->participantsClasses) <= 0 )
@@ -23,9 +31,10 @@ abstract class AbstractProcedure implements Procedure
 			catch( Throwable $error )   {throw new DomainException($error->getMessage());}
 		}
 	}
-	/* -------------------------------------------------------------------- */
-	/* ------------------------- get participants ------------------------- */
-	/* -------------------------------------------------------------------- */
+	/** **********************************************************************
+	 * get participants array
+	 * @return  Participant[]   participants array
+	 ************************************************************************/
 	public function getParticipants() : array
 	{
 		return $this->participants;

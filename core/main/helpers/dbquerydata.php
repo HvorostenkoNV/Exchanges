@@ -1,16 +1,16 @@
 <?php
 declare(strict_types=1);
 
-namespace Main\Exchange\Participants\Data;
+namespace Main\Helpers;
 
 use
 	RuntimeException,
 	InvalidArgumentException,
-	Main\Data\QueueData,
-	Main\Data\MapData;
+	Main\Data\MapData,
+	Main\Data\QueueData;
 /** ***********************************************************************************************
- * Participants delivered data
- * @package exchange_exchange
+ * DB query data
+ * @package exchange_helpers
  * @author  Hvorostenko
  * @example
  *  [
@@ -19,12 +19,12 @@ use
  *      MapData
  *  ]
  *************************************************************************************************/
-class DeliveredData extends QueueData implements Data
+class DBQueryData extends QueueData
 {
 	/** **********************************************************************
 	 * get data form queue start
-	 * @return  MapData             data
-	 * @throws  RuntimeException    if no data for pop
+	 * @return  MapData                     data
+	 * @throws  RuntimeException            if no data for pop
 	 ************************************************************************/
 	public function pop()
 	{

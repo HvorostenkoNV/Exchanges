@@ -1,16 +1,14 @@
 <?php
 declare(strict_types=1);
 
-namespace Main\Exchange\Participants\Data\Users1C;
-
-use Main\Exchange\Participants\Data\FieldsParams as AbstractFieldsParams;
+namespace Main\Exchange\Procedures\Rules;
 /** ***********************************************************************************************
- * Users1C fields params
+ * Participants combining rules abstract rules
  * @package exchange_exchange
  * @author  Hvorostenko
  * TODO
  *************************************************************************************************/
-class FieldsParams extends AbstractFieldsParams
+class CombiningRules implements Rules
 {
 
 }

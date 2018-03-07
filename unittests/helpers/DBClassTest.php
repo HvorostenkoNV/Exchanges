@@ -240,7 +240,15 @@ final class DBClassTest extends DBExchangeTestCase
 
 			$dbClassQuery = $db->query($sqlString, $queryValues);
 			while( !$dbClassQuery->isEmpty() )
-				$queryByDBClass[] = get_object_vars($dbClassQuery->dequeue());
+			{
+				$data       = $dbClassQuery->pop();
+				$dataArray  = [];
+
+				foreach( $data->getKeys() as $key )
+					$dataArray[$key] = $data->get($key);
+
+				$queryByDBClass[] = $dataArray;
+			}
 
 			self::assertEquals
 			(

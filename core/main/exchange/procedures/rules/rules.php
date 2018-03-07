@@ -1,14 +1,13 @@
 <?php
 declare(strict_types=1);
 
-namespace Main\Exchange\Participants\Data;
+namespace Main\Exchange\Procedures\Rules;
 /** ***********************************************************************************************
- * Participants combining rules abstract rules
+ * Participants data interface
  * @package exchange_exchange
  * @author  Hvorostenko
- * TODO
  *************************************************************************************************/
-abstract class CombiningRules implements Data
+interface Rules
 {
 
 }

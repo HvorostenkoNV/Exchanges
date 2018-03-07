@@ -5,10 +5,10 @@ namespace Main\Helpers;
 
 use
 	RuntimeException,
-	PDOException,
 	PDO,
-	SplQueue,
-	Main\Singleton;
+	PDOException,
+	Main\Singleton,
+	Main\Data\MapData;
 /** ***********************************************************************************************
  * DB class, provides methods to work with db
  * @package exchange_helpers
@@ -65,12 +65,12 @@ class DB
 	 * query
 	 * @param   string  $sqlQuery   sql query string
 	 * @param   array   $params     query params for preparing
-	 * @return  SplQueue            query result in rows
+	 * @return  DBQueryData         query result in rows
 	 ************************************************************************/
-	public function query(string $sqlQuery, array $params = []) : SplQueue
+	public function query(string $sqlQuery, array $params = []) : DBQueryData
 	{
 		$preparedQuery      = NULL;
-		$result             = new SplQueue;
+		$result             = new DBQueryData;
 		$this->lastError    = '';
 
 		if( array_key_exists($sqlQuery, $this->preparedQueries) )
@@ -92,8 +92,8 @@ class DB
 			try
 			{
 				$preparedQuery->execute($params);
-				foreach( $preparedQuery->fetchAll(PDO::FETCH_OBJ) as $rowObject )
-					$result->enqueue($rowObject);
+				foreach( $preparedQuery->fetchAll(PDO::FETCH_ASSOC) as $row )
+					$result->push(new MapData($row));
 			}
 			catch( PDOException $exception )
 			{

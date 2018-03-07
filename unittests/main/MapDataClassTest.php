@@ -15,14 +15,15 @@ final class MapDataClassTest extends ExchangeTestCase
 	 ************************************************************************/
 	public function check() : void
 	{
-		$map    = new MapData;
-		$values =
+		$map            = new MapData;
+		$values         =
 		[
 			1       => 'One',
 			'two'   => 'Two',
 			'three' => 3,
 			4       => 4
 		];
+		$randValuesKeys = array_rand($values, 2);
 
 		self::assertTrue($map->isEmpty(),       'Incorrect Map work');
 		self::assertTrue($map->count() === 0,   'Incorrect Map work');
@@ -36,21 +37,18 @@ final class MapDataClassTest extends ExchangeTestCase
 		foreach( $values as $index => $value )
 			self::assertTrue($map->get($index) === $value, 'Incorrect Map work');
 
-		$map->delete(array_rand($values));
-		$map->delete(array_rand($values));
+		$map->delete($randValuesKeys[0]);
+		$map->delete($randValuesKeys[1]);
 		self::assertTrue($map->count() === count($values) - 2, 'Incorrect Map work');
 
 		$map->clear();
-		self::assertTrue($map->isEmpty(), 'Incorrect Queue work');
+		self::assertTrue($map->isEmpty(), 'Incorrect Map work');
 
 		$map = new MapData($values);
 		self::assertTrue($map->count() === count($values),  'Incorrect Map work');
 		foreach( $values as $index => $value )
 			self::assertTrue($map->get($index) === $value, 'Incorrect Map work');
 
-		$keys = $map->getKeys();
-		self::assertTrue($keys->count() === count($values), 'Incorrect Map work');
-		while( !$keys->isEmpty() )
-			self::assertTrue(array_key_exists($keys->pop(), $values), 'Incorrect Map work');
+		self::assertEquals($map->getKeys(), array_keys($values),    'Incorrect Map work');
 	}
 }

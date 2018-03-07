@@ -1,16 +1,14 @@
 <?php
 declare(strict_types=1);
 
-namespace Main\Exchange\Participants\Data\Users1C;
-
-use Main\Exchange\Participants\Data\CombiningRules as AbstractCombiningRules;
+namespace Main\Exchange\Procedures\Rules;
 /** ***********************************************************************************************
- * Users1C combining rules
+ * Participants matching rules abstract rules
  * @package exchange_exchange
  * @author  Hvorostenko
  * TODO
  *************************************************************************************************/
-class CombiningRules extends AbstractCombiningRules
+class MatchingRules implements Rules
 {
 
 }

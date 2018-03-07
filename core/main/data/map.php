@@ -29,9 +29,9 @@ interface Map extends Data, Countable
 	public function get($key);
 	/** **********************************************************************
 	 * get value by index
-	 * @return  Queue           keys queue
+	 * @return  string[]        keys queue
 	 ************************************************************************/
-	public function getKeys() : Queue;
+	public function getKeys() : array;
 	/** **********************************************************************
 	 * attach value to index
 	 * @param   mixed   $key    value index

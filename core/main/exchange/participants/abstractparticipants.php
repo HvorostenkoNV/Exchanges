@@ -6,8 +6,6 @@ namespace Main\Exchange\Participants;
 use
 	Main\Exchange\Participants\Data\ProvidedData,
 	Main\Exchange\Participants\Data\FieldsParams,
-	Main\Exchange\Participants\Data\MatchingRules,
-	Main\Exchange\Participants\Data\CombiningRules,
 	Main\Exchange\Participants\Data\DeliveredData;
 /** ***********************************************************************************************
  * Participant abstract class
@@ -32,25 +30,7 @@ abstract class AbstractParticipants implements Participant
 	 ************************************************************************/
 	final public function getFieldsParams() : FieldsParams
 	{
-		return new \Main\Exchange\Participants\Data\Users1C\FieldsParams;
-	}
-	/** **********************************************************************
-	 * get matching rules
-	 * @return  MatchingRules   matching rules
-	 * TODO
-	 ************************************************************************/
-	final public function getMatchingRules() : MatchingRules
-	{
-		return new \Main\Exchange\Participants\Data\Users1C\MatchingRules;
-	}
-	/** **********************************************************************
-	 * get combining rules
-	 * @return  CombiningRules   combining rules
-	 * TODO
-	 ************************************************************************/
-	final public function getCombiningRules() : CombiningRules
-	{
-		return new \Main\Exchange\Participants\Data\Users1C\CombiningRules;
+		return new \Main\Exchange\Participants\Data\FieldsParams;
 	}
 	/** **********************************************************************
 	 * provide data

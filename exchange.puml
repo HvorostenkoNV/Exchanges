@@ -135,10 +135,14 @@ namespace Main.Exchange.Procedures{
 
     interface Procedure{
         +getParticipants() : array|Participants.Participant
+        +getMatchingRules() : Rules.MatchingRules
+        +getCombiningRules() : Rules.CombiningRules
     }
 
     abstract AbstractProcedure{
         +getParticipants() : array|Participants.Participant
+        +getMatchingRules() : Rules.MatchingRules
+        +getCombiningRules() : Rules.CombiningRules
     }
 
     class UsersExchange{
@@ -154,16 +158,12 @@ namespace Main.Exchange.Participants{
     interface Participant{
         +getProvidedData() : Data.ProvidedData
         +getFieldsParams() : Data.FieldsParams
-        +getMatchingRules() : Data.MatchingRules
-        +getCombiningRules() : Data.CombiningRules
         +provideData(Data.DeliveredData $data) : bool
     }
 
     abstract AbstractParticipants{
         +getProvidedData() : Data.ProvidedData
         +getFieldsParams() : Data.FieldsParams
-        +getMatchingRules() : Data.MatchingRules
-        +getCombiningRules() : Data.CombiningRules
         +provideData(Data.DeliveredData $data) : bool
 
         -readXml(string $path) : Data.ProvidedData
@@ -207,27 +207,17 @@ namespace Main.Exchange.Participants.Data{
 
     }
 
-    abstract FieldsParams{
-
-    }
-
-    abstract MatchingRules{
-
-    }
-
-    abstract CombiningRules{
+    class FieldsParams{
 
     }
 
     Data <|-- ProvidedData
     Data <|-- DeliveredData
     Data <|-- FieldsParams
-    Data <|-- MatchingRules
-    Data <|-- CombiningRules
 }
 
-namespace Main.Exchange.Participants.Data.Users1C{
-    class FieldsParams{
+namespace Main.Exchange.Procedures.Rules{
+    interface Rules{
 
     }
 
@@ -238,6 +228,9 @@ namespace Main.Exchange.Participants.Data.Users1C{
     class CombiningRules{
 
     }
+
+    Rules <|-- MatchingRules
+    Rules <|-- CombiningRules
 }
 
 Main.Exchange.Exchange .. Main.Exchange.DataProcessors.Manager
@@ -246,10 +239,7 @@ Main.Exchange.Exchange .. Main.Exchange.Procedures.Manager
 Main.Exchange.DataProcessors.Processor *-- "one" Main.Exchange.DataProcessors.Results.Result
 Main.Exchange.DataProcessors.Processor *-- "one" Main.Exchange.Procedures.Procedure
 Main.Exchange.Procedures.Procedure *-- "many" Main.Exchange.Participants.Participant
+Main.Exchange.Procedures.Procedure *-- "Many" Main.Exchange.Procedures.Rules.Rules
 Main.Exchange.Participants.Participant *-- "Many" Main.Exchange.Participants.Data.Data
-
-Main.Exchange.Participants.Data.FieldsParams <|-- Main.Exchange.Participants.Data.Users1C.FieldsParams
-Main.Exchange.Participants.Data.MatchingRules <|-- Main.Exchange.Participants.Data.Users1C.MatchingRules
-Main.Exchange.Participants.Data.CombiningRules <|-- Main.Exchange.Participants.Data.Users1C.CombiningRules
 
 @enduml

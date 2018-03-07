@@ -40,7 +40,14 @@ final class QueueDataClassTest extends ExchangeTestCase
 		$queue->clear();
 		self::assertTrue($queue->isEmpty(),         'Incorrect Queue work');
 
-		$this->expectException(RuntimeException::class);
-		$queue->pop();
+		try
+		{
+			$queue->pop();
+			self::fail('Expect '.RuntimeException::class.' error with pop on empty queue');
+		}
+		catch( RuntimeException $error )
+		{
+			self::assertTrue(true);
+		}
 	}
 }

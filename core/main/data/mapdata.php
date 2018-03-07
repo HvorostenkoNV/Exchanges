@@ -64,21 +64,15 @@ class MapData implements Map
 	}
 	/** **********************************************************************
 	 * get value by index
-	 * @return  Queue           keys queue
+	 * @return  string[]        keys queue
 	 ************************************************************************/
-	public function getKeys() : Queue
+	public function getKeys() : array
 	{
-		$result = new QueueData;
-		$keys   = array_keys($this->data);
-
-		foreach( $keys as $value )
-			$result->push($value);
-
-		return $result;
+		return array_keys($this->data);
 	}
 	/** **********************************************************************
 	 * check data is empty
-	 * @return  bool    collection is empty
+	 * @return  bool            collection is empty
 	 ************************************************************************/
 	public function isEmpty() : bool
 	{

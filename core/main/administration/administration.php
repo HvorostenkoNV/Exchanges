@@ -1,14 +1,22 @@
 <?php
+declare(strict_types=1);
+
 namespace Main\Administration;
 
-use Main\Singltone;
-
+use Main\Singleton;
+/** ***********************************************************************************************
+ * Administration class, administration entrance point
+ * @package exchange_main
+ * @method  static Administration getInstance
+ * @author  Hvorostenko
+ * TODO
+ *************************************************************************************************/
 class Administration
 {
-	use Singltone;
+	use Singleton;
 
 	public function run() : void
 	{
-		// TODO
+
 	}
 }

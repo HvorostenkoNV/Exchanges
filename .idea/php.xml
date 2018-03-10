@@ -3,14 +3,14 @@
   <component name="PhpInterpreters">
     <interpreters>
       <interpreter home="sftp://root@10.10.1.161:22/usr/bin/php" id="d5360887-3986-4d44-876c-14556403cba4" name="Remote PHP" debugger_id="php.debugger.XDebug">
-        <remote_data WEB_SERVER_CONFIG_ID="92a8bf21-a1b8-4aac-b6da-5f6550bca6a8" WEB_SERVER_CONFIG_NAME="PROD" HOST="10.10.1.161" PORT="22" ANONYMOUS="false" USERNAME="root" PASSWORD="df9bdf98df99df9cdf9fdf9edfd8dfc5dfc5dfde" PRIVATE_KEY_FILE="" MY_KNOWN_HOSTS_FILE="" PASSPHRASE="" USE_KEY_PAIR="false" INTERPRETER_PATH="/usr/bin/php" HELPERS_PATH="/root/.phpstorm_helpers" INITIALIZED="false" VALID="true" />
+        <remote_data WEB_SERVER_CONFIG_ID="92a8bf21-a1b8-4aac-b6da-5f6550bca6a8" WEB_SERVER_CONFIG_NAME="PROD" WEB_SERVER_CREDENTIALS_ID="sftp://root@10.10.1.161:22" INTERPRETER_PATH="/usr/bin/php" HELPERS_PATH="/root/.phpstorm_helpers" INITIALIZED="false" VALID="true" />
       </interpreter>
     </interpreters>
   </component>
   <component name="PhpInterpretersPhpInfoCache">
     <phpInfoCache>
       <interpreter name="Remote PHP">
-        <phpinfo binary_type="PHP" php_cgi="/usr/bin/php-cgi" php_cli="/usr/bin/php" path_separator=":" remote_host="192.168.101.49 59652 22" version="7.2.2">
+        <phpinfo binary_type="PHP" php_cgi="/usr/bin/php-cgi" php_cli="/usr/bin/php" path_separator=":" remote_host="10.189.61.235 49686 22" version="7.2.2">
           <additional_php_ini>/etc/php.d/20-bcmath.ini, /etc/php.d/20-bz2.ini, /etc/php.d/20-calendar.ini, /etc/php.d/20-ctype.ini, /etc/php.d/20-curl.ini, /etc/php.d/20-dom.ini, /etc/php.d/20-exif.ini, /etc/php.d/20-fileinfo.ini, /etc/php.d/20-ftp.ini, /etc/php.d/20-gd.ini, /etc/php.d/20-gettext.ini, /etc/php.d/20-iconv.ini, /etc/php.d/20-json.ini, /etc/php.d/20-mbstring.ini, /etc/php.d/20-mysqlnd.ini, /etc/php.d/20-pdo.ini, /etc/php.d/20-phar.ini, /etc/php.d/20-posix.ini, /etc/php.d/20-shmop.ini, /etc/php.d/20-simplexml.ini, /etc/php.d/20-sockets.ini, /etc/php.d/20-sqlite3.ini, /etc/php.d/20-sysvmsg.ini, /etc/php.d/20-sysvsem.ini, /etc/php.d/20-sysvshm.ini, /etc/php.d/20-tidy.ini, /etc/php.d/20-tokenizer.ini, /etc/php.d/20-xml.ini, /etc/php.d/20-xmlwriter.ini, /etc/php.d/20-xsl.ini, /etc/php.d/30-mysqli.ini, /etc/php.d/30-pdo_mysql.ini, /etc/php.d/30-pdo_sqlite.ini, /etc/php.d/30-wddx.ini, /etc/php.d/30-xmlreader.ini, /etc/php.d/40-zip.ini</additional_php_ini>
           <configuration_file>/etc/php.ini</configuration_file>
           <configuration_options>
@@ -273,7 +273,7 @@
   <component name="PhpUnit">
     <phpunit_settings>
       <PhpUnitSettings load_method="PHPUNIT_PHAR" custom_loader_path="" phpunit_phar_path="$PROJECT_DIR$/phpunit.phar" />
-      <phpunit_by_interpreter interpreter_id="d5360887-3986-4d44-876c-14556403cba4" load_method="PHPUNIT_PHAR" bootstrap_file_path="/var/www/unittests/bootstrap.php" custom_loader_path="" phpunit_phar_path="/var/www/phpunit.phar" use_bootstrap_file="true" />
+      <phpunit_by_interpreter interpreter_id="d5360887-3986-4d44-876c-14556403cba4" load_method="PHPUNIT_PHAR" bootstrap_file_path="/var/www/unittests/bootstrap.php" configuration_file_path="/var/www/unittests/phpunit.xml" custom_loader_path="" phpunit_phar_path="/var/www/unittests/phpunit.phar" use_configuration_file="true" />
     </phpunit_settings>
   </component>
 </project>

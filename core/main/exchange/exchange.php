@@ -1,37 +1,44 @@
 <?php
+declare(strict_types=1);
+
 namespace Main\Exchange;
 
 use
-	Main\Singltone,
+	Main\Singleton,
 	Main\Helpers\Logger,
 	Main\Exchange\Procedures\Manager        as ProceduresManager,
 	Main\Exchange\DataProcessors\Manager    as ProcessorsManager;
-
+/** ***********************************************************************************************
+ * Exchange class, exchange entrance point
+ * @package exchange_exchange
+ * @method  static Exchange getInstance
+ * @author  Hvorostenko
+ *************************************************************************************************/
 class Exchange
 {
-	use Singltone;
-	/* -------------------------------------------------------------------- */
-	/* ---------------------------- construct ----------------------------- */
-	/* -------------------------------------------------------------------- */
+	use Singleton;
+	/** **********************************************************************
+	 * constructor
+	 ************************************************************************/
 	private function __construct()
 	{
 		Logger::getInstance()->addNotice('Exchange object created');
 	}
-	/* -------------------------------------------------------------------- */
-	/* ------------------------------- run -------------------------------- */
-	/* -------------------------------------------------------------------- */
+	/** **********************************************************************
+	 * run exchange process
+	 * TODO
+	 ************************************************************************/
 	public function run() : void
 	{
 		Logger::getInstance()->addNotice('Exchange process start');
-
+/*
 		foreach( ProceduresManager::getProceduresList() as $procedure )
 		{
 			$collector  = ProcessorsManager::getCollector($procedure);
 			$matcher    = ProcessorsManager::getMatcher($procedure);
 			$combiner   = ProcessorsManager::getCombiner($procedure);
 			$provider   = ProcessorsManager::getProvider($procedure);
-			// TODO
-/*
+
 			$collector->process();
 			$matcher->setCollectedData($collector->getCollectedData());
 			$matcher->process();
@@ -39,7 +46,7 @@ class Exchange
 			$combiner->process();
 			$provider->setCombinedData($combiner->getCombinedData());
 			$provider->process();
-*/
 		}
+*/
 	}
 }

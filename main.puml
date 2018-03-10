@@ -7,7 +7,7 @@ namespace Main{
         +getAPI() : Main.API
     }
 
-    class Singltone << (T,#00CC00) Trait >>{
+    class Singleton << (T,#00CC00) Trait >>{
         -instance
         +{static}getInstance()
     }

@@ -1,73 +1,90 @@
 <?php
+declare(strict_types=1);
+
 namespace Main\Helpers;
 
 use
 	RuntimeException,
-	PDOException,
 	PDO,
-	Main\Singltone;
-
+	PDOException,
+	Main\Singleton,
+	Main\Helpers\Data\DBFieldsValues,
+	Main\Helpers\Data\DBQueryResult;
+/** ***********************************************************************************************
+ * DB class, provides methods to work with db
+ * @package exchange_helpers
+ * @method  static DB getInstance
+ * @author  Hvorostenko
+ *************************************************************************************************/
 class DB
 {
-	use Singltone;
+	use Singleton;
 
 	private
-		$PDO                = NULL,
+		$pdo                = NULL,
 		$preparedQueries    = [],
 		$lastError          = '';
-	/* -------------------------------------------------------------------- */
-	/* ---------------------------- construct ----------------------------- */
-	/* -------------------------------------------------------------------- */
+	/** **********************************************************************
+	 * constructor
+	 * @throws  RuntimeException    db connection error
+	 ************************************************************************/
 	private function __construct()
 	{
-		$config     = Config::getInstance();
-		$dbName     = $config->getParam('db.name');
-		$dbLogin    = $config->getParam('db.login');
-		$dbPassword = $config->getParam('db.password');
-		$dbHost     = $config->getParam('db.host');
+		$config             = Config::getInstance();
+		$connectionParams   =
+		[
+			'dbName'        => $config->getParam('db.name'),
+			'dbLogin'       => $config->getParam('db.login'),
+			'dbPassword'    => $config->getParam('db.password'),
+			'dbHost'        => $config->getParam('db.host'),
+		];
 
 		if( !extension_loaded('PDO') )
 			throw new RuntimeException('PHP PDO extension unavailable');
 
-		if( strlen($dbName) <= 0 || strlen($dbLogin) <= 0 || strlen($dbPassword) <= 0 || strlen($dbHost) <= 0 )
-			throw new RuntimeException('DB connection params are not complete');
+		foreach( $connectionParams as $param => $value )
+			if( strlen($value) <= 0 )
+				throw new RuntimeException("DB connection params are not complete. $param missed");
 
 		try
 		{
-			$this->PDO = new PDO
+			$this->pdo = new PDO
 			(
-				'mysql:dbname='.$dbName.';host='.$dbHost,
-				$dbLogin,
-				$dbPassword,
+				'mysql:dbname='.$connectionParams['dbName'].';host='.$connectionParams['dbHost'],
+				$connectionParams['dbLogin'],
+				$connectionParams['dbPassword'],
 				[
 					PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES UTF8'
 				]
 			);
-			$this->PDO->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+			$this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+			Logger::getInstance()->addNotice('DB object created, connection success');
 		}
 		catch( PDOException $exception )
 		{
-			throw new RuntimeException($exception->getMessage());
+			throw new RuntimeException('DB connection error: '.$exception->getMessage());
 		}
-
-		Logger::getInstance()->addNotice('DB object created, connection success');
 	}
-	/* -------------------------------------------------------------------- */
-	/* ------------------------------ query ------------------------------- */
-	/* -------------------------------------------------------------------- */
-	public function query(string $sqlQuery, array $params) : array
+	/** **********************************************************************
+	 * query
+	 * @param   string  $sqlQuery   sql query string
+	 * @param   array   $params     query params for preparing
+	 * @return  DBQueryResult       query result in rows
+	 ************************************************************************/
+	public function query(string $sqlQuery, array $params = []) : DBQueryResult
 	{
-		$preparedQuery  = NULL;
-		$result         = [];
+		$preparedQuery      = NULL;
+		$result             = new DBQueryResult;
+		$this->lastError    = '';
 
-		$this->lastError = '';
 		if( array_key_exists($sqlQuery, $this->preparedQueries) )
 			$preparedQuery = $this->preparedQueries[$sqlQuery];
 		else
 		{
 			try
 			{
-				$this->preparedQueries[$sqlQuery] = $preparedQuery = $this->PDO->prepare($sqlQuery);
+				$this->preparedQueries[$sqlQuery] = $preparedQuery = $this->pdo->prepare($sqlQuery);
 			}
 			catch( PDOException $exception )
 			{
@@ -80,7 +97,8 @@ class DB
 			try
 			{
 				$preparedQuery->execute($params);
-				$result = $preparedQuery->fetchAll(PDO::FETCH_ASSOC);
+				foreach( $preparedQuery->fetchAll(PDO::FETCH_ASSOC) as $row )
+					$result->push(new DBFieldsValues($row));
 			}
 			catch( PDOException $exception )
 			{
@@ -90,16 +108,74 @@ class DB
 
 		return $result;
 	}
-	/* -------------------------------------------------------------------- */
-	/* ------------------------------ errors ------------------------------ */
-	/* -------------------------------------------------------------------- */
+	/** **********************************************************************
+	 * save item
+	 * @param   array   $params     query params for preparing
+	 * @param   string  $sqlQuery   sql query string
+	 * @return  int                 created item id
+	 ************************************************************************/
+	public function save(string $sqlQuery, array $params = []) : int
+	{
+		$insertOperation = false;
+		foreach( ['INSERT', 'insert'] as $string )
+			if( strpos($sqlQuery, $string) !== false )
+			{
+				$insertOperation = true;
+				break;
+			}
+
+		if( $insertOperation )
+		{
+			$this->query($sqlQuery, $params);
+			return intval($this->pdo->lastInsertId());
+		}
+		else
+		{
+			$this->lastError = 'No insert operation detected';
+			return 0;
+		}
+	}
+	/** **********************************************************************
+	 * delete item
+	 * @param   string  $sqlQuery   sql query string
+	 * @param   array   $params     query params for preparing
+	 * @return  bool                deleting result
+	 ************************************************************************/
+	public function delete(string $sqlQuery, array $params = []) : bool
+	{
+		$deleteOperation = false;
+		foreach( ['DELETE', 'delete'] as $string )
+			if( strpos($sqlQuery, $string) !== false )
+			{
+				$deleteOperation = true;
+				break;
+			}
+
+		if( $deleteOperation )
+		{
+			$this->query($sqlQuery, $params);
+			return $this->hasLastError();
+		}
+		else
+		{
+			$this->lastError = 'No delete operation detected';
+			return false;
+		}
+	}
+	/** **********************************************************************
+	 * check if has last error
+	 * @return  bool
+	 ************************************************************************/
 	public function hasLastError() : bool
 	{
 		return strlen($this->lastError) > 0;
 	}
+	/** **********************************************************************
+	 * get last error message
+	 * @return  string      last error message
+	 ************************************************************************/
 	public function getLastError() : string
 	{
 		return $this->lastError;
 	}
-	// TODO
 }

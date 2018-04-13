@@ -2,44 +2,46 @@
 declare(strict_types=1);
 
 namespace Main\Data;
+
+use Iterator;
 /** ***********************************************************************************************
- * Map data interface, collection of key => values
+ * Set interface, set of unique objects
  * @package exchange_main
  * @author  Hvorostenko
  *************************************************************************************************/
-interface Map extends Data
+interface Set extends Data, Iterator
 {
     /** **********************************************************************
-     * construct
-     * @param   array   $data   data
+     * Return the current element
+     * @return  object|NULL             current set object or NULL
      ************************************************************************/
-    public function __construct(array $data = []);
+    public function current() : ?object;
     /** **********************************************************************
-     * delete value by index
-     * @param   mixed   $key    value index
+     * delete object from set
+     * @param   object  $object         object to delete
      ************************************************************************/
-    public function delete($key) : void;
+    public function delete(object $object) : void;
     /** **********************************************************************
-     * get value by index
-     * @param   mixed   $key    value index
-     * @return  mixed           value
+     * Move forward to next element
      ************************************************************************/
-    public function get($key);
+    public function next() : void;
     /** **********************************************************************
-     * get value by index
-     * @return  string[]        keys queue
+     * Return the key of the current element
+     * @return  int                     key of the current element
      ************************************************************************/
-    public function getKeys() : array;
+    public function key() : int;
     /** **********************************************************************
-     * check map has value
-     * @param   mixed   $value  value
-     * @return  bool            value index
+     * push object to set
+     * @param   object  $object         object to add
      ************************************************************************/
-    public function hasValue($value) : bool;
+    public function push(object $object) :void;
     /** **********************************************************************
-     * attach value to index
-     * @param   mixed   $key    value index
-     * @param   mixed   $value  value
+     * Rewind the Iterator to the first element
      ************************************************************************/
-    public function set($key, $value) : void;
+    public function rewind() : void;
+    /** **********************************************************************
+     * Checks if current position is valid
+     * @return  bool                   valid or not
+     ************************************************************************/
+    public function valid() : bool;
 }

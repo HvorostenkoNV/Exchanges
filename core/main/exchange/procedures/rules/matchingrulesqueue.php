@@ -1,23 +1,23 @@
 <?php
 declare(strict_types=1);
 
-namespace Main\Exchange\Participants\Data;
+namespace Main\Exchange\Procedures\Rules;
 
 use
     RuntimeException,
     InvalidArgumentException,
     Main\Data\QueueData;
 /** ***********************************************************************************************
- * Participants delivered data. Data ready for delivery. Data type of "First In, First Out". Collection of DBFieldsValues objects
- * @package exchange_exchange
+ * Queue of matching rules of two participants
+ * @package exchange_main
  * @author  Hvorostenko
  *************************************************************************************************/
-class DeliveredData extends QueueData implements Data
+class MatchingRulesQueue extends QueueData
 {
     /** **********************************************************************
      * get data form queue start
-     * @return  ItemData                    data
-     * @throws  RuntimeException            if no data for pop
+     * @return  string[]                    data
+     * @throws  RuntimeException    if no data for pop
      ************************************************************************/
     public function pop()
     {
@@ -25,13 +25,17 @@ class DeliveredData extends QueueData implements Data
     }
     /** **********************************************************************
      * get data form queue start
-     * @param   ItemData    $data           data
-     * @throws  InvalidArgumentException    expect ItemData data
+     * @param   string[]    $data           data
+     * @throws  InvalidArgumentException    pushed data is not array of string
      ************************************************************************/
     public function push($data) : void
     {
-        if (!$data instanceof ItemData || $data->count() <= 0)
-            throw new InvalidArgumentException('Pushed data required to be not empty '.ItemData::class.' object');
+        if (!is_array($data) || count($data) <= 0)
+            throw new InvalidArgumentException('Pushed data required to be array of strings');
+
+        foreach ($data as $value)
+            if (!is_string($value))
+                throw new InvalidArgumentException('Pushed data required to be array of strings');
 
         parent::push($data);
     }

@@ -5,13 +5,13 @@ use Main\Exchange\DataProcessors\Results\CombinerResult;
 
 class Provider
 {
-	public function setCombinedData(CombinerResult $data) : void
-	{
-		// TODO
-	}
+    public function setCombinedData(CombinerResult $data) : void
+    {
+        // TODO
+    }
 
-	public function process() : void
-	{
-		// TODO
-	}
+    public function process() : void
+    {
+        // TODO
+    }
 }

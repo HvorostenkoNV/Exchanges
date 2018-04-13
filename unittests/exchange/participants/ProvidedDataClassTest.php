@@ -2,65 +2,56 @@
 declare(strict_types=1);
 
 use
-	Main\Data\MapData,
-	Main\Exchange\Participants\Data\ProvidedData;
+    Main\Data\MapData,
+    Main\Exchange\Participants\Data\ItemData,
+    Main\Exchange\Participants\Data\ProvidedData;
 /** ***********************************************************************************************
  * Test Main\Data\QueueData class
  * @package exchange_unit_tests
  * @author  Hvorostenko
  *************************************************************************************************/
-final class ProvidedDataClassTest extends ExchangeTestCase
+final class ProvidedDataClassTest extends QueueDataClass
 {
-	/** **********************************************************************
-	 * check functional
-	 * @test
-	 ************************************************************************/
-	public function check() : void
-	{
-		$queue  = new ProvidedData;
-		$values =
-		[
-			new MapData,
-			new MapData,
-			new MapData,
-			new MapData
-		];
+    protected static $queueClassName = ProvidedData::class;
+    /** **********************************************************************
+     * get correct data
+     * @return  array                   correct data array
+     * @throws
+     ************************************************************************/
+    protected static function getCorrectValues() : array
+    {
+        parent::getCorrectValues();
 
-		self::assertTrue($queue->isEmpty(),     'Incorrect DBQueryData work');
-		self::assertTrue($queue->count() === 0, 'Incorrect DBQueryData work');
+        $result = [];
 
-		foreach( $values as $value )
-			$queue->push($value);
+        for ($index = 1; $index <= 3; $index++)
+        {
+            $fieldsValues = new ItemData;
+            $fieldsValues->set('field', 'value');
+            $result[] = $fieldsValues;
+        }
 
-		self::assertFalse($queue->isEmpty(),                'Incorrect DBQueryData work');
-		self::assertTrue($queue->count() == count($values), 'Incorrect DBQueryData work');
+        return $result;
+    }
+    /** **********************************************************************
+     * get incorrect values
+     * @return  array                   incorrect values
+     ************************************************************************/
+    protected static function getIncorrectValues() : array
+    {
+        parent::getIncorrectValues();
 
-		self::assertTrue($queue->pop() === $values[0],  'Incorrect DBQueryData work');
-		self::assertTrue($queue->pop() === $values[1],  'Incorrect DBQueryData work');
-
-		self::assertTrue($queue->count() == count($values) - 2, 'Incorrect DBQueryData work');
-
-		$queue->clear();
-		self::assertTrue($queue->isEmpty(), 'Incorrect DBQueryData work');
-
-		try
-		{
-			$queue->pop();
-			self::fail('Expect '.RuntimeException::class.' error with pop on empty queue');
-		}
-		catch( RuntimeException $error )
-		{
-			self::assertTrue(true);
-		}
-
-		try
-		{
-			$queue->push('test');
-			self::fail('Expect '.InvalidArgumentException::class.' error with push non '.MapData::class.' data');
-		}
-		catch( InvalidArgumentException $error )
-		{
-			self::assertTrue(true);
-		}
-	}
+        return
+        [
+            'string',
+            1,
+            1.5,
+            true,
+            [1, 2, 3],
+            new ProvidedData,
+            new MapData,
+            new ItemData,
+            NULL
+        ];
+    }
 }

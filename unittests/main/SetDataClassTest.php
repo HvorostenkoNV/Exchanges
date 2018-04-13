@@ -1,15 +1,18 @@
 <?php
 declare(strict_types=1);
 
-use Main\Data\QueueData;
+use
+    Main\Data\MapData,
+    Main\Data\QueueData,
+    Main\Data\SetData;
 /** ***********************************************************************************************
- * Test Main\Data\QueueData class
+ * Test Main\Data\SetData class
  * @package exchange_unit_tests
  * @author  Hvorostenko
  *************************************************************************************************/
-final class QueueDataClassTest extends QueueDataClass
+final class SetDataClassTest extends SetDataClass
 {
-    protected static $queueClassName = QueueData::class;
+    protected static $setClassName = SetData::class;
     /** **********************************************************************
      * get correct data
      * @return  array                   correct data array
@@ -20,13 +23,9 @@ final class QueueDataClassTest extends QueueDataClass
 
         return
         [
-            'string',
-            10,
-            10.5,
-            true,
-            [1, 2, 3],
+            new MapData,
             new QueueData,
-            NULL
+            new SetData
         ];
     }
 }

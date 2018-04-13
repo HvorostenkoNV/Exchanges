@@ -12,11 +12,11 @@ define('UNITTESTS_CLASSES_FOLDER',  UNITTESTS_ROOT.DIRECTORY_SEPARATOR.'core');
 
 spl_autoload_register(function($className)
 {
-	$classNameString    = strtolower($className);
-	$classNameString    = str_replace('\\', DIRECTORY_SEPARATOR, $classNameString);
-	$classFilePath      = UNITTESTS_CLASSES_FOLDER.DIRECTORY_SEPARATOR.$classNameString.'.php';
-	$file               = new SplFileInfo($classFilePath);
+    $classNameString    = strtolower($className);
+    $classNameString    = str_replace('\\', DIRECTORY_SEPARATOR, $classNameString);
+    $classFilePath      = UNITTESTS_CLASSES_FOLDER.DIRECTORY_SEPARATOR.$classNameString.'.php';
+    $file               = new SplFileInfo($classFilePath);
 
-	if( $file->isFile() && $file->getExtension() == 'php' )
-		include $file->getPathname();
+    if ($file->isFile() && $file->getExtension() == 'php')
+        include $file->getPathname();
 });

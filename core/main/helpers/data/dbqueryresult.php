@@ -1,23 +1,23 @@
 <?php
 declare(strict_types=1);
 
-namespace Main\Exchange\Participants\Data;
+namespace Main\Helpers\Data;
 
 use
     RuntimeException,
     InvalidArgumentException,
     Main\Data\QueueData;
 /** ***********************************************************************************************
- * Participants delivered data. Data ready for delivery. Data type of "First In, First Out". Collection of DBFieldsValues objects
- * @package exchange_exchange
+ * DB query data. Data type of "First In, First Out". Collection of DBFieldsValues objects
+ * @package exchange_helpers
  * @author  Hvorostenko
  *************************************************************************************************/
-class DeliveredData extends QueueData implements Data
+class DBQueryResult extends QueueData
 {
     /** **********************************************************************
      * get data form queue start
-     * @return  ItemData                    data
-     * @throws  RuntimeException            if no data for pop
+     * @return  DBFieldsValues              data
+     * @throws  RuntimeException    if no data for pop
      ************************************************************************/
     public function pop()
     {
@@ -25,13 +25,13 @@ class DeliveredData extends QueueData implements Data
     }
     /** **********************************************************************
      * get data form queue start
-     * @param   ItemData    $data           data
-     * @throws  InvalidArgumentException    expect ItemData data
+     * @param   DBFieldsValues  $data       data
+     * @throws  InvalidArgumentException    pushed data is not MapData
      ************************************************************************/
     public function push($data) : void
     {
-        if (!$data instanceof ItemData || $data->count() <= 0)
-            throw new InvalidArgumentException('Pushed data required to be not empty '.ItemData::class.' object');
+        if (!$data instanceof DBFieldsValues || $data->count() <= 0)
+            throw new InvalidArgumentException('Pushed data required to be not empty '.DBFieldsValues::class.' object');
 
         parent::push($data);
     }

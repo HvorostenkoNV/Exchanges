@@ -1,7 +1,9 @@
 <component name="InspectionProjectProfileManager">
   <settings>
-    <option name="projectProfile" value="Project Exchange" />
-    <option name="PROJECT_PROFILE" value="Project Exchange" />
+    <option name="projectProfile" value="MAIN" />
+    <option name="useProjectProfile" value="false" />
+    <option name="PROJECT_PROFILE" value="MAIN" />
+    <option name="USE_PROJECT_PROFILE" value="false" />
     <version value="1.0" />
   </settings>
 </component>

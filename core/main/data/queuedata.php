@@ -54,7 +54,7 @@ class QueueData implements Queue
 		{
 			return $this->splQueue->dequeue();
 		}
-		catch( RuntimeException $error )
+		catch (RuntimeException $error)
 		{
 			throw $error;
 		}

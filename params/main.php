@@ -7,6 +7,6 @@ declare(strict_types=1);
  *************************************************************************************************/
 return
 [
-	'defaultLang'           => 'en',
-	'localizationFolder'    => 'resources'.DS.'loc'
+    'defaultLang'           => 'en',
+    'localizationFolder'    => 'resources'.DS.'loc'
 ];

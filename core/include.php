@@ -15,13 +15,13 @@ define('CLASSES_FOLDER',    DOCUMENT_ROOT.DS.'core');
 
 spl_autoload_register(function($className)
 {
-	$classNameString    = strtolower($className);
-	$classNameString    = str_replace('\\', DS, $classNameString);
-	$classFilePath      = CLASSES_FOLDER.DS.$classNameString.'.php';
-	$file               = new SplFileInfo($classFilePath);
+    $classNameString    = strtolower($className);
+    $classNameString    = str_replace('\\', DS, $classNameString);
+    $classFilePath      = CLASSES_FOLDER.DS.$classNameString.'.php';
+    $file               = new SplFileInfo($classFilePath);
 
-	if( $file->isFile() && $file->getExtension() == 'php' )
-		include $file->getPathname();
-	else
-		Logger::getInstance()->addWarning('Trying to load unfounded class "'.$className.'"');
+    if ($file->isFile() && $file->getExtension() == 'php')
+        include $file->getPathname();
+    else
+        Logger::getInstance()->addWarning('Trying to load unfounded class "'.$className.'"');
 });

@@ -1,48 +1,47 @@
 <?php
 declare(strict_types=1);
 
-use Main\Data\MapData;
+use Main\Exchange\Procedures\Rules\MatchingRulesQueue;
 /** ***********************************************************************************************
- * Test Main\Data\MapData class
+ * Test Main\Helpers\Data\DBQueryResult class
  * @package exchange_unit_tests
  * @author  Hvorostenko
  *************************************************************************************************/
-class MapDataClassTest extends MapDataClass
+final class MatchingRulesQueueClassTest extends QueueDataClass
 {
-    protected static $mapClassName = MapData::class;
+    protected static $queueClassName = MatchingRulesQueue::class;
     /** **********************************************************************
      * get correct data
      * @return  array                   correct data array
      ************************************************************************/
-    protected static function getCorrectData() : array
+    protected static function getCorrectValues() : array
     {
-        parent::getCorrectData();
+        parent::getCorrectValues();
 
         return
         [
-            1       => 'string',
-            'two'   => 2,
-            'three' => 2.5,
-            4       => true,
-            5       => [1, 2, 3],
-            6       => new MapData,
-            7       => NULL
+            ['string', 'string'],
+            ['string', 'string'],
+            ['string', 'string']
         ];
     }
     /** **********************************************************************
-     * get incorrect keys
-     * @return  array                   incorrect keys
+     * get incorrect values
+     * @return  array                   incorrect values
      ************************************************************************/
-    protected static function getIncorrectKeys() : array
+    protected static function getIncorrectValues() : array
     {
-        parent::getIncorrectKeys();
+        parent::getIncorrectValues();
 
         return
         [
-            [1, 2, 3],
-            new MapData,
+            'string',
+            1,
+            1.5,
             true,
-            5.5,
+            [1, 2, 3],
+            [],
+            new MatchingRulesQueue,
             NULL
         ];
     }

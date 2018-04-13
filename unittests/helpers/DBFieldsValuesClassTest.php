@@ -1,15 +1,15 @@
 <?php
 declare(strict_types=1);
 
-use Main\Data\MapData;
+use Main\Helpers\Data\DBFieldsValues;
 /** ***********************************************************************************************
- * Test Main\Data\MapData class
+ * Test Main\Helpers\Data\DBFieldsValues class
  * @package exchange_unit_tests
  * @author  Hvorostenko
  *************************************************************************************************/
-class MapDataClassTest extends MapDataClass
+final class DBDBFieldsValuesClassTest extends MapDataClass
 {
-    protected static $mapClassName = MapData::class;
+    protected static $mapClassName = DBFieldsValues::class;
     /** **********************************************************************
      * get correct data
      * @return  array                   correct data array
@@ -20,13 +20,9 @@ class MapDataClassTest extends MapDataClass
 
         return
         [
-            1       => 'string',
-            'two'   => 2,
-            'three' => 2.5,
-            4       => true,
-            5       => [1, 2, 3],
-            6       => new MapData,
-            7       => NULL
+            'One'   => 'string',
+            'two'   => 1,
+            'three' => 1.5
         ];
     }
     /** **********************************************************************
@@ -39,11 +35,28 @@ class MapDataClassTest extends MapDataClass
 
         return
         [
-            [1, 2, 3],
-            new MapData,
-            true,
+            '',
+            1,
             5.5,
+            true,
+            [1, 2, 3],
+            new DBFieldsValues,
             NULL
+        ];
+    }
+    /** **********************************************************************
+     * get incorrect values
+     * @return  array                   incorrect values
+     ************************************************************************/
+    protected static function getIncorrectValues() : array
+    {
+        parent::getIncorrectValues();
+
+        return
+        [
+            true,
+            [1, 2, 3],
+            new DBFieldsValues
         ];
     }
 }

@@ -3,16 +3,16 @@ declare(strict_types=1);
 
 use
     Main\Data\MapData,
-    Main\Exchange\Participants\Data\ItemData,
-    Main\Exchange\Participants\Data\DeliveredData;
+    Main\Helpers\Data\DBFieldsValues,
+    Main\Helpers\Data\DBQueryResult;
 /** ***********************************************************************************************
- * Test Main\Data\QueueData class
+ * Test Main\Helpers\Data\DBQueryResult class
  * @package exchange_unit_tests
  * @author  Hvorostenko
  *************************************************************************************************/
-final class DeliveredDataClassTest extends QueueDataClass
+final class DBQueryResultClassTest extends QueueDataClass
 {
-    protected static $queueClassName = DeliveredData::class;
+    protected static $queueClassName = DBQueryResult::class;
     /** **********************************************************************
      * get correct data
      * @return  array                   correct data array
@@ -26,7 +26,7 @@ final class DeliveredDataClassTest extends QueueDataClass
 
         for ($index = 1; $index <= 3; $index++)
         {
-            $fieldsValues = new ItemData;
+            $fieldsValues = new DBFieldsValues;
             $fieldsValues->set('field', 'value');
             $result[] = $fieldsValues;
         }
@@ -42,16 +42,16 @@ final class DeliveredDataClassTest extends QueueDataClass
         parent::getIncorrectValues();
 
         return
-            [
-                'string',
-                1,
-                1.5,
-                true,
-                [1, 2, 3],
-                new DeliveredData,
-                new MapData,
-                new ItemData,
-                NULL
-            ];
+        [
+            'string',
+            1,
+            1.5,
+            true,
+            [1, 2, 3],
+            new DBQueryResult,
+            new DBFieldsValues,
+            new MapData,
+            NULL
+        ];
     }
 }

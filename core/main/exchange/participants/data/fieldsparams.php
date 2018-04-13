@@ -2,6 +2,8 @@
 declare(strict_types=1);
 
 namespace Main\Exchange\Participants\Data;
+
+use InvalidArgumentException;
 /** ***********************************************************************************************
  * Participants fields params abstract rules
  * @package exchange_exchange
@@ -9,96 +11,133 @@ namespace Main\Exchange\Participants\Data;
  *************************************************************************************************/
 class FieldsParams implements Data
 {
-	private
-		$availableFields    = [],
-		$requiredFields     = [],
-		$fieldsTypes        = [];
-	private static
-		$availableFieldsTypes   =
-		[
-			'increment',
-			'integer', 'string', 'boolean',
-			'array-integer', 'array-string', 'array-boolean'
-		],
-		$defaultFieldType       = 'string';
-	/** **********************************************************************
-	 * set available fields
-	 * @return  array                   available fields types
-	 ************************************************************************/
-	public static function getAvailableFieldsTypes() : array
-	{
-		return self::$availableFieldsTypes;
-	}
-	/** **********************************************************************
-	 * set available fields
-	 * @param   string[]    $fields     fields
-	 ************************************************************************/
-	public function setAvailableFields(array $fields) : void
-	{
-		$availableFields       = array_filter($fields, function($value)
-		{
-			return is_string($value);
-		});
-		$availableFields       = array_unique($availableFields);
-		$this->availableFields = $availableFields;
-	}
-	/** **********************************************************************
-	 * get available fields
-	 * @return  string[]                available fields
-	 ************************************************************************/
-	public function getAvailableFields() : array
-	{
-		return $this->availableFields;
-	}
-	/** **********************************************************************
-	 * set required fields
-	 * @param   string[]    $fields     fields
-	 ************************************************************************/
-	public function setRequiredFields(array $fields) : void
-	{
-		$requiredFields         = array_filter($fields, function($value)
-		{
-			return is_string($value);
-		});
-		$requiredFields         = array_unique($requiredFields);
-		$this->requiredFields   = [];
+    private
+        $fieldsInfo = [];
+    private static
+        $availableFieldsTypes   =
+        [
+            'increment',
+            'integer', 'float', 'string', 'boolean',
+            'array-integer', 'array-float', 'array-string', 'array-boolean'
+        ],
+        $defaultFieldType       = 'string';
+    /** **********************************************************************
+     * set available fields
+     * @return  string[]                        available fields types
+     ************************************************************************/
+    public static function getAvailableFieldsTypes() : array
+    {
+        return self::$availableFieldsTypes;
+    }
+    /** **********************************************************************
+     * clear data
+     ************************************************************************/
+    public function clear() : void
+    {
+        $this->fieldsInfo = [];
+    }
+    /** **********************************************************************
+     * get data count
+     * @return  int                             items count
+     ************************************************************************/
+    public function count() : int
+    {
+        return count($this->fieldsInfo);
+    }
+    /** **********************************************************************
+     * check data is empty
+     * @return  bool                            collection is empty
+     ************************************************************************/
+    public function isEmpty() : bool
+    {
+        return count($this->fieldsInfo) <= 0;
+    }
+    /** **********************************************************************
+     * set work fields
+     * @param   string[]    $fields             fields
+     * @throws  InvalidArgumentException        fields contains non strings or duplicates
+     ************************************************************************/
+    public function setFields(array $fields) : void
+    {
+        $workFields = array_filter($fields, function($value)
+        {
+            return is_string($value) && strlen($value) > 0;
+        });
+        if (count($workFields) != count($fields))
+            throw new InvalidArgumentException('Seted fields contains non strings');
 
-		foreach( $requiredFields as $field )
-			if( in_array($field, $this->availableFields) )
-				$this->requiredFields[] = $field;
-	}
-	/** **********************************************************************
-	 * get required fields
-	 * @return  string[]                required fields
-	 ************************************************************************/
-	public function getRequiredFields()
-	{
-		return $this->requiredFields;
-	}
-	/** **********************************************************************
-	 * set field type
-	 * @param   string  $field          field
-	 * @param   string  $type           field type
-	 ************************************************************************/
-	public function setFieldType(string $field, string $type) : void
-	{
-		if( !in_array($field, $this->availableFields) ) return;
+        $workFields = array_unique($workFields);
+        if (count($workFields) != count($fields))
+            throw new InvalidArgumentException('Seted fields contains non duplicates');
 
-		unset($this->fieldsTypes[$field]);
-		if( in_array($type, self::$availableFieldsTypes) )
-			$this->fieldsTypes[$field] = $type;
-	}
-	/** **********************************************************************
-	 * get field type
-	 * @param   string  $field          field
-	 * @return  string|NULL             field type or NULL if field undefined
-	 ************************************************************************/
-	public function getFieldType(string $field) : ?string
-	{
-		if( !in_array($field, $this->availableFields) )
-			return NULL;
-		return array_key_exists($field, $this->fieldsTypes)
-			? $this->fieldsTypes[$field]
-			: self::$defaultFieldType;
-	}
+        $this->fieldsInfo = [];
+        foreach ($workFields as $field)
+            $this->fieldsInfo[$field] =
+            [
+                'required'  => false,
+                'type'      => self::$defaultFieldType
+            ];
+    }
+    /** **********************************************************************
+     * get work fields
+     * @return  string[]                        available fields
+     ************************************************************************/
+    public function getFields() : array
+    {
+        return array_keys($this->fieldsInfo);
+    }
+    /** **********************************************************************
+     * mark field required
+     * @param   string  $field                  field name
+     * @param   bool    $value                  required
+     * @throws  InvalidArgumentException        undefined field
+     ************************************************************************/
+    public function setFieldRequired(string $field, bool $value) : void
+    {
+        if (!array_key_exists($field, $this->fieldsInfo))
+            throw new InvalidArgumentException("Field $field is not in work fields");
+
+        $this->fieldsInfo[$field]['required'] = $value;
+    }
+    /** **********************************************************************
+     * get field required value
+     * @param   string  $field                  field name
+     * @return  bool                            field is required
+     * @throws  InvalidArgumentException        undefined field
+     ************************************************************************/
+    public function getFieldRequired(string $field) : bool
+    {
+        if (!array_key_exists($field, $this->fieldsInfo))
+            throw new InvalidArgumentException("Field $field is not in work fields");
+
+        return $this->fieldsInfo[$field]['required'];
+    }
+    /** **********************************************************************
+     * set field type
+     * @param   string  $field                  field
+     * @param   string  $type                   field type
+     * @throws  InvalidArgumentException        undefined field or incorrect field type
+     ************************************************************************/
+    public function setFieldType(string $field, string $type) : void
+    {
+        if (!array_key_exists($field, $this->fieldsInfo))
+            throw new InvalidArgumentException("Field \"$field\" is not in work fields");
+        if (!in_array($type, self::$availableFieldsTypes))
+            throw new InvalidArgumentException("Field type \"$type\" is not available field type");
+
+        $this->fieldsInfo[$field]['type'] = $type;
+    }
+    /** **********************************************************************
+     * get field type
+     * @param   string  $field                  field
+     * @return  string                          field type
+     * @throws  InvalidArgumentException        undefined field
+     ************************************************************************/
+    public function getFieldType(string $field) : string
+    {
+        if (!array_key_exists($field, $this->fieldsInfo))
+            throw new InvalidArgumentException("Field \"$field\" is not in work fields");
+
+        return $this->fieldsInfo[$field]['type'];
+    }
 }

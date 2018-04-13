@@ -9,16 +9,16 @@ use Main\Application;
  *************************************************************************************************/
 final class ApplicationClassTest extends ExchangeTestCase
 {
-	/** **********************************************************************
-	 * Application is singleton
-	 * @test
-	 ************************************************************************/
-	public function isSingleton() : void
-	{
-		self::assertTrue
-		(
-			$this->singletonImplemented(Application::class),
-			$this->getMessage('SINGLETON_IMPLEMENTATION_FAILED', ['CLASS_NAME' => Application::class])
-		);
-	}
+    /** **********************************************************************
+     * Application is singleton
+     * @test
+     ************************************************************************/
+    public function isSingleton() : void
+    {
+        self::assertTrue
+        (
+            $this->singletonImplemented(Application::class),
+            $this->getMessage('SINGLETON_IMPLEMENTATION_FAILED', ['CLASS_NAME' => Application::class])
+        );
+    }
 }

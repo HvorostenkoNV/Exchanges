@@ -11,9 +11,9 @@ use Main\Exchange\Participants\Participant;
  *************************************************************************************************/
 interface Procedure
 {
-	/** **********************************************************************
-	 * get participants array
-	 * @return  Participant[]   participants array
-	 ************************************************************************/
-	public function getParticipants() : array;
+    /** **********************************************************************
+     * get participants array
+     * @return  Participant[]   participants array
+     ************************************************************************/
+    public function getParticipants() : array;
 }

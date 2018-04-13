@@ -13,10 +13,10 @@ use Main\Singleton;
  *************************************************************************************************/
 class API
 {
-	use Singleton;
+    use Singleton;
 
-	public function run() : void
-	{
+    public function run() : void
+    {
 
-	}
+    }
 }

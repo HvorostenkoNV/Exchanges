@@ -7,8 +7,8 @@ declare(strict_types=1);
  *************************************************************************************************/
 return
 [
-	'name'      => 'exchange',
-	'login'     => 'root',
-	'password'  => 'RooT987456@#',
-	'host'      => '127.0.0.1'
+    'name'      => 'exchange',
+    'login'     => 'root',
+    'password'  => 'RooT987456@#',
+    'host'      => '127.0.0.1'
 ];

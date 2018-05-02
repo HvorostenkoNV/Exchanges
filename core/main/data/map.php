@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Main\Data;
 /** ***********************************************************************************************
  * Map data interface, collection of key => values
+ *
  * @package exchange_main
  * @author  Hvorostenko
  *************************************************************************************************/
@@ -11,35 +12,48 @@ interface Map extends Data
 {
     /** **********************************************************************
      * construct
-     * @param   array   $data   data
+     *
+     * @param   array   $data               data
      ************************************************************************/
     public function __construct(array $data = []);
     /** **********************************************************************
-     * delete value by index
-     * @param   mixed   $key    value index
+     * delete value by key
+     *
+     * @param   mixed   $key                value key
      ************************************************************************/
     public function delete($key) : void;
     /** **********************************************************************
-     * get value by index
-     * @param   mixed   $key    value index
-     * @return  mixed           value
+     * get value by key
+     *
+     * @param   mixed   $key                value key
+     * @return  mixed                       value
      ************************************************************************/
     public function get($key);
     /** **********************************************************************
-     * get value by index
-     * @return  string[]        keys queue
+     * get map keys
+     *
+     * @return  array                       array of keys
      ************************************************************************/
     public function getKeys() : array;
     /** **********************************************************************
+     * check map has key
+     *
+     * @param   mixed   $key                key to check
+     * @return  bool                        map has key
+     ************************************************************************/
+    public function hasKey($key) : bool;
+    /** **********************************************************************
      * check map has value
-     * @param   mixed   $value  value
-     * @return  bool            value index
+     *
+     * @param   mixed   $value              value
+     * @return  bool                        map has value
      ************************************************************************/
     public function hasValue($value) : bool;
     /** **********************************************************************
-     * attach value to index
-     * @param   mixed   $key    value index
-     * @param   mixed   $value  value
+     * attach value to key
+     *
+     * @param   mixed   $key                key
+     * @param   mixed   $value              value
      ************************************************************************/
     public function set($key, $value) : void;
 }

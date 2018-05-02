@@ -5,7 +5,7 @@ use Main\Exchange\Procedures\Procedure;
 
 abstract class AbstractProcessor implements Processor
 {
-    private $procedure = NULL;
+    private $procedure = null;
 
     final public function __construct(Procedure $procedure)
     {

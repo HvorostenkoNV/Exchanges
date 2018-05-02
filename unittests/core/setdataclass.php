@@ -1,9 +1,14 @@
 <?php
 declare(strict_types=1);
 
-use Main\Data\Set;
+namespace UnitTests\Core;
+
+use
+    InvalidArgumentException,
+    Main\Data\Set;
 /** ***********************************************************************************************
  * Parent class for testing Main\Data\Set classes
+ *
  * @package exchange_unit_tests
  * @author  Hvorostenko
  *************************************************************************************************/
@@ -11,7 +16,35 @@ abstract class SetDataClass extends ExchangeTestCase
 {
     protected static $setClassName = '';
     /** **********************************************************************
+     * get correct data
+     *
+     * @return  array                   correct data array
+     ************************************************************************/
+    protected static function getCorrectValues() : array
+    {
+        return [];
+    }
+    /** **********************************************************************
+     * get incorrect values
+     *
+     * @return  array                   incorrect values
+     ************************************************************************/
+    protected static function getIncorrectValues() : array
+    {
+        return [];
+    }
+    /** **********************************************************************
+     * get new queue object
+     *
+     * @return  Set                     new queue object
+     ************************************************************************/
+    final protected static function createSetObject() : Set
+    {
+        return new static::$setClassName;
+    }
+    /** **********************************************************************
      * check empty object
+     *
      * @test
      ************************************************************************/
     public function emptyObject() : void
@@ -25,12 +58,14 @@ abstract class SetDataClass extends ExchangeTestCase
         );
         self::assertEquals
         (
-            0, $set->count(),
+            0,
+            $set->count(),
             'New '.static::$setClassName.' object values count is not zero'
         );
     }
     /** **********************************************************************
      * check read/write operations
+     *
      * @test
      * @depends emptyObject
      ************************************************************************/
@@ -46,7 +81,9 @@ abstract class SetDataClass extends ExchangeTestCase
         }
 
         foreach ($values as $value)
+        {
             $set->push($value);
+        }
 
         self::assertFalse
         (
@@ -55,7 +92,8 @@ abstract class SetDataClass extends ExchangeTestCase
         );
         self::assertEquals
         (
-            count($values), $set->count(),
+            count($values),
+            $set->count(),
             'Filled '.static::$setClassName.' values count is not equal items count put'
         );
 
@@ -67,12 +105,14 @@ abstract class SetDataClass extends ExchangeTestCase
             {
                 self::assertEquals
                 (
-                    $values[$startValuesIndex], $set->current(),
+                    $values[$startValuesIndex],
+                    $set->current(),
                     'Value put in '.static::$setClassName.' before not equals received'
                 );
                 self::assertEquals
                 (
-                    $startValuesIndex, $set->key(),
+                    $startValuesIndex,
+                    $set->key(),
                     'Value put in '.static::$setClassName.' before not equals received'
                 );
 
@@ -85,6 +125,7 @@ abstract class SetDataClass extends ExchangeTestCase
     }
     /** **********************************************************************
      * check incorrect read/write operations
+     *
      * @test
      * @depends readWriteOperations
      ************************************************************************/
@@ -96,25 +137,25 @@ abstract class SetDataClass extends ExchangeTestCase
         self::assertNull
         (
             $set->current(),
-            'Empty '.static::$setClassName.' must return NULL on call "current" method'
+            'Empty '.static::$setClassName.' must return null on call "current" method'
         );
 
-        if (count($incorrectValues))
-            foreach ($incorrectValues as $value)
+        foreach ($incorrectValues as $value)
+        {
+            try
             {
-                try
-                {
-                    $set->push($value);
-                    self::fail('Expect '.InvalidArgumentException::class.' exception in '.static::$setClassName.' on push incorrect value '.var_export($value, true));
-                }
-                catch (InvalidArgumentException $error)
-                {
-                    self::assertTrue(true);
-                }
+                $set->push($value);
+                self::fail('Expect '.InvalidArgumentException::class.' exception in '.static::$setClassName.' on push incorrect value '.var_export($value, true));
             }
+            catch (InvalidArgumentException $error)
+            {
+                self::assertTrue(true);
+            }
+        }
     }
     /** **********************************************************************
      * check clearing operations
+     *
      * @test
      * @depends readWriteOperations
      ************************************************************************/
@@ -124,12 +165,15 @@ abstract class SetDataClass extends ExchangeTestCase
         $values = static::getCorrectValues();
 
         foreach ($values as $value)
+        {
             $set->push($value);
+        }
 
         $set->delete($values[array_rand($values)]);
         self::assertEquals
         (
-            count($values) - 1, $set->count(),
+            count($values) - 1,
+            $set->count(),
             static::$setClassName.' values count not less by one after delete one item'
         );
 
@@ -142,32 +186,9 @@ abstract class SetDataClass extends ExchangeTestCase
         );
         self::assertEquals
         (
-            0, $set->count(),
+            0,
+            $set->count(),
             static::$setClassName.' values count is not zero after call "clear" method'
         );
-    }
-    /** **********************************************************************
-     * get correct data
-     * @return  array                   correct data array
-     ************************************************************************/
-    protected static function getCorrectValues() : array
-    {
-        return [];
-    }
-    /** **********************************************************************
-     * get incorrect values
-     * @return  array                   incorrect values
-     ************************************************************************/
-    protected static function getIncorrectValues() : array
-    {
-        return [];
-    }
-    /** **********************************************************************
-     * get new queue object
-     * @return  Set                     new queue object
-     ************************************************************************/
-    final protected static function createSetObject() : Set
-    {
-        return new static::$setClassName;
     }
 }

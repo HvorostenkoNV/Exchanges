@@ -6,6 +6,7 @@ namespace Main\API;
 use Main\Singleton;
 /** ***********************************************************************************************
  * API class, API entrance point
+ *
  * @package exchange_main
  * @method  static API getInstance
  * @author  Hvorostenko

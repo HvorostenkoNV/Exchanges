@@ -3,17 +3,19 @@ declare(strict_types=1);
 
 namespace Main\Exchange\Procedures;
 
-use Main\Exchange\Participants\Participant;
+use Main\Exchange\Procedures\Data\ParticipantsQueue;
 /** ***********************************************************************************************
- * Procedures interface
+ * Application procedure interface
+ *
  * @package exchange_exchange
  * @author  Hvorostenko
  *************************************************************************************************/
 interface Procedure
 {
     /** **********************************************************************
-     * get participants array
-     * @return  Participant[]   participants array
+     * get participants
+     *
+     * @return  ParticipantsQueue           participants
      ************************************************************************/
-    public function getParticipants() : array;
+    public function getParticipants() : ParticipantsQueue;
 }

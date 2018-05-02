@@ -5,7 +5,8 @@ namespace Main\Exchange\Participants\Data;
 
 use Main\Data\Data as PrimeData;
 /** ***********************************************************************************************
- * Participants data interface
+ * Participants data interface, base participants data interface
+ *
  * @package exchange_exchange
  * @author  Hvorostenko
  *************************************************************************************************/

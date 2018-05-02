@@ -5,38 +5,108 @@ namespace Main\Exchange\Procedures;
 
 use
     Throwable,
-    DomainException,
-    Main\Exchange\Participants\Participant;
+    RuntimeException,
+    ReflectionClass,
+    Main\Helpers\DB,
+    Main\Helpers\Logger,
+    Main\Helpers\Data\DBQueryResult,
+    Main\Exchange\Participants\Participant,
+    Main\Exchange\Procedures\Data\ParticipantsQueue;
 /** ***********************************************************************************************
- * Procedures abstract class
+ * Application procedure abstract class
+ *
  * @package exchange_exchange
  * @author  Hvorostenko
  *************************************************************************************************/
 abstract class AbstractProcedure implements Procedure
 {
-    protected   $participantsClasses    = [];
-    private     $participants           = [];
     /** **********************************************************************
-     * construct
-     * @throws  DomainException     problems with getting participants
+     * get participants
+     *
+     * @return  ParticipantsQueue           participants collection
+     * @throws
      ************************************************************************/
-    final public function __construct()
+    final public function getParticipants() : ParticipantsQueue
     {
-        if (count($this->participantsClasses) <= 0)
-            throw new DomainException('Class property "participantsClasses" is empty');
+        $result         = new ParticipantsQueue;
+        $logger         = Logger::getInstance();
+        $queryResult    = null;
 
-        foreach ($this->participantsClasses as $className)
+        try
         {
-            try                         {$this->participants[] = new $className;}
-            catch (Throwable $error)    {throw new DomainException($error->getMessage());}
+            $queryResult = $this->queryParticipants();
+        }
+        catch (RuntimeException $exception)
+        {
+            $error          = $exception->getMessage();
+            $procedureName  = static::class;
+
+            $logger->addWarning("failed to get \"$procedureName\" procedure participants: $error");
+            return $result;
+        }
+
+        while (!$queryResult->isEmpty())
+        {
+            $participantName        = $queryResult->pop()->get('NAME');
+            $participantClassName   = $this->getParticipantFullClassName($participantName);
+
+            try
+            {
+                $result->push(new $participantClassName);
+            }
+            catch (Throwable $exception)
+            {
+                $error          = $exception->getMessage();
+                $procedureName  = static::class;
+
+                $logger->addWarning("failed to create participant \"$participantClassName\" for procedure \"$procedureName\": $error");
+            }
+        }
+
+        return $result;
+    }
+    /** **********************************************************************
+     * query procedure participant
+     *
+     * @return  DBQueryResult               query result
+     * @throws  RuntimeException            db connection error
+     ************************************************************************/
+    private function queryParticipants() : DBQueryResult
+    {
+        $classReflection    = new ReflectionClass(static::class);
+        $classShortName     = $classReflection->getShortName();
+        $sqlQuery           = '
+            SELECT
+                participants.NAME
+            FROM
+                procedures_participants
+            INNER JOIN participants
+                ON procedures_participants.PARTICIPANT = participants.ID
+            INNER JOIN procedures
+                ON procedures_participants.PROCEDURE = procedures.ID
+            WHERE
+                procedures.NAME = ?';
+
+        try
+        {
+            return DB::getInstance()->query($sqlQuery, [$classShortName]);
+        }
+        catch (RuntimeException $exception)
+        {
+            throw $exception;
         }
     }
     /** **********************************************************************
-     * get participants array
-     * @return  Participant[]   participants array
+     * get participant class full name by participant name
+     *
+     * @param   string  $name               participant name
+     * @return  string                      participant class name
      ************************************************************************/
-    public function getParticipants() : array
+    private function getParticipantFullClassName(string $name) : string
     {
-        return $this->participants;
+        $classReflection    = new ReflectionClass(Participant::class);
+        $classNamespace     = $classReflection->getNamespaceName();
+
+        return $classNamespace.'\\'.$name;
     }
 }

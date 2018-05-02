@@ -7,7 +7,9 @@ use
     InvalidArgumentException,
     Main\Data\MapData;
 /** ***********************************************************************************************
- * Item map data, based on db query row, collection of key => values
+ * DB row item map data, collection of key => values
+ * Based on db query row
+ *
  * @package exchange_helpers
  * @author  Hvorostenko
  *************************************************************************************************/
@@ -15,32 +17,39 @@ class DBFieldsValues extends MapData
 {
     /** **********************************************************************
      * construct
+     *
      * @param   array   $data               data
-     * @throws  InvalidArgumentException    incorrect array
+     * @throws  InvalidArgumentException    incorrect data array argument
      ************************************************************************/
     public function __construct(array $data = [])
     {
         foreach ($data as $key => $value)
         {
             if (!is_string($key) || strlen($key) <= 0)
-                throw new InvalidArgumentException('Incorrect array data. Data keys must be string.');
+            {
+                throw new InvalidArgumentException('incorrect array data: data keys must be string');
+            }
             if (!$this->checkValueValid($value))
-                throw new InvalidArgumentException('Incorrect array data. Data values must be string, integer or float. '.gettype($value).' cached');
+            {
+                throw new InvalidArgumentException('incorrect array data: data values must be string, integer, float or null');
+            }
         }
 
         parent::__construct($data);
     }
     /** **********************************************************************
-     * delete value by index
-     * @param   string  $key                value index
+     * delete value by key
+     *
+     * @param   string  $key                value key
      ************************************************************************/
     public function delete($key) : void
     {
         parent::delete($key);
     }
     /** **********************************************************************
-     * get value by index
-     * @param   string  $key                value index
+     * get value by key
+     *
+     * @param   string  $key                value key
      * @return  mixed                       value
      ************************************************************************/
     public function get($key)
@@ -48,30 +57,47 @@ class DBFieldsValues extends MapData
         return parent::get($key);
     }
     /** **********************************************************************
-     * get value by index
-     * @return  string[]                    keys queue
+     * get map keys
+     *
+     * @return  string[]                    array of keys
      ************************************************************************/
     public function getKeys() : array
     {
         return parent::getKeys();
     }
     /** **********************************************************************
-     * attach value to index
-     * @param   string  $key                value index
+     * check map has key
+     *
+     * @param   string  $key                key to check
+     * @return  bool                        map has key
+     ************************************************************************/
+    public function hasKey($key) : bool
+    {
+        return parent::hasKey($key);
+    }
+    /** **********************************************************************
+     * attach value to key
+     *
+     * @param   string  $key                value key
      * @param   mixed   $value              value
-     * @throws  InvalidArgumentException    incorrect key type
+     * @throws  InvalidArgumentException    incorrect key or value
      ************************************************************************/
     public function set($key, $value) : void
     {
         if (!is_string($key) || strlen($key) <= 0)
-            throw new InvalidArgumentException('Key must be string.');
+        {
+            throw new InvalidArgumentException('key must be string');
+        }
         if (!$this->checkValueValid($value))
-            throw new InvalidArgumentException('Value must be string, integer or float. '.gettype($value).' cached');
+        {
+            throw new InvalidArgumentException('value must be string, integer, float or null');
+        }
 
         parent::set($key, $value);
     }
     /** **********************************************************************
      * check value valid
+     *
      * @param   mixed   $value              value
      * @return  bool                        value valid
      ************************************************************************/
@@ -82,13 +108,13 @@ class DBFieldsValues extends MapData
             case 'integer':
             case 'double':
             case 'string':
+            case 'NULL':
                 return true;
                 break;
             case 'boolean':
             case 'array':
             case 'object':
             case 'resource':
-            case 'NULL':
             default:
                 return false;
         }

@@ -10,6 +10,7 @@ use
     Main\Singleton;
 /** ***********************************************************************************************
  * Logger class, provides logging functional
+ *
  * @package exchange_helpers
  * @method  static Logger getInstance
  * @author  Hvorostenko
@@ -18,96 +19,134 @@ class Logger
 {
     use Singleton;
 
-    private
-        $messages       = [],
-        $availableTypes = ['note', 'warning', 'error'];
+    private static $messagesTypes =
+    [
+        'note'      =>
+        [
+            'weight'    => 0,
+            'critical'  => false
+        ],
+        'warning'   =>
+        [
+            'weight'    => 3,
+            'critical'  => false
+        ],
+        'error'     =>
+        [
+            'weight'    => 5,
+            'critical'  => true
+        ]
+    ];
+    private $messages = [];
     /** **********************************************************************
      * constructor
      ************************************************************************/
     private function __construct()
     {
-        $this->addNotice('Logger object created');
+        $this->addString('note', 'Logger object created');
     }
     /** **********************************************************************
-     * add notice
-     * @param   string  $message    message text
+     * add notice into log file
+     *
+     * @param   string  $message            message text
      ************************************************************************/
     public function addNotice(string $message) : void
     {
         $this->addString('note', $message);
     }
     /** **********************************************************************
-     * add warning
-     * @param   string  $message    message text
+     * add warning into log file
+     *
+     * @param   string  $message            message text
      ************************************************************************/
     public function addWarning(string $message) : void
     {
         $this->addString('warning', $message);
     }
     /** **********************************************************************
-     * add error and shut system down
-     * @param   string  $message    message text
+     * add error into log file
+     *
+     * @param   string  $message            message text
      ************************************************************************/
     public function addError(string $message) : void
     {
         $this->addString('error', $message);
-        $this->write();
-        trigger_error($message, E_USER_ERROR);
     }
     /** **********************************************************************
      * saving message string
-     * @param   string  $type       message type
-     * @param   string  $message    message text
+     * IMPORTANT: message with critical type will shut system down
+     *
+     * @param   string  $type               message type
+     * @param   string  $message            message text
      ************************************************************************/
     private function addString(string $type, string $message) : void
     {
-        if (!in_array($type, $this->availableTypes) || strlen($message) <= 0)
+        if (!array_key_exists($type, self::$messagesTypes) || strlen($message) <= 0)
+        {
             return;
+        }
 
         $this->messages[] =
         [
             'type'      => $type,
             'message'   => $message
         ];
+
+        if (self::$messagesTypes[$type]['critical'])
+        {
+            $this->write();
+            trigger_error($message, E_USER_ERROR);
+        }
     }
     /** **********************************************************************
      * saving log file
      ************************************************************************/
     public function write() : void
     {
-        $date           = new DateTime;
-        $logsDir        = new SplFileInfo(LOGS_FOLDER);
-        $messages       = [];
-        $logFileCreated = false;
+        $date       = new DateTime;
+        $logsFolder = new SplFileInfo(LOGS_FOLDER);
+        $messages   = [];
+
+        if (!$logsFolder->isDir() || !$logsFolder->isWritable())
+        {
+            return;
+        }
 
         foreach ($this->messages as $messageInfo)
-            switch ($messageInfo['type'])
+        {
+            $message        = $messageInfo['message'];
+            $messageWeight  = self::$messagesTypes[$messageInfo['type']]['weight'];
+
+            switch ($messageWeight)
             {
-                case 'note':
-                    $messages[] = $messageInfo['message'];
+                case 0:
+                    $messages[] = "NOTICE: $message";
                     break;
-                case 'warning':
-                    $messages[] = 'WARNING: '.$messageInfo['message'];
+                case 3:
+                    $messages[] = "WARNING: $message";
                     break;
-                case 'error':
-                    $messages[] = 'FATAL ERROR: '.$messageInfo['message'];
+                case 5:
+                    $messages[] = "FATAL ERROR: $message";
                     break;
             }
+        }
 
-        if ($logsDir->isDir() && $logsDir->isWritable())
-            while (!$logFileCreated)
+        while (true)
+        {
+            $logFileName    = LOGS_FOLDER.DS.$date->format('Y-m-d_H-i-s').'.txt';
+            $logFile        = new SplFileInfo($logFileName);
+
+            if (!$logFile->isFile())
             {
-                $logFile = new SplFileInfo(LOGS_FOLDER.DS.$date->format('Y-m-d_H-i-s').'.txt');
-
-                if (!$logFile->isFile())
-                {
-                    $logFile
-                        ->openFile('w')
-                        ->fwrite(implode("\n", $messages));
-                    $logFileCreated = true;
-                }
-                else
-                    $date->add(new DateInterval('PT1S'));
+                $logFile
+                    ->openFile('w')
+                    ->fwrite(implode("\n", $messages));
+                break;
             }
+            else
+            {
+                $date->add(new DateInterval('PT1S'));
+            }
+        }
     }
 }

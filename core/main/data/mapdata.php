@@ -6,6 +6,7 @@ namespace Main\Data;
 use InvalidArgumentException;
 /** ***********************************************************************************************
  * Map data, collection of key => values
+ *
  * @package exchange_main
  * @author  Hvorostenko
  *************************************************************************************************/
@@ -13,103 +14,125 @@ class MapData implements Map
 {
     private
         $data           = [],
-        $includedValues = [];
+        $hashedValues   = [];
     /** **********************************************************************
      * construct
+     *
      * @param   array   $data               data
      ************************************************************************/
     public function __construct(array $data = [])
     {
         foreach ($data as $key => $value)
         {
-            $this->data[$key]                                       = $value;
-            $this->includedValues[$this->getVariableHash($value)]   = NULL;
+            $hashedValue                        = $this->getVariableHash($value);
+            $this->data[$key]                   = $value;
+            $this->hashedValues[$hashedValue]   = null;
         }
     }
     /** **********************************************************************
-     * delete value by index
-     * @param   mixed   $key                value index
+     * delete value by key
+     *
+     * @param   mixed   $key                value key
      ************************************************************************/
     public function delete($key) : void
     {
-        if (!array_key_exists($key, $this->data))
-            return;
+        if (array_key_exists($key, $this->data))
+        {
+            $value          = $this->data[$key];
+            $hashedValue    = $this->getVariableHash($value);
 
-        $value = $this->data[$key];
-        unset($this->data[$key]);
-        unset($this->includedValues[$this->getVariableHash($value)]);
+            unset($this->data[$key], $this->hashedValues[$hashedValue]);
+        }
     }
     /** **********************************************************************
-     * clear data
+     * clear map
      ************************************************************************/
     public function clear() : void
     {
-        $this->data             = [];
-        $this->includedValues   = [];
+        $this->data         = [];
+        $this->hashedValues = [];
     }
     /** **********************************************************************
-     * get data count
+     * get map count
+     *
+     * @return  int                         map count
      ************************************************************************/
     public function count() : int
     {
         return count($this->data);
     }
     /** **********************************************************************
-     * get value by index
-     * @param   mixed   $key                value index
+     * get value by key
+     *
+     * @param   mixed   $key                value key
      * @return  mixed                       value
      ************************************************************************/
     public function get($key)
     {
         return array_key_exists($key, $this->data)
             ? $this->data[$key]
-            : NULL;
+            : null;
     }
     /** **********************************************************************
-     * get value by index
-     * @return  array                       keys queue
+     * get map keys
+     *
+     * @return  array                       array of keys
      ************************************************************************/
     public function getKeys() : array
     {
         return array_keys($this->data);
     }
     /** **********************************************************************
+     * check map has key
+     *
+     * @param   mixed   $key                key to check
+     * @return  bool                        map has key
+     ************************************************************************/
+    public function hasKey($key) : bool
+    {
+        return array_key_exists($key, $this->data);
+    }
+    /** **********************************************************************
      * check map has value
+     *
      * @param   mixed   $value              value
-     * @return  bool                        has value
+     * @return  bool                        map has value
      ************************************************************************/
     public function hasValue($value) : bool
     {
-        return array_key_exists
-        (
-            $this->getVariableHash($value),
-            $this->includedValues
-        );
+        return array_key_exists($this->getVariableHash($value), $this->hashedValues);
     }
     /** **********************************************************************
-     * check data is empty
-     * @return  bool                        collection is empty
+     * check map is empty
+     *
+     * @return  bool                        map is empty
      ************************************************************************/
     public function isEmpty() : bool
     {
         return count($this->data) <= 0;
     }
     /** **********************************************************************
-     * attach value to index
-     * @param   mixed   $key                value index
+     * attach value to key
+     *
+     * @param   mixed   $key                key
      * @param   mixed   $value              value
      * @throws  InvalidArgumentException    incorrect key type
      ************************************************************************/
     public function set($key, $value) : void
     {
         if (!is_string($key) && !is_int($key))
+        {
             throw new InvalidArgumentException('Incorrect key type');
+        }
 
-        $this->data[$key]                                       = $value;
-        $this->includedValues[$this->getVariableHash($value)]   = NULL;
+        $hashedValue                        = $this->getVariableHash($value);
+        $this->data[$key]                   = $value;
+        $this->hashedValues[$hashedValue]   = null;
     }
     /** **********************************************************************
      * get variable hash
+     * using variable hash as unique value for variable keeping and identification
+     *
      * @param   mixed   $value              value
      * @return  string                      variable hash
      ************************************************************************/
@@ -127,9 +150,9 @@ class MapData implements Map
                 return spl_object_hash($value);
                 break;
             case 'resource':
-                return strval(intval($value));
+                return strval((int) $value);
                 break;
-            case 'NULL':
+            case 'null':
                 return 'null-value';
                 break;
             case 'string':

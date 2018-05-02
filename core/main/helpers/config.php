@@ -6,11 +6,14 @@ namespace Main\Helpers;
 use
     RuntimeException,
     UnexpectedValueException,
+    SplFileInfo,
     RecursiveIteratorIterator,
     RecursiveDirectoryIterator,
     Main\Singleton;
 /** ***********************************************************************************************
- * Config class, provides access to system configs params
+ * Application config class
+ * Provides access to system configs params
+ *
  * @package exchange_helpers
  * @method  static Config getInstance
  * @author  Hvorostenko
@@ -22,59 +25,103 @@ class Config
     private $params = [];
     /** **********************************************************************
      * constructor
+     * IMPORTANT: application shut down on any config constructing error
      ************************************************************************/
     private function __construct()
     {
-        try
-        {
-            $directory  = new RecursiveDirectoryIterator(PARAMS_FOLDER);
-            $iterator   = new RecursiveIteratorIterator($directory);
+        $paramsFiles    = $this->getParamsFiles(PARAMS_FOLDER);
+        $logger         = Logger::getInstance();
 
-            while ($iterator->valid())
+        if (count($paramsFiles) <= 0)
+        {
+            $logger->addError('Config object creating error: no params files was found');
+        }
+
+        foreach ($paramsFiles as $file)
+        {
+            $filePath       = $file->getPathname();
+            $fileContent    = include $filePath;
+            $libraryName    = $this->getLibraryName($filePath);
+
+            if (is_array($fileContent))
             {
-                $item = $iterator->current();
-
-                if ($item->isFile() && $item->isReadable() && $item->getExtension() == 'php')
+                foreach ($fileContent as $index => $value)
                 {
-                    $filePath       = $item->getPathname();
-                    $fileContent    = include $filePath;
-                    $libraryName    = str_replace
-                    (
-                        [PARAMS_FOLDER.DS,  '.php', DS],
-                        ['',                '',     '.'],
-                        $filePath
-                    );
-
-                    if (is_array($fileContent))
-                        foreach ($fileContent as $index => $value)
-                            $this->params[$libraryName.'.'.$index] = $value;
+                    $this->params[$libraryName.'.'.$index] = $value;
                 }
-
-                $iterator->next();
             }
+        }
 
-            Logger::getInstance()->addNotice('Config object created');
-        }
-        catch (UnexpectedValueException|RuntimeException $exception)
-        {
-            Logger::getInstance()->addError('Params folder was not founded');
-        }
+        $logger->addNotice('Config object created');
     }
     /** **********************************************************************
-     * get parameter
-     * @param   string  $paramName  parameter name
-     * @return  string              parameter value
-     * @example                     $config->getParam('main.someImportantParameter')
-     * @example                     $config->getParam('users.connectionAD.login')
+     * get parameter value by name
+     *
+     * @param   string  $paramName          full parameter name
+     * @return  string                      parameter value
+     * @example                             $config->getParam('main.someImportantParameter')
+     * @example                             $config->getParam('users.connectionAD.login')
      ************************************************************************/
     public function getParam(string $paramName) : string
     {
         if (array_key_exists($paramName, $this->params))
+        {
             return $this->params[$paramName];
+        }
         else
         {
-            Logger::getInstance()->addWarning('Trying to get unknown param "'.$paramName.'"');
+            Logger::getInstance()->addWarning("Param \"$paramName\" was not found");
             return '';
         }
+    }
+    /** **********************************************************************
+     * get all params files
+     *
+     * @param   string  $folderPath         inspecting folder path
+     * @return  SplFileInfo[]               files
+     ************************************************************************/
+    private function getParamsFiles(string $folderPath) : array
+    {
+        if (strlen($folderPath) <= 0)
+        {
+            return [];
+        }
+
+        try
+        {
+            $result     = [];
+            $directory  = new RecursiveDirectoryIterator($folderPath);
+            $iterator   = new RecursiveIteratorIterator($directory);
+
+            while ($iterator->valid())
+            {
+                $file = $iterator->current();
+                if ($file->isFile() && $file->isReadable() && $file->getExtension() == 'php')
+                {
+                    $result[] = $file;
+                }
+                $iterator->next();
+            }
+
+            return $result;
+        }
+        catch (UnexpectedValueException|RuntimeException $exception)
+        {
+            return [];
+        }
+    }
+    /** **********************************************************************
+     * get params library name by params file path
+     *
+     * @param   string  $filePath           file path
+     * @return  string                      library name
+     ************************************************************************/
+    private function getLibraryName(string $filePath) : string
+    {
+        $libraryName    = str_replace(PARAMS_FOLDER.DS, '',     $filePath);
+        $libraryName    = str_replace('.php',           '',     $libraryName);
+        $libraryName    = str_replace(DS,               '.',    $libraryName);
+
+        return $libraryName;
     }
 }

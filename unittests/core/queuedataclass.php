@@ -1,9 +1,15 @@
 <?php
 declare(strict_types=1);
 
-use Main\Data\Queue;
+namespace UnitTests\Core;
+
+use
+    RuntimeException,
+    InvalidArgumentException,
+    Main\Data\Queue;
 /** ***********************************************************************************************
  * Parent class for testing Main\Data\Queue classes
+ *
  * @package exchange_unit_tests
  * @author  Hvorostenko
  *************************************************************************************************/
@@ -11,7 +17,35 @@ abstract class QueueDataClass extends ExchangeTestCase
 {
     protected static $queueClassName = '';
     /** **********************************************************************
+     * get correct data
+     *
+     * @return  array                   correct data array
+     ************************************************************************/
+    protected static function getCorrectValues() : array
+    {
+        return [];
+    }
+    /** **********************************************************************
+     * get incorrect values
+     *
+     * @return  array                   incorrect values
+     ************************************************************************/
+    protected static function getIncorrectValues() : array
+    {
+        return [];
+    }
+    /** **********************************************************************
+     * get new queue object
+     *
+     * @return  Queue                   new queue object
+     ************************************************************************/
+    final protected static function createQueueObject() : Queue
+    {
+        return new static::$queueClassName;
+    }
+    /** **********************************************************************
      * check empty object
+     *
      * @test
      ************************************************************************/
     public function emptyObject() : void
@@ -25,12 +59,14 @@ abstract class QueueDataClass extends ExchangeTestCase
         );
         self::assertEquals
         (
-            0, $queue->count(),
+            0,
+            $queue->count(),
             'New '.static::$queueClassName.' object values count is not zero'
         );
     }
     /** **********************************************************************
      * check read/write operations
+     *
      * @test
      * @depends emptyObject
      ************************************************************************/
@@ -46,7 +82,9 @@ abstract class QueueDataClass extends ExchangeTestCase
         }
 
         foreach ($values as $value)
+        {
             $queue->push($value);
+        }
 
         self::assertFalse
         (
@@ -55,7 +93,8 @@ abstract class QueueDataClass extends ExchangeTestCase
         );
         self::assertEquals
         (
-            count($values), $queue->count(),
+            count($values),
+            $queue->count(),
             'Filled '.static::$queueClassName.' values count is not equal items count put'
         );
 
@@ -63,18 +102,21 @@ abstract class QueueDataClass extends ExchangeTestCase
         {
             self::assertEquals
             (
-                $value, $queue->pop(),
+                $value,
+                $queue->pop(),
                 'Value put in '.static::$queueClassName.' before not equals received'
             );
             self::assertEquals
             (
-                count($values) - $index - 1, $queue->count(),
+                count($values) - $index - 1,
+                $queue->count(),
                 static::$queueClassName.' values count is not equal expected after pop'
             );
         }
     }
     /** **********************************************************************
      * check incorrect read/write operations
+     *
      * @test
      * @depends readWriteOperations
      ************************************************************************/
@@ -93,22 +135,22 @@ abstract class QueueDataClass extends ExchangeTestCase
             self::assertTrue(true);
         }
 
-        if (count($incorrectValues))
-            foreach ($incorrectValues as $value)
+        foreach ($incorrectValues as $value)
+        {
+            try
             {
-                try
-                {
-                    $queue->push($value);
-                    self::fail('Expect '.InvalidArgumentException::class.' exception in '.static::$queueClassName.' on push incorrect value '.var_export($value, true));
-                }
-                catch (InvalidArgumentException $error)
-                {
-                    self::assertTrue(true);
-                }
+                $queue->push($value);
+                self::fail('Expect '.InvalidArgumentException::class.' exception in '.static::$queueClassName.' on push incorrect value '.var_export($value, true));
             }
+            catch (InvalidArgumentException $error)
+            {
+                self::assertTrue(true);
+            }
+        }
     }
     /** **********************************************************************
      * check clearing operations
+     *
      * @test
      * @depends readWriteOperations
      ************************************************************************/
@@ -117,7 +159,9 @@ abstract class QueueDataClass extends ExchangeTestCase
         $queue = self::createQueueObject();
 
         foreach (static::getCorrectValues() as $value)
+        {
             $queue->push($value);
+        }
 
         $queue->clear();
 
@@ -128,32 +172,9 @@ abstract class QueueDataClass extends ExchangeTestCase
         );
         self::assertEquals
         (
-            0, $queue->count(),
+            0,
+            $queue->count(),
             static::$queueClassName.' values count is not zero after call "clear" method'
         );
-    }
-    /** **********************************************************************
-     * get correct data
-     * @return  array                   correct data array
-     ************************************************************************/
-    protected static function getCorrectValues() : array
-    {
-        return [];
-    }
-    /** **********************************************************************
-     * get incorrect values
-     * @return  array                   incorrect values
-     ************************************************************************/
-    protected static function getIncorrectValues() : array
-    {
-        return [];
-    }
-    /** **********************************************************************
-     * get new queue object
-     * @return  Queue                   new queue object
-     ************************************************************************/
-    final protected static function createQueueObject() : Queue
-    {
-        return new static::$queueClassName;
     }
 }

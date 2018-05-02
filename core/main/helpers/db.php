@@ -5,13 +5,16 @@ namespace Main\Helpers;
 
 use
     RuntimeException,
-    PDO,
     PDOException,
+    PDO,
+    PDOStatement,
     Main\Singleton,
     Main\Helpers\Data\DBFieldsValues,
     Main\Helpers\Data\DBQueryResult;
 /** ***********************************************************************************************
- * DB class, provides methods to work with db
+ * Application DB class
+ * Provides methods for work with database
+ *
  * @package exchange_helpers
  * @method  static DB getInstance
  * @author  Hvorostenko
@@ -21,164 +24,200 @@ class DB
     use Singleton;
 
     private
-        $pdo                = NULL,
+        $pdo                = null,
         $preparedQueries    = [],
-        $lastError          = '';
+        $lastError          = '',
+        $lastInsertId       = 0;
     /** **********************************************************************
      * constructor
-     * @throws  RuntimeException    db connection error
+     *
+     * @throws  RuntimeException                    db connection error
      ************************************************************************/
     private function __construct()
     {
-        $config             = Config::getInstance();
-        $connectionParams   =
-        [
-            'dbName'        => $config->getParam('db.name'),
-            'dbLogin'       => $config->getParam('db.login'),
-            'dbPassword'    => $config->getParam('db.password'),
-            'dbHost'        => $config->getParam('db.host'),
-        ];
-
-        if (!extension_loaded('PDO'))
-            throw new RuntimeException('PHP PDO extension unavailable');
-
-        foreach ($connectionParams as $param => $value)
-            if (strlen($value) <= 0)
-                throw new RuntimeException("DB connection params are not complete. $param missed");
+        $config = Config::getInstance();
+        $logger = Logger::getInstance();
 
         try
         {
-            $this->pdo = new PDO
+            $this->pdo = $this->getNewPDO
             (
-                'mysql:dbname='.$connectionParams['dbName'].';host='.$connectionParams['dbHost'],
-                $connectionParams['dbLogin'],
-                $connectionParams['dbPassword'],
-                [
-                    PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES UTF8'
-                ]
+                $config->getParam('db.host'),
+                $config->getParam('db.name'),
+                $config->getParam('db.login'),
+                $config->getParam('db.password')
             );
-            $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-            Logger::getInstance()->addNotice('DB object created, connection success');
+            $logger->addNotice('DB object created, connection success');
         }
         catch (PDOException $exception)
         {
-            throw new RuntimeException('DB connection error: '.$exception->getMessage());
+            $error = $exception->getMessage();
+            $logger->addWarning("DB object creating failed with error: $error");
+            throw new RuntimeException($error);
         }
     }
     /** **********************************************************************
-     * query
-     * @param   string  $sqlQuery   sql query string
-     * @param   array   $params     query params for preparing
-     * @return  DBQueryResult       query result in rows
-     * @throws
+     * run DB query and get result
+     *
+     * @param   string  $sqlQuery                   sql query string
+     * @param   array   $params                     query params for preparing
+     * @return  DBQueryResult                       query result in rows
      ************************************************************************/
     public function query(string $sqlQuery, array $params = []) : DBQueryResult
     {
-        $preparedQuery      = NULL;
         $result             = new DBQueryResult;
+        $logger             = Logger::getInstance();
+        $preparedQuery      = null;
         $this->lastError    = '';
+        $this->lastInsertId = 0;
 
-        if (array_key_exists($sqlQuery, $this->preparedQueries))
-            $preparedQuery = $this->preparedQueries[$sqlQuery];
-        else
+        try
         {
-            try
-            {
-                $this->preparedQueries[$sqlQuery] = $preparedQuery = $this->pdo->prepare($sqlQuery);
-            }
-            catch (PDOException $exception)
-            {
-                $this->lastError = $exception->getMessage();
-            }
+            $preparedQuery = $this->getPreparedQueryStatement($sqlQuery);
+        }
+        catch (PDOException $exception)
+        {
+            $error = $exception->getMessage();
+            $this->lastError = $error;
+            $logger->addWarning("Caught DB query error \"$error\" on preparing query \"$sqlQuery\"");
+            return $result;
         }
 
-        if ($preparedQuery)
+        try
         {
-            try
-            {
-                $preparedQuery->execute($params);
-                foreach ($preparedQuery->fetchAll(PDO::FETCH_ASSOC) as $row)
-                    $result->push(new DBFieldsValues($row));
-            }
-            catch (PDOException $exception)
-            {
-                $this->lastError = $exception->getMessage();
-            }
-        }
+            $pdoLastInsertId    = (int) $this->pdo->lastInsertId();
+            $queryResult        = $this->executeQueryStatement($preparedQuery, $params);
+            $newInsertedId      = (int) $this->pdo->lastInsertId();
 
-        return $result;
-    }
-    /** **********************************************************************
-     * save item
-     * @param   array   $params     query params for preparing
-     * @param   string  $sqlQuery   sql query string
-     * @return  int                 created item id
-     * @throws
-     ************************************************************************/
-    public function save(string $sqlQuery, array $params = []) : int
-    {
-        $insertOperation = false;
-        foreach (['INSERT', 'insert'] as $string)
-            if (strpos($sqlQuery, $string) !== false)
+            foreach ($queryResult as $row)
             {
-                $insertOperation = true;
-                break;
+                $result->push(new DBFieldsValues($row));
+            }
+            if ($newInsertedId != $pdoLastInsertId)
+            {
+                $this->lastInsertId = $newInsertedId;
             }
 
-        if ($insertOperation)
-        {
-            $this->query($sqlQuery, $params);
-            return intval($this->pdo->lastInsertId());
+            return $result;
         }
-        else
+        catch (PDOException $exception)
         {
-            $this->lastError = 'No insert operation detected';
-            return 0;
+            $error = $exception->getMessage();
+            $this->lastError = $error;
+            $logger->addWarning("Caught DB query error \"$error\" on execute query \"$sqlQuery\"");
+            return $result;
         }
     }
     /** **********************************************************************
-     * delete item
-     * @param   string  $sqlQuery   sql query string
-     * @param   array   $params     query params for preparing
-     * @return  bool                deleting result
-     * @throws
-     ************************************************************************/
-    public function delete(string $sqlQuery, array $params = []) : bool
-    {
-        $deleteOperation = false;
-        foreach (['DELETE', 'delete'] as $string)
-            if (strpos($sqlQuery, $string) !== false)
-            {
-                $deleteOperation = true;
-                break;
-            }
-
-        if ($deleteOperation)
-        {
-            $this->query($sqlQuery, $params);
-            return $this->hasLastError();
-        }
-        else
-        {
-            $this->lastError = 'No delete operation detected';
-            return false;
-        }
-    }
-    /** **********************************************************************
-     * check if has last error
-     * @return  bool
+     * check if there was any error during last query
+     *
+     * @return  bool                                last query error exist
      ************************************************************************/
     public function hasLastError() : bool
     {
         return strlen($this->lastError) > 0;
     }
     /** **********************************************************************
-     * get last error message
-     * @return  string      last error message
+     * get last query error message
+     *
+     * @return  string                              last query error exist message
      ************************************************************************/
     public function getLastError() : string
     {
         return $this->lastError;
+    }
+    /** **********************************************************************
+     * get last inserted item id
+     *
+     * @return  int                                 last inserted item id
+     ************************************************************************/
+    public function getLastInsertId() : int
+    {
+        return $this->lastInsertId;
+    }
+    /** **********************************************************************
+     * get new PDO
+     *
+     * @param   string  $dbHost                     database host
+     * @param   string  $dbName                     database name
+     * @param   string  $dbLogin                    database login
+     * @param   string  $dbPassword                 database password
+     * @return  PDO                                 new PDO object
+     * @throws  PDOException                        new PDO object creating failed
+     ************************************************************************/
+    private function getNewPDO(string $dbHost, string $dbName, string $dbLogin, string $dbPassword) : PDO
+    {
+        try
+        {
+            $pdo = new PDO
+            (
+                "mysql:dbname=$dbName;host=$dbHost",
+                $dbLogin,
+                $dbPassword,
+                [
+                    PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES UTF8'
+                ]
+            );
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            return $pdo;
+        }
+        catch (PDOException $exception)
+        {
+            throw $exception;
+        }
+    }
+    /** **********************************************************************
+     * get prepared query statement
+     *
+     * @param   string  $sqlQuery                   sql query
+     * @return  PDOStatement                        prepared query statement
+     * @throws  PDOException                        preparing error
+     ************************************************************************/
+    private function getPreparedQueryStatement(string $sqlQuery) : PDOStatement
+    {
+        try
+        {
+            if (!array_key_exists($sqlQuery, $this->preparedQueries))
+            {
+                $this->preparedQueries[$sqlQuery] = $this->pdo->prepare($sqlQuery);
+            }
+
+            return $this->preparedQueries[$sqlQuery];
+        }
+        catch (PDOException $exception)
+        {
+            throw $exception;
+        }
+    }
+    /** **********************************************************************
+     * execute prepared query statement
+     *
+     * @param   PDOStatement    $preparedQuery      prepared query statement
+     * @param   array   $params                     query params for preparing
+     * @return  array                               query result in rows
+     * @throws  PDOException                        executing error
+     ************************************************************************/
+    private function executeQueryStatement(PDOStatement $preparedQuery, array $params) : array
+    {
+        try
+        {
+            if (!$preparedQuery->execute($params))
+            {
+                throw new PDOException($preparedQuery->errorInfo()[2]);
+            }
+        }
+        catch (PDOException $exception)
+        {
+            throw $exception;
+        }
+
+        try
+        {
+            return $preparedQuery->fetchAll(PDO::FETCH_ASSOC);
+        }
+        catch (PDOException $exception)
+        {
+            return [];
+        }
     }
 }

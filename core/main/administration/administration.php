@@ -6,6 +6,7 @@ namespace Main\Administration;
 use Main\Singleton;
 /** ***********************************************************************************************
  * Administration class, administration entrance point
+ *
  * @package exchange_main
  * @method  static Administration getInstance
  * @author  Hvorostenko

@@ -5,7 +5,8 @@ namespace Main\Data;
 
 use Countable;
 /** ***********************************************************************************************
- * Data interface, base data interface
+ * Data interface, base project data interface
+ *
  * @package exchange_main
  * @author  Hvorostenko
  *************************************************************************************************/
@@ -17,12 +18,14 @@ interface Data extends Countable
     public function clear() : void;
     /** **********************************************************************
      * get data count
-     * @return  int                     items count
+     *
+     * @return  int                         data count
      ************************************************************************/
     public function count() : int;
     /** **********************************************************************
      * check data is empty
-     * @return  bool                    collection is empty
+     *
+     * @return  bool                        data is empty
      ************************************************************************/
     public function isEmpty() : bool;
 }

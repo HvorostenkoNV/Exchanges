@@ -6,99 +6,147 @@ namespace Main\Exchange\Procedures;
 use
     Throwable,
     RuntimeException,
-    SplQueue,
+    Main\Data\MapData,
     Main\Helpers\DB,
-    Main\Helpers\Logger;
+    Main\Helpers\Logger,
+    Main\Helpers\Data\DBQueryResult,
+    Main\Exchange\Procedures\Data\ProceduresQueue;
 /** ***********************************************************************************************
- * Procedures manager. Provides procedures ability work with.
+ * Application procedures manager
+ * Provides procedures ability work with
+ *
  * @package exchange_exchange
  * @author  Hvorostenko
  *************************************************************************************************/
 class Manager
 {
     /** **********************************************************************
-     * get procedures array
-     * @return  SplQueue    procedures array
-     * TODO
+     * get procedures by filter
+     *
+     * @param   MapData|null    $filter     filter
+     * @return  ProceduresQueue             queue of procedures
+     * @throws
      ************************************************************************/
-    public static function getProceduresList() : SplQueue
+    public static function getProcedures(MapData $filter = null) : ProceduresQueue
     {
-        $result = new SplQueue();
-        /*
-        $DB     = self::getDB();
-        $result = [];
-
-        if ($DB)
-            foreach ($DB->query('SELECT NAME FROM procedures WHERE ACTIVITY = ?', [1]) as $itemInfo)
-            {
-                $procedureNameClass = self::getProcedureClassName($itemInfo['NAME']);
-                try
-                {
-                    $result[] = new $procedureNameClass;
-                }
-                catch (Throwable $error)
-                {
-                    Logger::getInstance()->addWarning('Failed to create procedure object "'.$itemInfo['NAME'].'": '.$error->getMessage());
-                }
-            }
-
-        return $result;
-        */
-        return $result;
-    }
-    /** **********************************************************************
-     * get procedure by name
-     * @return  Procedure|NULL  procedure or NULL if not found
-     * TODO
-     ************************************************************************/
-    public static function getProcedure(string $name) : ?Procedure
-    {
-        /*
-        $DB = self::getDB();
-
-        if ($DB && strlen($name) > 0)
-            foreach ($DB->query('SELECT NAME FROM procedures WHERE ACTIVITY = ? AND NAME = ?', [1, $name]) as $itemInfo)
-            {
-                $procedureNameClass = self::getProcedureClassName($itemInfo['NAME']);
-                try
-                {
-                    return new $procedureNameClass;
-                }
-                catch (Throwable $error)
-                {
-                    Logger::getInstance()->addWarning('Failed to create procedure object "'.$itemInfo['NAME'].'": '.$error->getMessage());
-                }
-            }
-
-        return NULL;
-        */
-        return NULL;
-    }
-/*
-    private static function getDB() : ?DB
-    {
-        if (self::$DB || self::$dbUnavailable)
-            return self::$DB;
+        $result         = new ProceduresQueue();
+        $db             = null;
+        $logger         = Logger::getInstance();
+        $filter         = self::validateFilter($filter);
+        $queryResult    = null;
 
         try
         {
-            self::$DB = DB::getInstance();
+            $queryResult = self::queryProcedures($filter);
         }
         catch (RuntimeException $exception)
         {
-            Logger::getInstance()->addWarning('DB error: "'.$exception->getMessage().'"');
-            self::$dbUnavailable = true;
+            $error = $exception->getMessage();
+            $logger->addWarning("failed to get procedures: $error");
+            return $result;
         }
 
-        return self::$DB;
-    }
+        while (!$queryResult->isEmpty())
+        {
+            $procedureName      = $queryResult->pop()->get('NAME');
+            $procedureClassName = self::getProcedureFullClassName($procedureName);
 
-    private static function getProcedureClassName(string $procedureName) : string
-    {
-        $result = str_replace('_', ' ', $procedureName);
-        $result = ucwords($result);
-        $result = implode('', explode(' ', $result));
-        return '\\Main\\Exchange\\Procedures\\'.$result;
+            try
+            {
+                $result->push(new $procedureClassName);
+            }
+            catch (Throwable $exception)
+            {
+                $error = $exception->getMessage();
+                $logger->addWarning("failed to create procedure \"$procedureClassName\": $error");
+            }
+        }
+
+        return $result;
     }
-*/
+    /** **********************************************************************
+     * validate procedures filter
+     *
+     * @param   MapData|null    $filter     filter
+     * @return  MapData                     validated filter
+     ************************************************************************/
+    private static function validateFilter(MapData $filter = null) : MapData
+    {
+        $result     = new MapData();
+        $activity   = $filter ? $filter->get('ACTIVITY')    : null;
+        $names      = $filter ? $filter->get('NAME')        : null;
+
+        $names = array_filter
+        (
+            is_array($names) ? $names : [$names],
+            function($value)
+            {
+                return is_string($value) && strlen($value) > 0;
+            }
+        );
+
+        if (is_bool($activity))
+        {
+            $result->set('ACTIVITY', $activity);
+        }
+        if (count($names) > 0)
+        {
+            $result->set('NAME', $names);
+        }
+
+        return $result;
+    }
+    /** **********************************************************************
+     * query procedures from database
+     *
+     * @param   MapData $filter             filter
+     * @return  DBQueryResult               query result
+     * @throws  RuntimeException            db connection error
+     ************************************************************************/
+    private static function queryProcedures(MapData $filter) : DBQueryResult
+    {
+        $sqlQuery       = 'SELECT NAME FROM procedures';
+        $sqlQueryParams = [];
+        $sqlWhereClause = [];
+
+        if ($filter->hasKey('ACTIVITY'))
+        {
+            $sqlQueryParams[]   = $filter->get('ACTIVITY') ? 'Y' : 'N';
+            $sqlWhereClause[]   = 'ACTIVITY = ?';
+        }
+        if ($filter->hasKey('NAME'))
+        {
+            $valueTemplates = [];
+            foreach ($filter->get('NAME') as $value)
+            {
+                $sqlQueryParams[]   = $value;
+                $valueTemplates[]   = '?';
+            }
+            $sqlWhereClause[] = 'NAME IN ('.implode(', ', $valueTemplates).')';
+        }
+
+        if (count($sqlWhereClause) > 0)
+        {
+            $sqlQuery .= ' WHERE '.implode(' AND ', $sqlWhereClause);
+        }
+
+        try
+        {
+            return DB::getInstance()->query($sqlQuery, $sqlQueryParams);
+        }
+        catch (RuntimeException $exception)
+        {
+            throw $exception;
+        }
+    }
+    /** **********************************************************************
+     * get procedure class full name by procedure name
+     *
+     * @param   string  $name               procedure name
+     * @return  string                      procedure class name
+     ************************************************************************/
+    private static function getProcedureFullClassName(string $name) : string
+    {
+        return __NAMESPACE__.'\\'.$name;
+    }
 }

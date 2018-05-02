@@ -7,15 +7,17 @@ use
     Main\Exchange\Participants\Data\ProvidedData,
     Main\Exchange\Participants\Data\DeliveredData;
 /** ***********************************************************************************************
- * Participant Users1C
+ * Application participant Users1C
+ *
  * @package exchange_exchange
  * @author  Hvorostenko
  *************************************************************************************************/
 class Users1C extends AbstractParticipants
 {
     /** **********************************************************************
-     * read provided data and get it
-     * @return  ProvidedData    data
+     * read participant provided data and get it
+     *
+     * @return  ProvidedData                data
      * TODO
      ************************************************************************/
     protected function readProvidedData() : ProvidedData
@@ -23,9 +25,10 @@ class Users1C extends AbstractParticipants
         return new ProvidedData;
     }
     /** **********************************************************************
-     * write delivered data
-     * @param   DeliveredData   $data   data to write
-     * @return  bool                    process result
+     * provide delivered data to the participant
+     *
+     * @param   DeliveredData   $data       data to write
+     * @return  bool                        process result
      * TODO
      ************************************************************************/
     protected function writeDeliveredData(DeliveredData $data) : bool

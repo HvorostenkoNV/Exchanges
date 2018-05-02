@@ -7,15 +7,17 @@ use
     Main\Exchange\Participants\Data\ProvidedData,
     Main\Exchange\Participants\Data\DeliveredData;
 /** ***********************************************************************************************
- * Participant UsersBitrix
+ * Application participant UsersBitrix
+ *
  * @package exchange_exchange
  * @author  Hvorostenko
  *************************************************************************************************/
 class UsersBitrix extends AbstractParticipants
 {
     /** **********************************************************************
-     * read provided data and get it
-     * @return  ProvidedData    data
+     * read participant provided data and get it
+     *
+     * @return  ProvidedData            data
      * TODO
      ************************************************************************/
     protected function readProvidedData() : ProvidedData
@@ -23,7 +25,8 @@ class UsersBitrix extends AbstractParticipants
         return new ProvidedData;
     }
     /** **********************************************************************
-     * write delivered data
+     * provide delivered data to the participant
+     *
      * @param   DeliveredData   $data   data to write
      * @return  bool                    process result
      * TODO

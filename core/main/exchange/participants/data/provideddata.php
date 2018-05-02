@@ -8,30 +8,38 @@ use
     InvalidArgumentException,
     Main\Data\QueueData;
 /** ***********************************************************************************************
- * Participants provided data. Data from participant. Data type of "First In, First Out". Collection of DBFieldsValues objects
+ * Participants provided data. from participant.
+ * Queue data, collection type of "First In, First Out"
+ * Collection of DBFieldsValues objects
+ *
  * @package exchange_exchange
  * @author  Hvorostenko
  *************************************************************************************************/
 class ProvidedData extends QueueData implements Data
 {
     /** **********************************************************************
-     * get data form queue start
+     * extract queue data from the start
+     *
      * @return  ItemData                    data
-     * @throws  RuntimeException            if no data for pop
+     * @throws  RuntimeException            if no data for extract
      ************************************************************************/
     public function pop()
     {
         return parent::pop();
     }
     /** **********************************************************************
-     * get data form queue start
+     * push data to the end
+     *
      * @param   ItemData    $data           data
-     * @throws  InvalidArgumentException    expect ItemData data
+     * @throws  InvalidArgumentException    incorrect pushed data
      ************************************************************************/
     public function push($data) : void
     {
         if (!$data instanceof ItemData || $data->count() <= 0)
-            throw new InvalidArgumentException('Pushed data required to be not empty '.ItemData::class.' object');
+        {
+            $needClassName = ItemData::class;
+            throw new InvalidArgumentException("pushed data required to be not empty $needClassName object");
+        }
 
         parent::push($data);
     }

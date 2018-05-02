@@ -3,172 +3,71 @@ declare(strict_types=1);
 
 namespace Main\Exchange\Procedures\Rules;
 
-use
-    InvalidArgumentException,
-    Main\Exchange\Participants\Participant;
+use Main\Exchange\Participants\Participant;
 /** ***********************************************************************************************
- * Procedures matching rules, describes matches between same fields of different participants and items matching rules
+ * Participant fields matching rules.
+ * Describes matches between same fields of different participants
+ *
  * @package exchange_exchange
  * @author  Hvorostenko
  *************************************************************************************************/
 class MatchingRules implements Rules
 {
-    private
-        $participants           = [],
-        $systemFieldsMap        = [],
-        $participantsFieldsMap  = [],
-        $matchingRules          = [];
+    private $aliases = [];
     /** **********************************************************************
-     * construct
-     * @param   string[]    $participants           work participants array
-     * @throws  InvalidArgumentException            participants array is not array of class names of Participant
+     * attach participant field alias
+     *
+     * @param   Participant $participant        participant
+     * @param   string      $fieldName          field name
+     * @param   string      $alias              field alias
      ************************************************************************/
-    public function __construct(array $participants = [])
+    public function attachFieldAlias(Participant $participant, string $fieldName, string $alias) : void
     {
-        if (count($participants) <= 0)
-            throw new InvalidArgumentException('Empty array is geted');
-
-        foreach ($participants as $participantClassName)
-            if
-            (
-                !is_string($participantClassName)       ||
-                !class_exists($participantClassName)    ||
-                !is_subclass_of($participantClassName, Participant::class)
-            )
-                throw new InvalidArgumentException('Expect get array of class names of '.Participant::class);
-
-        $this->participants = $participants;
-    }
-    /** **********************************************************************
-     * construct
-     * @return  string[]    $participants           work participants array
-     ************************************************************************/
-    public function getParticipants() : array
-    {
-        return $this->participants;
-    }
-    /** **********************************************************************
-     * attach participant field
-     * @param   string  $systemField                system field name
-     * @param   string  $participant                participant class name
-     * @param   string  $field                      participant field name
-     * @throws  InvalidArgumentException            params error
-     ************************************************************************/
-    public function attachParticipantField(string $systemField, string $participant, string $field) : void
-    {
-        $participantFieldKey    = $participant.'@'.$field;
-        $systemParticipantKey   = $systemField.'@'.$participant;
-
-        if (strlen($systemField) <= 0)
-            throw new InvalidArgumentException('System field param is empty');
-        if (!in_array($participant, $this->participants))
-            throw new InvalidArgumentException('Participant field is undefined');
-        if (strlen($field) <= 0)
-            throw new InvalidArgumentException('Participant field param is empty');
-        if
-        (
-            array_key_exists($participantFieldKey, $this->participantsFieldsMap) &&
-            $this->participantsFieldsMap[$participantFieldKey] != $systemParticipantKey
-        )
-            throw new InvalidArgumentException('Field "'.$field.'" for participant "'.$participant.'" already attached for system field "'.$systemField.'"');
-
-        $this->systemFieldsMap[$systemParticipantKey]       = $field;
-        $this->participantsFieldsMap[$participantFieldKey]  = $systemField;
-    }
-    /** **********************************************************************
-     * find participant field name
-     * @param   string  $systemField                system field name
-     * @param   string  $participant                participant class name
-     * @return  string|NULL                         participant field name
-     ************************************************************************/
-    public function findParticipantField(string $systemField, string $participant) : ?string
-    {
-        $systemParticipantKey = $systemField.'@'.$participant;
-        return array_key_exists($systemParticipantKey, $this->systemFieldsMap)
-            ? $this->systemFieldsMap[$systemParticipantKey]
-            : NULL;
-    }
-    /** **********************************************************************
-     * find system field name
-     * @param   string  $participant                participant class name
-     * @param   string  $field                      participant field name
-     * @return  string|NULL                         system field name
-     ************************************************************************/
-    public function findSystemField(string $participant, string $field) : ?string
-    {
-        $participantFieldKey = $participant.'@'.$field;
-        return array_key_exists($participantFieldKey, $this->participantsFieldsMap)
-            ? $this->participantsFieldsMap[$participantFieldKey]
-            : NULL;
-    }
-    /** **********************************************************************
-     * detach participant field
-     * @param   string  $systemField                system field name
-     * @param   string  $participant                participant class name
-     ************************************************************************/
-    public function detachParticipantField(string $systemField, string $participant) : void
-    {
-        $systemParticipantKey   = $systemField.'@'.$participant;
-        $field                  = array_key_exists($systemParticipantKey, $this->systemFieldsMap)
-            ? $this->systemFieldsMap[$systemParticipantKey]
-            : '';
-        $participantFieldKey    = $participant.'@'.$field;
-
-        unset($this->systemFieldsMap[$systemParticipantKey]);
-        unset($this->participantsFieldsMap[$participantFieldKey]);
-    }
-    /** **********************************************************************
-     * add matching rule between two participants
-     * @param   string      $firstParticipant       first participant class name
-     * @param   string      $secondParticipant      second participant class name
-     * @param   string[]    $systemFields           array of system fields
-     * @throws  InvalidArgumentException            incorrect params
-     ************************************************************************/
-    public function addMatchingRule(string $firstParticipant, string $secondParticipant, array $systemFields) : void
-    {
-        $ruleKey = $firstParticipant.'@'.$secondParticipant;
-
-        if (!in_array($firstParticipant, $this->participants))
-            throw new InvalidArgumentException('"'.$firstParticipant.'" participant is not undefined');
-        if (!in_array($secondParticipant, $this->participants))
-            throw new InvalidArgumentException('"'.$secondParticipant.'" participant is not undefined');
-
-        if (!array_key_exists($ruleKey, $this->matchingRules))
-            $this->matchingRules[$ruleKey] = new MatchingRulesQueue();
-
-        try
+        if (strlen($fieldName) > 0 || strlen($alias) > 0)
         {
-            $this->matchingRules[$ruleKey]->push($systemFields);
-        }
-        catch (InvalidArgumentException $error)
-        {
-            throw $error;
+            $fieldFullName = $this->getFieldFullName($participant, $alias);
+            $this->aliases[$fieldFullName] = $fieldName;
         }
     }
     /** **********************************************************************
-     * get matching rules between two participants
-     * @param   string      $firstParticipant       first participant class name
-     * @param   string      $secondParticipant      second participant class name
-     * @return  MatchingRulesQueue|NULL             queue of rules or NULL
-     * @throws  InvalidArgumentException            incorrect params
+     * get participant field by alias
+     *
+     * @param   Participant $participant        participant
+     * @param   string      $alias              participant field alias
+     * @return  string|null                     participant field
      ************************************************************************/
-    public function getMatchingRules(string $firstParticipant, string $secondParticipant) : ?MatchingRulesQueue
+    public function getFieldByAlias(Participant $participant, string $alias) : ?string
     {
-        $ruleKey = $firstParticipant.'@'.$secondParticipant;
-        return array_key_exists($ruleKey, $this->matchingRules)
-            ? $this->matchingRules[$ruleKey]
-            : NULL;
+        $fieldFullName = $this->getFieldFullName($participant, $alias);
+
+        return array_key_exists($fieldFullName, $this->aliases)
+            ? $this->aliases[$fieldFullName]
+            : null;
     }
     /** **********************************************************************
-     * clear matching rules between two participants
-     * @param   string      $firstParticipant       first participant class name
-     * @param   string      $secondParticipant      second participant class name
-     * @throws  InvalidArgumentException            incorrect params
+     * drop participant field alias
+     *
+     * @param   Participant $participant        participant
+     * @param   string      $alias              participant field alias
      ************************************************************************/
-    public function clearMatchingRules(string $firstParticipant, string $secondParticipant) : void
+    public function dropFieldAlias(Participant $participant, string $alias) : void
     {
-        $ruleKey = $firstParticipant.'@'.$secondParticipant;
-        if (array_key_exists($ruleKey, $this->matchingRules))
-            unset($this->matchingRules[$ruleKey]);
+        $fieldFullName = $this->getFieldFullName($participant, $alias);
+
+        if (array_key_exists($fieldFullName, $this->aliases))
+        {
+            unset($this->aliases[$fieldFullName]);
+        }
+    }
+    /** **********************************************************************
+     * get item index
+     *
+     * @param   Participant $participant        participant
+     * @param   string      $alias              field alias
+     * @return  string                          item index
+     ************************************************************************/
+    private function getFieldFullName(Participant $participant, string $alias) : string
+    {
+        return get_class($participant).'@'.$alias;
     }
 }

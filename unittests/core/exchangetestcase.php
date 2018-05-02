@@ -1,15 +1,25 @@
 <?php
 declare(strict_types=1);
 
-use PHPUnit\Framework\TestCase;
+namespace UnitTests\Core;
+
+use
+    Throwable,
+    SplFileInfo,
+    ReflectionClass,
+    ReflectionException,
+    RecursiveDirectoryIterator,
+    RecursiveIteratorIterator,
+    PHPUnit\Framework\TestCase;
 /** ***********************************************************************************************
  * Main Exchange TestCase to inherit
+ *
  * @package exchange_unit_tests
  * @author  Hvorostenko
  *************************************************************************************************/
 abstract class ExchangeTestCase extends TestCase
 {
-    protected $messages =
+    private static $messages   =
     [
         'SINGLETON_IMPLEMENTATION_FAILED'   => 'There is a possibility to create more than one instance of #CLASS_NAME# class',
         'CONSTANT_NOT_DEFINED'              => 'Constant "#CONSTANT_NAME#" is not defined',
@@ -22,45 +32,47 @@ abstract class ExchangeTestCase extends TestCase
     ];
     /** **********************************************************************
      * get message
-     * @param   string  $type       message index
-     * @param   array   $changing   array of replacements index => value
-     * @return  string              processed message
+     *
+     * @param   string  $type               message code
+     * @param   array   $changing           array of replacements index => value
+     * @return  string                      processed message
      ************************************************************************/
-    protected function getMessage(string $type, array $changing = []) : string
+    protected static function getMessage(string $type, array $changing = []) : string
     {
-        $result         = array_key_exists($type, $this->messages) ? $this->messages[$type] : '';
+        if (!array_key_exists($type, self::$messages))
+        {
+            return '';
+        }
+
         $replaceFrom    = [];
         $replaceTo      = [];
 
-        if (count($changing) > 0)
-            foreach ($changing as $index => $value)
-            {
-                $replaceFrom[]  = '#'.$index.'#';
-                $replaceTo[]    = $value;
-            }
+        foreach ($changing as $index => $value)
+        {
+            $replaceFrom[]  = '#'.$index.'#';
+            $replaceTo[]    = $value;
+        }
 
-        if (count($replaceFrom) > 0 && count($replaceTo) > 0)
-            $result = str_replace($replaceFrom, $replaceTo, $result);
-
-        return $result;
+        return str_replace($replaceFrom, $replaceTo, self::$messages[$type]);
     }
     /** **********************************************************************
      * check class is singleton
-     * @param   string  $className  full class name
-     * @return  bool
+     *
+     * @param   string  $className          full class name
+     * @return  bool                        class is singleton
      ************************************************************************/
-    protected function singletonImplemented(string $className) : bool
+    protected static function singletonImplemented(string $className) : bool
     {
         $hasCallMethod  = method_exists($className, 'getInstance');
-        $objectCreated  = NULL;
-        $objectCloned   = NULL;
+        $objectCreated  = null;
+        $objectCloned   = null;
 
         try
         {
             $objectCreated  = new $className;
             $objectCloned   = clone $objectCreated;
         }
-        catch (Error $error)
+        catch (Throwable $error)
         {
 
         }
@@ -69,34 +81,48 @@ abstract class ExchangeTestCase extends TestCase
     }
     /** **********************************************************************
      * reset singleton instance of class
-     * @param   string  $className  full class name
+     *
+     * @param   string  $className          full class name
      ************************************************************************/
-    protected function resetSingletonInstance(string $className) : void
+    protected static function resetSingletonInstance(string $className) : void
     {
-        $instance       = call_user_func([$className, 'getInstance']);
-        $reflection     = new ReflectionClass($instance);
-        $instanceProp   = $reflection->getProperty('instanceArray');
+        try
+        {
+            $reflection     = new ReflectionClass($className);
+            $instanceProp   = $reflection->getProperty('instance');
+            $propIsArray    = is_array($reflection->getDefaultProperties()['instance']);
 
-        $instanceProp->setAccessible(true);
-        $instanceProp->setValue([], []);
-        $instanceProp->setAccessible(false);
+            $instanceProp->setAccessible(true);
+            $instanceProp->setValue
+            (
+                null,
+                $propIsArray ? [] : null
+            );
+            $instanceProp->setAccessible(false);
+        }
+        catch (ReflectionException $exception)
+        {
+
+        }
     }
     /** **********************************************************************
      * get file/dir permissions
-     * @param   string  $path   full file/dir path
-     * @return  string          file/dir permissions
-     * @example                 777, 555
+     *
+     * @param   string  $path               full file/dir path
+     * @return  string                      file/dir permissions
+     * @example                             777, 555
      ************************************************************************/
-    protected function getPermissions(string $path) : string
+    protected static function getPermissions(string $path) : string
     {
         return substr(sprintf('%o', fileperms($path)), -3);
     }
     /** **********************************************************************
      * get all files in dir
-     * @param   string  $path   full dir path
-     * @return  SplFileInfo[]   array of SplFileInfo objects
+     *
+     * @param   string  $path               full dir path
+     * @return  SplFileInfo[]               array of SplFileInfo objects
      ************************************************************************/
-    protected function findAllFiles(string $path) : array
+    protected static function getAllFiles(string $path) : array
     {
         $result = [];
 
@@ -108,7 +134,9 @@ abstract class ExchangeTestCase extends TestCase
             while ($iterator->valid())
             {
                 if ($iterator->current()->isFile())
+                {
                     $result[] = $iterator->current();
+                }
 
                 $iterator->next();
             }

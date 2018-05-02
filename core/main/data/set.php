@@ -5,43 +5,49 @@ namespace Main\Data;
 
 use Iterator;
 /** ***********************************************************************************************
- * Set interface, set of unique objects
+ * Set interface, collection of unique objects
+ *
  * @package exchange_main
  * @author  Hvorostenko
  *************************************************************************************************/
 interface Set extends Data, Iterator
 {
     /** **********************************************************************
-     * Return the current element
-     * @return  object|NULL             current set object or NULL
+     * get current item
+     *
+     * @return  object|null                 current item or null
      ************************************************************************/
     public function current() : ?object;
     /** **********************************************************************
-     * delete object from set
-     * @param   object  $object         object to delete
+     * drop item from set
+     *
+     * @param   object  $object             item for drop
      ************************************************************************/
     public function delete(object $object) : void;
     /** **********************************************************************
-     * Move forward to next element
+     * move forward to next item
      ************************************************************************/
     public function next() : void;
     /** **********************************************************************
-     * Return the key of the current element
-     * @return  int                     key of the current element
+     * get current item key
+     *
+     * @return  int                         current item key
      ************************************************************************/
     public function key() : int;
     /** **********************************************************************
-     * push object to set
-     * @param   object  $object         object to add
+     * push item to set
+     *
+     * @param   object  $object             pushed item
      ************************************************************************/
     public function push(object $object) :void;
     /** **********************************************************************
-     * Rewind the Iterator to the first element
+     * rewind iterator to the first item
      ************************************************************************/
     public function rewind() : void;
     /** **********************************************************************
-     * Checks if current position is valid
-     * @return  bool                   valid or not
+     * checks current position is valid
+     *
+     * @return  bool                        current position is valid
      ************************************************************************/
     public function valid() : bool;
 }

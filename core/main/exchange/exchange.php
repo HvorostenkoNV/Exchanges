@@ -9,7 +9,8 @@ use
     Main\Exchange\Procedures\Manager        as ProceduresManager,
     Main\Exchange\DataProcessors\Manager    as ProcessorsManager;
 /** ***********************************************************************************************
- * Exchange class, exchange entrance point
+ * Exchange class, application exchange entrance point
+ *
  * @package exchange_exchange
  * @method  static Exchange getInstance
  * @author  Hvorostenko
@@ -32,7 +33,7 @@ class Exchange
     {
         Logger::getInstance()->addNotice('Exchange process start');
 /*
-        foreach (ProceduresManager::getProceduresList() as $procedure)
+        foreach (ProceduresManager::getProcedures() as $procedure)
         {
             $collector  = ProcessorsManager::getCollector($procedure);
             $matcher    = ProcessorsManager::getMatcher($procedure);

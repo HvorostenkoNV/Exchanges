@@ -10,6 +10,7 @@ use
     Main\API\API;
 /** ***********************************************************************************************
  * Application class, application entrance point
+ *
  * @package exchange_main
  * @method  static Application getInstance
  * @author  Hvorostenko

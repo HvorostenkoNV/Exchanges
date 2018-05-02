@@ -130,7 +130,7 @@ namespace Main.Exchange.DataProcessors.Results{
 namespace Main.Exchange.Procedures{
     class Manager{
         +{static}getProcedure(string $procedureName) : Procedure
-        +{static}getProceduresList() : array|Procedure
+        +{static}getProcedures() : array|Procedure
     }
 
     interface Procedure{
@@ -157,13 +157,13 @@ namespace Main.Exchange.Procedures{
 namespace Main.Exchange.Participants{
     interface Participant{
         +getProvidedData() : Data.ProvidedData
-        +getFieldsParams() : Data.FieldsParams
+        +getFields() : Data.FieldsMap
         +provideData(Data.DeliveredData $data) : bool
     }
 
     abstract AbstractParticipants{
         +getProvidedData() : Data.ProvidedData
-        +getFieldsParams() : Data.FieldsParams
+        +getFields() : Data.FieldsMap
         +provideData(Data.DeliveredData $data) : bool
 
         -readXml(string $path) : Data.ProvidedData
@@ -207,13 +207,13 @@ namespace Main.Exchange.Participants.Data{
 
     }
 
-    class FieldsParams{
+    class FieldsMap{
 
     }
 
     Data <|-- ProvidedData
     Data <|-- DeliveredData
-    Data <|-- FieldsParams
+    Data <|-- FieldsMap
 }
 
 namespace Main.Exchange.Procedures.Rules{

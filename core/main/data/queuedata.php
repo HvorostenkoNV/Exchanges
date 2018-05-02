@@ -7,13 +7,14 @@ use
 	SplQueue,
 	RuntimeException;
 /** ***********************************************************************************************
- * Queue, data type of "First In, First Out"
+ * Queue data, collection type of "First In, First Out"
+ *
  * @package exchange_main
  * @author  Hvorostenko
  *************************************************************************************************/
 class QueueData implements Queue
 {
-	private $splQueue = NULL;
+	private $splQueue = null;
 	/** **********************************************************************
 	 * construct
 	 ************************************************************************/
@@ -22,31 +23,35 @@ class QueueData implements Queue
 		$this->splQueue = new SplQueue;
 	}
 	/** **********************************************************************
-	 * clear data
+	 * clear queue
 	 ************************************************************************/
 	public function clear() : void
 	{
 		$this->splQueue = new SplQueue;
 	}
 	/** **********************************************************************
-	 * get data count
+	 * get queue count
+     *
+     * @return  int                         queue count
 	 ************************************************************************/
 	public function count() : int
 	{
 		return $this->splQueue->count();
 	}
 	/** **********************************************************************
-	 * check data is empty
-	 * @return  bool                collection is empty
+	 * check queue is empty
+     *
+	 * @return  bool                        queue is empty
 	 ************************************************************************/
 	public function isEmpty() : bool
 	{
 		return $this->splQueue->isEmpty();
 	}
 	/** **********************************************************************
-	 * get data form queue start
-	 * @return  mixed               data
-	 * @throws  RuntimeException    if no data for pop
+     * extract queue data from the start
+     *
+	 * @return  mixed                       data
+	 * @throws  RuntimeException            if no data for extract
 	 ************************************************************************/
 	public function pop()
 	{
@@ -60,8 +65,9 @@ class QueueData implements Queue
 		}
 	}
 	/** **********************************************************************
-	 * get data form queue start
-	 * @param   mixed   $data       data
+     * push data to the end
+     *
+	 * @param   mixed   $data               data
 	 ************************************************************************/
 	public function push($data) : void
 	{

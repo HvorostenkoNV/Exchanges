@@ -5,13 +5,14 @@ namespace Main\Data;
 
 use SplObjectStorage;
 /** ***********************************************************************************************
- * Set of unique objects
+ * Set data, set of unique objects
+ *
  * @package exchange_main
  * @author  Hvorostenko
  *************************************************************************************************/
 class SetData implements Set
 {
-    private $set = NULL;
+    private $set = null;
     /** **********************************************************************
      * construct
      ************************************************************************/
@@ -20,77 +21,84 @@ class SetData implements Set
         $this->set = new SplObjectStorage;
     }
     /** **********************************************************************
-     * clear data
+     * clear set
      ************************************************************************/
     public function clear() : void
     {
         $this->set = new SplObjectStorage;
     }
     /** **********************************************************************
-     * get data count
-     * @return  int                     items count
+     * get set count
+     *
+     * @return  int                         set count
      ************************************************************************/
     public function count() : int
     {
         return $this->set->count();
     }
     /** **********************************************************************
-     * Return the current element
-     * @return  object|NULL             current set object or NULL
+     * get current item
+     *
+     * @return  object|null                 current item or null
      ************************************************************************/
     public function current() : ?object
     {
         return $this->set->current();
     }
     /** **********************************************************************
-     * delete object from set
-     * @param   object  $object         object to delete
+     * drop item from set
+     *
+     * @param   object  $object             item for drop
      ************************************************************************/
     public function delete(object $object) : void
     {
         $this->set->detach($object);
     }
     /** **********************************************************************
-     * check data is empty
-     * @return  bool                    collection is empty
+     * check set is empty
+     *
+     * @return  bool                        set is empty
      ************************************************************************/
     public function isEmpty() : bool
     {
         return $this->set->count() <= 0;
     }
     /** **********************************************************************
-     * Move forward to next element
+     * move forward to next item
      ************************************************************************/
     public function next() : void
     {
         $this->set->next();
     }
     /** **********************************************************************
-     * Return the key of the current element
-     * @return  int                     key of the current element
+     * get current item key
+     *
+     * @return  int                         current item key
      ************************************************************************/
     public function key() : int
     {
         return $this->set->key();
     }
     /** **********************************************************************
-     * push object to set
-     * @param   object  $object         object to add
+     * push item to set
+     *
+     * @param   object  $object             pushed item
      ************************************************************************/
     public function push(object $object) :void
     {
         $this->set->attach($object);
     }
     /** **********************************************************************
-     * Rewind the Iterator to the first element
+     * rewind iterator to the first item
      ************************************************************************/
     public function rewind() : void
     {
         $this->set->rewind();
     }
     /** **********************************************************************
-     * Checks if current position is valid
-     * @return  bool                    valid or not
+     * checks current position is valid
+     *
+     * @return  bool                        current position is valid
      ************************************************************************/
     public function valid() : bool
     {

@@ -6,8 +6,8 @@ namespace UnitTests\ClassTesting\Exchange\Procedures;
 use
     ReflectionClass,
     UnitTests\Core\ExchangeTestCase,
-    UnitTests\Core\TempFilesCreator,
-    UnitTests\Core\TempDBRecordsCreator,
+    UnitTests\Core\TempFilesGenerator,
+    UnitTests\Core\TempDBRecordsGenerator,
     Main\Exchange\Procedures\UsersExchange,
     Main\Exchange\Participants\Users1C;
 /** ***********************************************************************************************
@@ -64,10 +64,10 @@ final class ProceduresTest extends ExchangeTestCase
                 'participants'  => []
             ]
         ];
-    /** @var TempFilesCreator */
-    private static $tempFilesCreator        = null;
-    /** @var TempDBRecordsCreator */
-    private static $tempDBRecordsCreator    = null;
+    /** @var TempFilesGenerator */
+    private static $tempFilesGenerator      = null;
+    /** @var TempDBRecordsGenerator */
+    private static $tempDBRecordsGenerator  = null;
     /** **********************************************************************
      * construct
      ************************************************************************/
@@ -75,26 +75,26 @@ final class ProceduresTest extends ExchangeTestCase
     {
         parent::setUpBeforeClass();
 
-        self::$tempFilesCreator     = new TempFilesCreator;
-        self::$tempDBRecordsCreator = new TempDBRecordsCreator;
+        self::$tempFilesGenerator       = new TempFilesGenerator;
+        self::$tempDBRecordsGenerator   = new TempDBRecordsGenerator;
 
         foreach (self::$tempProcedures as $procedure)
         {
-            self::$tempFilesCreator->createTempClass(UsersExchange::class, $procedure['className']);
-            $tempProcedureId = self::$tempDBRecordsCreator->createTempRecord(self::$proceduresTable,
+            self::$tempFilesGenerator->createTempClass(UsersExchange::class, $procedure['className']);
+            $tempProcedureId = self::$tempDBRecordsGenerator->createTempRecord(self::$proceduresTable,
             [
                 'NAME' => $procedure['dbItemName']
             ]);
 
             foreach ($procedure['participants'] as $participant)
             {
-                self::$tempFilesCreator->createTempClass(Users1C::class, $participant['className']);
-                $tempParticipantId = self::$tempDBRecordsCreator->createTempRecord(self::$participantsTable,
+                self::$tempFilesGenerator->createTempClass(Users1C::class, $participant['className']);
+                $tempParticipantId = self::$tempDBRecordsGenerator->createTempRecord(self::$participantsTable,
                 [
                     'NAME' => $participant['dbItemName']
                 ]);
 
-                self::$tempDBRecordsCreator->createTempRecord(self::$linkTable,
+                self::$tempDBRecordsGenerator->createTempRecord(self::$linkTable,
                 [
                     'PROCEDURE'     => $tempProcedureId,
                     'PARTICIPANT'   => $tempParticipantId
@@ -108,13 +108,14 @@ final class ProceduresTest extends ExchangeTestCase
     public static function tearDownAfterClass() : void
     {
         parent::tearDownAfterClass();
-        self::$tempFilesCreator->dropCreatedTempFiles();
-        self::$tempDBRecordsCreator->dropTempChanges();
+        self::$tempFilesGenerator->dropCreatedTempData();
+        self::$tempDBRecordsGenerator->dropTempChanges();
     }
     /** **********************************************************************
      * test getting procedures participants
      *
      * @test
+     * @throws
      ************************************************************************/
     public function providingParticipants() : void
     {

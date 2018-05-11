@@ -16,21 +16,36 @@ use
  *************************************************************************************************/
 final class SetDataTest extends SetDataClass
 {
-    protected static $setClassName = SetData::class;
+    /** **********************************************************************
+     * get Queue class name
+     *
+     * @return  string                      Set class name
+     ************************************************************************/
+    public static function getSetClassName() : string
+    {
+        return SetData::class;
+    }
     /** **********************************************************************
      * get correct data
      *
-     * @return  array                   correct data array
+     * @return  array                       correct data array
      ************************************************************************/
-    protected static function getCorrectValues() : array
+    public static function getCorrectDataValues() : array
     {
-        parent::getCorrectValues();
-
         return
         [
             new MapData,
             new QueueData,
             new SetData
         ];
+    }
+    /** **********************************************************************
+     * get incorrect data
+     *
+     * @return  array                       incorrect data array
+     ************************************************************************/
+    public static function getIncorrectDataValues() : array
+    {
+        return [];
     }
 }

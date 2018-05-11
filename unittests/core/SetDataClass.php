@@ -14,53 +14,45 @@ use
  *************************************************************************************************/
 abstract class SetDataClass extends ExchangeTestCase
 {
-    protected static $setClassName = '';
+    /** **********************************************************************
+     * get Queue class name
+     *
+     * @return  string                      Set class name
+     ************************************************************************/
+    abstract public static function getSetClassName() : string;
     /** **********************************************************************
      * get correct data
      *
-     * @return  array                   correct data array
+     * @return  array                       correct data array
      ************************************************************************/
-    protected static function getCorrectValues() : array
-    {
-        return [];
-    }
+    abstract public static function getCorrectDataValues() : array;
     /** **********************************************************************
-     * get incorrect values
+     * get incorrect data
      *
-     * @return  array                   incorrect values
+     * @return  array                       incorrect data array
      ************************************************************************/
-    protected static function getIncorrectValues() : array
-    {
-        return [];
-    }
-    /** **********************************************************************
-     * get new queue object
-     *
-     * @return  Set                     new queue object
-     ************************************************************************/
-    final protected static function createSetObject() : Set
-    {
-        return new static::$setClassName;
-    }
+    abstract public static function getIncorrectDataValues() : array;
     /** **********************************************************************
      * check empty object
      *
      * @test
+     * @throws
      ************************************************************************/
     public function emptyObject() : void
     {
-        $set = self::createSetObject();
+        $set        = $this->createSetObject();
+        $className  = static::getSetClassName();
 
         self::assertTrue
         (
             $set->isEmpty(),
-            'New '.static::$setClassName.' object is not empty'
+            "New $className object is not empty"
         );
         self::assertEquals
         (
             0,
             $set->count(),
-            'New '.static::$setClassName.' object values count is not zero'
+            "New $className object values count is not zero"
         );
     }
     /** **********************************************************************
@@ -68,15 +60,17 @@ abstract class SetDataClass extends ExchangeTestCase
      *
      * @test
      * @depends emptyObject
+     * @throws
      ************************************************************************/
     public function readWriteOperations() : void
     {
-        $set    = self::createSetObject();
-        $values = static::getCorrectValues();
+        $set        = $this->createSetObject();
+        $values     = static::getCorrectDataValues();
+        $className  = static::getSetClassName();
 
         if (count($values) <= 0)
         {
-            self::assertTrue(true);
+            self::markTestSkipped("No \"correct\" values for testing $className class");
             return;
         }
 
@@ -88,13 +82,13 @@ abstract class SetDataClass extends ExchangeTestCase
         self::assertFalse
         (
             $set->isEmpty(),
-            'Filled '.static::$setClassName.' is empty'
+            "Filled $className is empty"
         );
         self::assertEquals
         (
             count($values),
             $set->count(),
-            'Filled '.static::$setClassName.' values count is not equal items count put'
+            "Filled $className values count is not equal items count put"
         );
 
         for ($repeatLoop = 1; $repeatLoop <= 3; $repeatLoop++)
@@ -107,13 +101,13 @@ abstract class SetDataClass extends ExchangeTestCase
                 (
                     $values[$startValuesIndex],
                     $set->current(),
-                    'Value put in '.static::$setClassName.' before not equals received'
+                    "Value put in $className before not equals received"
                 );
                 self::assertEquals
                 (
                     $startValuesIndex,
                     $set->key(),
-                    'Value put in '.static::$setClassName.' before not equals received'
+                    "Value put in $className before not equals received"
                 );
 
                 $set->next();
@@ -128,24 +122,35 @@ abstract class SetDataClass extends ExchangeTestCase
      *
      * @test
      * @depends readWriteOperations
+     * @throws
      ************************************************************************/
     public function incorrectReadWriteOperations() : void
     {
-        $set                = self::createSetObject();
-        $incorrectValues    = static::getIncorrectValues();
+        $set                = $this->createSetObject();
+        $incorrectValues    = static::getIncorrectDataValues();
+        $className          = static::getSetClassName();
+
+        if (count($incorrectValues) <= 0)
+        {
+            self::markTestSkipped("No \"incorrect\" values for testing $className class");
+            return;
+        }
 
         self::assertNull
         (
             $set->current(),
-            'Empty '.static::$setClassName.' must return null on call "current" method'
+            "Empty $className must return null on call \"current\" method"
         );
 
         foreach ($incorrectValues as $value)
         {
             try
             {
+                $exceptionName  = InvalidArgumentException::class;
+                $valuePrintable = var_export($value, true);
+
                 $set->push($value);
-                self::fail('Expect '.InvalidArgumentException::class.' exception in '.static::$setClassName.' on push incorrect value '.var_export($value, true));
+                self::fail("Expect $exceptionName exception in $className on push incorrect value $valuePrintable");
             }
             catch (InvalidArgumentException $error)
             {
@@ -158,11 +163,13 @@ abstract class SetDataClass extends ExchangeTestCase
      *
      * @test
      * @depends readWriteOperations
+     * @throws
      ************************************************************************/
     public function clearingOperations() : void
     {
-        $set    = self::createSetObject();
-        $values = static::getCorrectValues();
+        $set        = $this->createSetObject();
+        $values     = static::getCorrectDataValues();
+        $className  = static::getSetClassName();
 
         foreach ($values as $value)
         {
@@ -174,7 +181,7 @@ abstract class SetDataClass extends ExchangeTestCase
         (
             count($values) - 1,
             $set->count(),
-            static::$setClassName.' values count not less by one after delete one item'
+            "$className values count not less by one after delete one item"
         );
 
         $set->clear();
@@ -182,13 +189,24 @@ abstract class SetDataClass extends ExchangeTestCase
         self::assertTrue
         (
             $set->isEmpty(),
-            static::$setClassName.' is not empty after call "clear" method'
+            "$className is not empty after call \"clear\" method"
         );
         self::assertEquals
         (
             0,
             $set->count(),
-            static::$setClassName.' values count is not zero after call "clear" method'
+            "$className values count is not zero after call \"clear\" method"
         );
+    }
+    /** **********************************************************************
+     * get new queue object
+     *
+     * @return  Set                     new queue object
+     ************************************************************************/
+    private function createSetObject() : Set
+    {
+        $className = static::getSetClassName();
+
+        return new $className;
     }
 }

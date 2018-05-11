@@ -9,7 +9,7 @@ use
     PDO,
     SplFileInfo,
     UnitTests\Core\ExchangeTestCase,
-    UnitTests\Core\TempDBRecordsCreator,
+    UnitTests\Core\TempDBRecordsGenerator,
     Main\Helpers\Config,
     Main\Helpers\DB;
 /** ***********************************************************************************************
@@ -31,8 +31,8 @@ final class DBTest extends ExchangeTestCase
         ],
         'items'     => []
     ];
-    /** @var TempDBRecordsCreator */
-    private static $tempDBRecordsCreator = null;
+    /** @var TempDBRecordsGenerator */
+    private static $tempDBRecordsGenerator  = null;
     /** **********************************************************************
      * construct
      ************************************************************************/
@@ -40,13 +40,14 @@ final class DBTest extends ExchangeTestCase
     {
         parent::setUpBeforeClass();
 
-        $table                      = self::$tempDBTable['name'];
-        $idColumn                   = self::$tempDBTable['columns']['item_id'];
-        $nameColumn                 = self::$tempDBTable['columns']['item_name'];
-        $codeColumn                 = self::$tempDBTable['columns']['item_code'];
-        self::$tempDBRecordsCreator = new TempDBRecordsCreator;
+        $table      = self::$tempDBTable['name'];
+        $idColumn   = self::$tempDBTable['columns']['item_id'];
+        $nameColumn = self::$tempDBTable['columns']['item_name'];
+        $codeColumn = self::$tempDBTable['columns']['item_code'];
 
-        self::$tempDBRecordsCreator->createTempTable($table,
+        self::$tempDBRecordsGenerator = new TempDBRecordsGenerator;
+
+        self::$tempDBRecordsGenerator->createTempTable($table,
         [
             'ID INT AUTO_INCREMENT',
             'NAME VARCHAR(255)',
@@ -61,7 +62,7 @@ final class DBTest extends ExchangeTestCase
                 $nameColumn => "Item name $index",
                 $codeColumn => "item_code_$index"
             ];
-            self::$tempDBRecordsCreator->createTempRecord($table, $item);
+            self::$tempDBRecordsGenerator->createTempRecord($table, $item);
             self::$tempDBTable['items'][] = $item;
         }
     }
@@ -71,7 +72,7 @@ final class DBTest extends ExchangeTestCase
     public static function tearDownAfterClass() : void
     {
         parent::tearDownAfterClass();
-        self::$tempDBRecordsCreator->dropTempChanges();
+        self::$tempDBRecordsGenerator->dropTempChanges();
     }
     /** **********************************************************************
      * check DB class is singleton
@@ -91,6 +92,7 @@ final class DBTest extends ExchangeTestCase
      *
      * @test
      * @return  SplFileInfo                     params file
+     * @throws
      ************************************************************************/
     public function paramsFileExist() : SplFileInfo
     {
@@ -111,6 +113,7 @@ final class DBTest extends ExchangeTestCase
      * @test
      * @depends paramsFileExist
      * @return  array                           connection params array
+     * @throws
      ************************************************************************/
     public function dbConnectionParamsExist() : array
     {
@@ -137,6 +140,7 @@ final class DBTest extends ExchangeTestCase
      * check PDO extension available
      *
      * @test
+     * @throws
      ************************************************************************/
     public function pdoAvailable() : void
     {
@@ -154,6 +158,7 @@ final class DBTest extends ExchangeTestCase
      * @depends pdoAvailable
      * @param   array   $connectionParams       connection params
      * @return  PDO|null                        PDO
+     * @throws
      ************************************************************************/
     public function connectionWithPDOAvailable(array $connectionParams) : ?PDO
     {
@@ -234,6 +239,7 @@ final class DBTest extends ExchangeTestCase
      * @depends connectionWithPDOAvailable
      * @depends isSingleton
      * @param   PDO $unitTestPdo                unit test PDO connection object
+     * @throws
      ************************************************************************/
     public function providingCorrectQuery(PDO $unitTestPdo) : void
     {
@@ -303,6 +309,7 @@ final class DBTest extends ExchangeTestCase
      * @depends isSingleton
      * @param   PDO $unitTestPdo                unit test PDO connection object
      * @return  int                             created test item id
+     * @throws
      ************************************************************************/
     public function providingCorrectSaving(PDO $unitTestPdo) : int
     {

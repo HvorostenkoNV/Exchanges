@@ -15,49 +15,38 @@ use
 abstract class MapDataClass extends ExchangeTestCase
 {
     /** **********************************************************************
-     * get new map object
-     *
-     * @param   array   $data               start data
-     * @return  Map                         new map object
-     ************************************************************************/
-    private static function createMapObject(array $data = []) : Map
-    {
-        $className = static::getMapClassName();
-
-        return count($data) > 0 ? new $className($data) : new $className;
-    }
-    /** **********************************************************************
      * get Map class name
      *
      * @return  string                      Map class name
      ************************************************************************/
-    abstract protected static function getMapClassName() : string;
+    abstract public static function getMapClassName() : string;
     /** **********************************************************************
      * get correct data
      *
      * @return  array                       correct data array
      ************************************************************************/
-    abstract protected static function getCorrectData() : array;
+    abstract public static function getCorrectData() : array;
     /** **********************************************************************
      * get incorrect keys
      *
-     * @return  array                       incorrect keys
+     * @return  array                       incorrect data keys
      ************************************************************************/
-    abstract protected static function getIncorrectKeys() : array;
+    abstract public static function getIncorrectDataKeys() : array;
     /** **********************************************************************
      * get incorrect values
      *
-     * @return  array                       incorrect values
+     * @return  array                       incorrect data values
      ************************************************************************/
-    abstract protected static function getIncorrectValues() : array;
+    abstract public static function getIncorrectDataValues() : array;
     /** **********************************************************************
      * check empty object
      *
      * @test
+     * @throws
      ************************************************************************/
     public function emptyObject() : void
     {
-        $map        = static::createMapObject();
+        $map        = $this->createMapObject();
         $className  = static::getMapClassName();
 
         self::assertTrue
@@ -77,16 +66,17 @@ abstract class MapDataClass extends ExchangeTestCase
      *
      * @test
      * @depends emptyObject
+     * @throws
      ************************************************************************/
     public function readWriteOperations() : void
     {
-        $map        = static::createMapObject();
+        $map        = $this->createMapObject();
         $values     = static::getCorrectData();
         $className  = static::getMapClassName();
 
         if (count($values) <= 0)
         {
-            self::assertTrue(true);
+            self::markTestSkipped("No \"correct\" data for testing $className class");
             return;
         }
 
@@ -139,65 +129,64 @@ abstract class MapDataClass extends ExchangeTestCase
      *
      * @test
      * @depends readWriteOperations
+     * @throws
      ************************************************************************/
     public function incorrectReadWriteOperations() : void
     {
-        $map                = static::createMapObject();
+        $map                = $this->createMapObject();
         $className          = static::getMapClassName();
         $correctData        = static::getCorrectData();
-        $setedKeys          = $map->getKeys();
-        $incorrectKeys      = static::getIncorrectKeys();
-        $incorrectValues    = static::getIncorrectValues();
-        $unknownKey         = 'unknownKey';
-        $correctKey         = count($correctData) > 0   ? array_rand($correctData)  : null;
-        $correctValue       = $correctKey               ? $correctData[$correctKey] : null;
+        $incorrectKeys      = static::getIncorrectDataKeys();
+        $incorrectValues    = static::getIncorrectDataValues();
 
-        while (in_array($unknownKey, $setedKeys))
+        if (count($incorrectKeys) <= 0)
         {
-            $unknownKey .= '1';
+            self::markTestSkipped("No \"incorrect\" data keys for testing $className class");
+            return;
+        }
+        if (count($incorrectValues) <= 0)
+        {
+            self::markTestSkipped("No \"incorrect\" data values for testing $className class");
+            return;
         }
 
         self::assertNull
         (
-            $map->get($unknownKey),
+            $map->get('unknownKey'),
             "Received value in $className by incorrect key is not null"
         );
 
-        if (count($incorrectKeys) > 0 && $correctValue)
+        $correctValue = $correctData[array_rand($correctData)];
+        foreach ($incorrectKeys as $key)
         {
-            foreach ($incorrectKeys as $key)
+            try
             {
-                try
-                {
-                    $exceptionName  = InvalidArgumentException::class;
-                    $printValue     = var_export($key, true);
+                $exceptionName  = InvalidArgumentException::class;
+                $keyPrintable   = var_export($key, true);
 
-                    $map->set($key, $correctValue);
-                    self::fail("Expect $exceptionName exception in $className on seting value by incorrect key $printValue");
-                }
-                catch (InvalidArgumentException $error)
-                {
-                    self::assertTrue(true);
-                }
+                $map->set($key, $correctValue);
+                self::fail("Expect $exceptionName exception in $className on seting value by incorrect key $keyPrintable");
+            }
+            catch (InvalidArgumentException $error)
+            {
+                self::assertTrue(true);
             }
         }
 
-        if (count($incorrectValues) > 0 && $correctKey)
+        $correctKey = array_rand($correctData);
+        foreach ($incorrectValues as $value)
         {
-            foreach ($incorrectValues as $value)
+            try
             {
-                try
-                {
-                    $exceptionName  = InvalidArgumentException::class;
-                    $printValue     = var_export($value, true);
+                $exceptionName  = InvalidArgumentException::class;
+                $valuePrintable = var_export($value, true);
 
-                    $map->set($correctKey, $value);
-                    self::fail("Expect $exceptionName exception in $className on seting value by incorrect value $printValue");
-                }
-                catch (InvalidArgumentException $error)
-                {
-                    self::assertTrue(true);
-                }
+                $map->set($correctKey, $value);
+                self::fail("Expect $exceptionName exception in $className on seting value by incorrect value $valuePrintable");
+            }
+            catch (InvalidArgumentException $error)
+            {
+                self::assertTrue(true);
             }
         }
     }
@@ -206,11 +195,12 @@ abstract class MapDataClass extends ExchangeTestCase
      *
      * @test
      * @depends readWriteOperations
+     * @throws
      ************************************************************************/
     public function alternativeCreateSyntax() : void
     {
         $values     = static::getCorrectData();
-        $map        = static::createMapObject($values);
+        $map        = $this->createMapObject($values);
         $className  = static::getMapClassName();
 
         self::assertFalse
@@ -231,7 +221,7 @@ abstract class MapDataClass extends ExchangeTestCase
             (
                 $value,
                 $map->get($index),
-                "Value form array $className created on not equals received"
+                "Received value from $className is not equal put before"
             );
         }
     }
@@ -239,15 +229,17 @@ abstract class MapDataClass extends ExchangeTestCase
      * check clearing operations
      *
      * @test
-     * @depends alternativeCreateSyntax
+     * @depends readWriteOperations
+     * @throws
      ************************************************************************/
     public function clearingOperations() : void
     {
-        $map        = static::createMapObject(static::getCorrectData());
+        $map        = $this->createMapObject(static::getCorrectData());
         $className  = static::getMapClassName();
         $keys       = $map->getKeys();
+        $randKey    = $keys[array_rand($keys)];
 
-        $map->delete($keys[array_rand($keys)]);
+        $map->delete($randKey);
         self::assertEquals
         (
             count($keys) - 1,
@@ -267,5 +259,17 @@ abstract class MapDataClass extends ExchangeTestCase
             $map->count(),
             "$className values count is not zero after call \"clear\" method"
         );
+    }
+    /** **********************************************************************
+     * get new map object
+     *
+     * @param   array   $data               start data
+     * @return  Map                         new map object
+     ************************************************************************/
+    private function createMapObject(array $data = []) : Map
+    {
+        $className = static::getMapClassName();
+
+        return new $className($data);
     }
 }

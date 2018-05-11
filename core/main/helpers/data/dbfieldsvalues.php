@@ -25,13 +25,19 @@ class DBFieldsValues extends MapData
     {
         foreach ($data as $key => $value)
         {
-            if (!is_string($key) || strlen($key) <= 0)
+            if (!is_string($key))
             {
-                throw new InvalidArgumentException('incorrect array data: data keys must be string');
+                $keyType = gettype($key);
+                throw new InvalidArgumentException("keys must be string, \"$keyType\" caught");
+            }
+            if (strlen($key) <= 0)
+            {
+                throw new InvalidArgumentException('keys must be not empty string');
             }
             if (!$this->checkValueValid($value))
             {
-                throw new InvalidArgumentException('incorrect array data: data values must be string, integer, float or null');
+                $valueType = gettype($value);
+                throw new InvalidArgumentException("values must be string, integer, float or null, \"$valueType\" caught");
             }
         }
 
@@ -84,13 +90,19 @@ class DBFieldsValues extends MapData
      ************************************************************************/
     public function set($key, $value) : void
     {
-        if (!is_string($key) || strlen($key) <= 0)
+        if (!is_string($key))
         {
-            throw new InvalidArgumentException('key must be string');
+            $keyType = gettype($key);
+            throw new InvalidArgumentException("key must be string, \"$keyType\" caught");
+        }
+        if (strlen($key) <= 0)
+        {
+            throw new InvalidArgumentException('key must be not empty string');
         }
         if (!$this->checkValueValid($value))
         {
-            throw new InvalidArgumentException('value must be string, integer, float or null');
+            $valueType = gettype($value);
+            throw new InvalidArgumentException("value must be string, integer, float or null, \"$valueType\" caught");
         }
 
         parent::set($key, $value);

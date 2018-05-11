@@ -21,6 +21,7 @@ final class MatchingRulesTest extends ExchangeTestCase
      * testing aliases read/write operations
      *
      * @test
+     * @throws
      ************************************************************************/
     public function aliasesReadWriteOperations() : void
     {
@@ -45,6 +46,7 @@ final class MatchingRulesTest extends ExchangeTestCase
      *
      * @test
      * @depends aliasesReadWriteOperations
+     * @throws
      ************************************************************************/
     public function aliasesDropOperation() : void
     {

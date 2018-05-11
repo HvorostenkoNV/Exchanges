@@ -129,18 +129,17 @@ namespace Main.Exchange.DataProcessors.Results{
 
 namespace Main.Exchange.Procedures{
     class Manager{
-        +{static}getProcedure(string $procedureName) : Procedure
-        +{static}getProcedures() : array|Procedure
+        +{static}getProcedures() : Procedure[]
     }
 
     interface Procedure{
-        +getParticipants() : array|Participants.Participant
+        +getParticipants() : Participants.Participant[]
         +getMatchingRules() : Rules.MatchingRules
         +getCombiningRules() : Rules.CombiningRules
     }
 
     abstract AbstractProcedure{
-        +getParticipants() : array|Participants.Participant
+        +getParticipants() : Participants.Participant[]
         +getMatchingRules() : Rules.MatchingRules
         +getCombiningRules() : Rules.CombiningRules
     }
@@ -156,36 +155,33 @@ namespace Main.Exchange.Procedures{
 
 namespace Main.Exchange.Participants{
     interface Participant{
-        +getProvidedData() : Data.ProvidedData
         +getFields() : Data.FieldsMap
-        +provideData(Data.DeliveredData $data) : bool
+        +getProvidedData() : Data.ProvidedData
+        +deliveryData(Data.DataForDelivery $data) : bool
     }
 
     abstract AbstractParticipants{
-        +getProvidedData() : Data.ProvidedData
         +getFields() : Data.FieldsMap
-        +provideData(Data.DeliveredData $data) : bool
+        +getProvidedData() : Data.ProvidedData
+        +deliveryData(Data.DataForDelivery $data) : bool
 
-        -readXml(string $path) : Data.ProvidedData
-        -readBD(array $connectionParams) : Data.ProvidedData
-
-        -{abstract}readProvidedData() : Data.ProvidedData
-        -{abstract}writeDeliveredData(Data.DeliveredData $data) : bool
+        -{abstract}readProvidedData() : ProvidedData
+        -{abstract}provideDataForDelivery(Data.DataForDelivery $data) : bool
     }
 
     class Users1C{
         -readProvidedData() : ProvidedData
-        -writeDeliveredData(DeliveredData $data) : bool
+        -provideDataForDelivery(DataForDelivery $data) : bool
     }
 
     class UsersAD{
         -readProvidedData() : ProvidedData
-        -writeDeliveredData(DeliveredData $data) : bool
+        -provideDataForDelivery(DataForDelivery $data) : bool
     }
 
     class UsersBitrix{
         -readProvidedData() : ProvidedData
-        -writeDeliveredData(DeliveredData $data) : bool
+        -provideDataForDelivery(DataForDelivery $data) : bool
     }
 
     Participant <|-- AbstractParticipants
@@ -203,7 +199,7 @@ namespace Main.Exchange.Participants.Data{
 
     }
 
-    class DeliveredData{
+    class DataForDelivery{
 
     }
 
@@ -212,8 +208,25 @@ namespace Main.Exchange.Participants.Data{
     }
 
     Data <|-- ProvidedData
-    Data <|-- DeliveredData
+    Data <|-- DataForDelivery
     Data <|-- FieldsMap
+}
+
+namespace Main.Exchange.Participants.Fields{
+    interface Field{
+
+    }
+
+    abstract AbstractField{
+
+    }
+
+    class StringField{
+
+    }
+
+    Field <|-- AbstractField
+    AbstractField <|-- StringField
 }
 
 namespace Main.Exchange.Procedures.Rules{
@@ -241,5 +254,7 @@ Main.Exchange.DataProcessors.Processor *-- "one" Main.Exchange.Procedures.Proced
 Main.Exchange.Procedures.Procedure *-- "many" Main.Exchange.Participants.Participant
 Main.Exchange.Procedures.Procedure *-- "Many" Main.Exchange.Procedures.Rules.Rules
 Main.Exchange.Participants.Participant *-- "Many" Main.Exchange.Participants.Data.Data
+
+Main.Exchange.Participants.Data.FieldsMap *-- "Many" Main.Exchange.Participants.Fields.Field
 
 @enduml

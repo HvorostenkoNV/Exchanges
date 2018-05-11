@@ -1,36 +1,37 @@
 <?php
 declare(strict_types=1);
 
-namespace Main\Exchange\Participants;
+namespace Main\Exchange\Participants\FieldsTypes;
 
-use
-    Main\Exchange\Participants\Fields\FieldsMap,
-    Main\Exchange\Participants\Data\Data as ParticipantData;
+use DomainException;
 /** ***********************************************************************************************
- * Application participant interface
+ * Participant field type interface
  *
  * @package exchange_exchange
  * @author  Hvorostenko
  *************************************************************************************************/
-interface Participant
+interface Field
 {
     /** **********************************************************************
-     * get participant fields params
+     * validate value
      *
-     * @return  FieldsMap                   fields params
+     * @param   mixed   $value              value
+     * @return  mixed                       validated value
+     * @throws  DomainException             bad validating result
      ************************************************************************/
-    public function getFields() : FieldsMap;
+    public function validateValue($value);
     /** **********************************************************************
-     * get participant provided raw data
+     * convert value for print
      *
-     * @return  ParticipantData             provided data
+     * @param   mixed   $value              value
+     * @return  mixed                       converted value
+     * @throws  DomainException             bad converting result
      ************************************************************************/
-    public function getProvidedData() : ParticipantData;
+    public function convertValueForPrint($value);
     /** **********************************************************************
-     * delivery data to the participant
+     * get random value
      *
-     * @param   ParticipantData $data       data for delivery
-     * @return  bool                        delivering data result
+     * @return  mixed                       random value
      ************************************************************************/
-    public function deliveryData(ParticipantData $data) : bool;
+    public function getRandomValue();
 }

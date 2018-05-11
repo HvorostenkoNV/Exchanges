@@ -19,7 +19,7 @@ final class MapDataTest extends MapDataClass
      *
      * @return  string                      Map class name
      ************************************************************************/
-    protected static function getMapClassName() : string
+    public static function getMapClassName() : string
     {
         return MapData::class;
     }
@@ -28,41 +28,51 @@ final class MapDataTest extends MapDataClass
      *
      * @return  array                       correct data array
      ************************************************************************/
-    protected static function getCorrectData() : array
+    public static function getCorrectData() : array
     {
         return
         [
             1       => 'string',
-            'two'   => 2,
-            'three' => 2.5,
-            4       => true,
-            5       => [1, 2, 3],
-            6       => new MapData,
-            7       => null
+            2       => '',
+            'three' => 2,
+            'four'  => 2.5,
+            5       => 0,
+            6       => true,
+            7       => false,
+            8       => [1, 2, 3],
+            9       => ['string', '', 2.5, 0, true, false],
+            10      => [],
+            11      => new MapData,
+            12      => null
         ];
     }
     /** **********************************************************************
      * get incorrect keys
      *
-     * @return  array                       incorrect keys
+     * @return  array                       incorrect data keys
      ************************************************************************/
-    protected static function getIncorrectKeys() : array
+    public static function getIncorrectDataKeys() : array
     {
         return
         [
-            [1, 2, 3],
-            new MapData,
+            2,
+            2.5,
+            0,
             true,
-            5.5,
+            false,
+            [1, 2, 3],
+            ['string', '', 2.5, 0, true, false],
+            [],
+            new MapData,
             null
         ];
     }
     /** **********************************************************************
      * get incorrect values
      *
-     * @return  array                       incorrect values
+     * @return  array                       incorrect data values
      ************************************************************************/
-    protected static function getIncorrectValues() : array
+    public static function getIncorrectDataValues() : array
     {
         return [];
     }

@@ -1,18 +1,20 @@
 <?php
 declare(strict_types=1);
 
-namespace UnitTests\ClassTesting\Data;
+namespace UnitTests\ClassTesting\Exchange\Participants\Data;
 
 use
     UnitTests\Core\QueueDataClass,
-    Main\Data\QueueData;
+    Main\Data\MapData,
+    Main\Exchange\Participants\Data\ItemData,
+    Main\Exchange\Participants\Data\DataForDelivery;
 /** ***********************************************************************************************
- * Test Main\Data\QueueData class
+ * Test Main\Exchange\Participants\Data\DataForDelivery class
  *
  * @package exchange_unit_tests
  * @author  Hvorostenko
  *************************************************************************************************/
-final class QueueDataTest extends QueueDataClass
+final class DataForDeliveryTest extends QueueDataClass
 {
     /** **********************************************************************
      * get Queue class name
@@ -21,14 +23,32 @@ final class QueueDataTest extends QueueDataClass
      ************************************************************************/
     public static function getQueueClassName() : string
     {
-        return QueueData::class;
+        return DataForDelivery::class;
     }
     /** **********************************************************************
      * get correct data
      *
      * @return  array                       correct data array
+     * @throws
      ************************************************************************/
     public static function getCorrectDataValues() : array
+    {
+        $result             = [];
+        $itemsCorrectData   = ItemDataTest::getCorrectData();
+
+        for ($index = 1; $index <= 10; $index++)
+        {
+            $result[] = new ItemData($itemsCorrectData);
+        }
+
+        return $result;
+    }
+    /** **********************************************************************
+     * get incorrect data
+     *
+     * @return  array                       incorrect data array
+     ************************************************************************/
+    public static function getIncorrectDataValues() : array
     {
         return
         [
@@ -42,17 +62,10 @@ final class QueueDataTest extends QueueDataClass
             [1, 2, 3],
             ['string', '', 2.5, 0, true, false],
             [],
-            new QueueData,
+            new DataForDelivery,
+            new MapData,
+            new ItemData,
             null
         ];
-    }
-    /** **********************************************************************
-     * get incorrect data
-     *
-     * @return  array                       incorrect data array
-     ************************************************************************/
-    public static function getIncorrectDataValues() : array
-    {
-        return [];
     }
 }

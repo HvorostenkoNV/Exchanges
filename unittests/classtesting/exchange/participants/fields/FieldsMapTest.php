@@ -1,12 +1,14 @@
 <?php
 declare(strict_types=1);
 
-namespace UnitTests\ClassTesting\Exchange\Participants\Data;
+namespace UnitTests\ClassTesting\Exchange\Participants\Fields;
 
 use
     UnitTests\Core\MapDataClass,
-    Main\Exchange\Participants\Data\Field,
-    Main\Exchange\Participants\Data\FieldsMap;
+    Main\Data\MapData,
+    Main\Exchange\Participants\FieldsTypes\Manager as FieldsTypesManager,
+    Main\Exchange\Participants\Fields\Field,
+    Main\Exchange\Participants\Fields\FieldsMap;
 /** ***********************************************************************************************
  * Test Main\Exchange\Participants\Data\FieldsMap class
  *
@@ -20,7 +22,7 @@ final class FieldsMapTest extends MapDataClass
      *
      * @return  string                      Map class name
      ************************************************************************/
-    protected static function getMapClassName() : string
+    public static function getMapClassName() : string
     {
         return FieldsMap::class;
     }
@@ -28,16 +30,17 @@ final class FieldsMapTest extends MapDataClass
      * get correct data
      *
      * @return  array                       correct data array
+     * @throws
      ************************************************************************/
-    protected static function getCorrectData() : array
+    public static function getCorrectData() : array
     {
         $result = [];
 
-        for ($index = 1; $index <= 10; $index++)
+        foreach (FieldsTypesManager::getAvailableFieldsTypes() as $type)
         {
-            $field = new Field;
-            $field->setName('field'.$index);
-            $result['field'.$index] = $field;
+            $fieldName  = 'field'.$type;
+            $fieldParam = new MapData(['name' => $fieldName, 'type' => $type]);
+            $result[$fieldName] = new Field($fieldParam);
         }
 
         return $result;
@@ -45,38 +48,46 @@ final class FieldsMapTest extends MapDataClass
     /** **********************************************************************
      * get incorrect keys
      *
-     * @return  array                       incorrect keys
+     * @return  array                       incorrect data keys
      ************************************************************************/
-    protected static function getIncorrectKeys() : array
+    public static function getIncorrectDataKeys() : array
     {
         return
         [
+            'string',
             '',
-            'someField',
-            1,
-            5.5,
+            2,
+            2.5,
+            0,
             true,
+            false,
             [1, 2, 3],
-            new Field,
+            ['string', '', 2.5, 0, true, false],
+            [],
+            new MapData,
             null
         ];
     }
     /** **********************************************************************
      * get incorrect values
      *
-     * @return  array                       incorrect values
+     * @return  array                       incorrect data values
      ************************************************************************/
-    protected static function getIncorrectValues() : array
+    public static function getIncorrectDataValues() : array
     {
         return
         [
+            'string',
             '',
-            'someField',
-            1,
-            5.5,
+            2,
+            2.5,
+            0,
             true,
+            false,
             [1, 2, 3],
-            new Field,
+            ['string', '', 2.5, 0, true, false],
+            [],
+            new MapData,
             null
         ];
     }

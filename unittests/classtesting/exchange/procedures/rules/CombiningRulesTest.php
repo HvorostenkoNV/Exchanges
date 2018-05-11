@@ -21,6 +21,7 @@ final class CombiningRulesTest extends ExchangeTestCase
      * testing priority read/write operations
      *
      * @test
+     * @throws
      ************************************************************************/
     public function priorityReadWriteOperations() : void
     {
@@ -45,6 +46,7 @@ final class CombiningRulesTest extends ExchangeTestCase
      *
      * @test
      * @depends priorityReadWriteOperations
+     * @throws
      ************************************************************************/
     public function priorityDropOperation() : void
     {
@@ -66,6 +68,7 @@ final class CombiningRulesTest extends ExchangeTestCase
      * testing empty priority read/write operations
      *
      * @test
+     * @throws
      ************************************************************************/
     public function emptyPriorityReadWriteOperations() : void
     {

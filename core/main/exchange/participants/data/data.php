@@ -3,14 +3,14 @@ declare(strict_types=1);
 
 namespace Main\Exchange\Participants\Data;
 
-use Main\Data\Data as PrimeData;
+use Main\Data\Queue;
 /** ***********************************************************************************************
  * Participants data interface, base participants data interface
  *
  * @package exchange_exchange
  * @author  Hvorostenko
  *************************************************************************************************/
-interface Data extends PrimeData
+interface Data extends Queue
 {
 
 }

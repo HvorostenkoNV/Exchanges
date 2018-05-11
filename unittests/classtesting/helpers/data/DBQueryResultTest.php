@@ -15,16 +15,23 @@ use
  *************************************************************************************************/
 final class DBQueryResultTest extends QueueDataClass
 {
-    protected static $queueClassName = DBQueryResult::class;
+    /** **********************************************************************
+     * get Queue class name
+     *
+     * @return  string                      Queue class name
+     ************************************************************************/
+    public static function getQueueClassName() : string
+    {
+        return DBQueryResult::class;
+    }
     /** **********************************************************************
      * get correct data
-     * @return  array                   correct data array
+     *
+     * @return  array                       correct data array
      * @throws
      ************************************************************************/
-    protected static function getCorrectValues() : array
+    public static function getCorrectDataValues() : array
     {
-        parent::getCorrectValues();
-
         $result = [];
 
         for ($index = 1; $index <= 3; $index++)
@@ -37,20 +44,24 @@ final class DBQueryResultTest extends QueueDataClass
         return $result;
     }
     /** **********************************************************************
-     * get incorrect values
-     * @return  array                   incorrect values
+     * get incorrect data
+     *
+     * @return  array                       incorrect data array
      ************************************************************************/
-    protected static function getIncorrectValues() : array
+    public static function getIncorrectDataValues() : array
     {
-        parent::getIncorrectValues();
-
         return
         [
             'string',
-            1,
-            1.5,
+            '',
+            2,
+            2.5,
+            0,
             true,
+            false,
             [1, 2, 3],
+            ['string', '', 2.5, 0, true, false],
+            [],
             new DBQueryResult,
             new DBFieldsValues,
             new MapData,

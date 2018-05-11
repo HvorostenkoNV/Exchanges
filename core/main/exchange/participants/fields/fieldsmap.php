@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Main\Exchange\Participants\Data;
+namespace Main\Exchange\Participants\Fields;
 
 use
     InvalidArgumentException,
@@ -30,11 +30,11 @@ class FieldsMap extends MapData
             if (!$value instanceof Field)
             {
                 $needClassName = Field::class;
-                throw new InvalidArgumentException("incorrect array data: data values must be instance of $needClassName");
+                throw new InvalidArgumentException("values must be instance of \"$needClassName\"");
             }
-            if (!is_string($key) || strlen($key) <= 0 || $key != $value->getName())
+            if (!is_string($key) || strlen($key) <= 0 || $key != $value->getParam('name'))
             {
-                throw new InvalidArgumentException('incorrect array data: data keys must be fields objects names');
+                throw new InvalidArgumentException('keys must be fields objects names');
             }
         }
 
@@ -100,9 +100,9 @@ class FieldsMap extends MapData
         if (!$value instanceof Field)
         {
             $needClassName = Field::class;
-            throw new InvalidArgumentException("value must be instance of $needClassName");
+            throw new InvalidArgumentException("value must be instance of \"$needClassName\"");
         }
-        if (!is_string($key) || strlen($key) <= 0 || $key != $value->getName())
+        if (!is_string($key) || strlen($key) <= 0 || $key != $value->getParam('name'))
         {
             throw new InvalidArgumentException('key must be field object name');
         }

@@ -6,8 +6,8 @@ namespace UnitTests\ClassTesting\Exchange\Procedures;
 use
     ReflectionClass,
     UnitTests\Core\ExchangeTestCase,
-    UnitTests\Core\TempFilesCreator,
-    UnitTests\Core\TempDBRecordsCreator,
+    UnitTests\Core\TempFilesGenerator,
+    UnitTests\Core\TempDBRecordsGenerator,
     Main\Data\MapData,
     Main\Exchange\Procedures\UsersExchange,
     Main\Exchange\Procedures\Manager;
@@ -39,10 +39,10 @@ final class ManagerTest extends ExchangeTestCase
                 'activity'      => false
             ]
         ];
-    /** @var TempFilesCreator */
-    private static $tempFilesCreator        = null;
-    /** @var TempDBRecordsCreator */
-    private static $tempDBRecordsCreator    = null;
+    /** @var TempFilesGenerator */
+    private static $tempFilesGenerator      = null;
+    /** @var TempDBRecordsGenerator */
+    private static $tempDBRecordsGenerator  = null;
     /** **********************************************************************
      * construct
      ************************************************************************/
@@ -50,14 +50,14 @@ final class ManagerTest extends ExchangeTestCase
     {
         parent::setUpBeforeClass();
 
-        self::$tempFilesCreator     = new TempFilesCreator;
-        self::$tempDBRecordsCreator = new TempDBRecordsCreator;
+        self::$tempFilesGenerator       = new TempFilesGenerator;
+        self::$tempDBRecordsGenerator   = new TempDBRecordsGenerator;
 
         foreach (self::$tempProcedures as $procedure)
         {
-            self::$tempFilesCreator->createTempClass(UsersExchange::class, $procedure['className']);
+            self::$tempFilesGenerator->createTempClass(UsersExchange::class, $procedure['className']);
 
-            self::$tempDBRecordsCreator->createTempRecord(self::$proceduresTable,
+            self::$tempDBRecordsGenerator->createTempRecord(self::$proceduresTable,
             [
                 'NAME'      => $procedure['dbItemName'],
                 'ACTIVITY'  => $procedure['activity'] ? 'Y' : 'N'
@@ -70,13 +70,14 @@ final class ManagerTest extends ExchangeTestCase
     public static function tearDownAfterClass() : void
     {
         parent::tearDownAfterClass();
-        self::$tempFilesCreator->dropCreatedTempFiles();
-        self::$tempDBRecordsCreator->dropTempChanges();
+        self::$tempFilesGenerator->dropCreatedTempData();
+        self::$tempDBRecordsGenerator->dropTempChanges();
     }
     /** **********************************************************************
      * check getting procedures with different filter params
      *
      * @test
+     * @throws
      ************************************************************************/
     public function providingProcedures() : void
     {
@@ -127,6 +128,7 @@ final class ManagerTest extends ExchangeTestCase
      * check getting procedure by name
      *
      * @test
+     * @throws
      ************************************************************************/
     public function providingProcedureByName() : void
     {

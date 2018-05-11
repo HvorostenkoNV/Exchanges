@@ -15,7 +15,7 @@ use
  * @package exchange_exchange
  * @author  Hvorostenko
  *************************************************************************************************/
-class DeliveredData extends QueueData implements Data
+class DataForDelivery extends QueueData implements Data
 {
     /** **********************************************************************
      * extract queue data from the start

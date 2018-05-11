@@ -15,53 +15,45 @@ use
  *************************************************************************************************/
 abstract class QueueDataClass extends ExchangeTestCase
 {
-    protected static $queueClassName = '';
+    /** **********************************************************************
+     * get Queue class name
+     *
+     * @return  string                      Queue class name
+     ************************************************************************/
+    abstract public static function getQueueClassName() : string;
     /** **********************************************************************
      * get correct data
      *
-     * @return  array                   correct data array
+     * @return  array                       correct data array
      ************************************************************************/
-    protected static function getCorrectValues() : array
-    {
-        return [];
-    }
+    abstract public static function getCorrectDataValues() : array;
     /** **********************************************************************
-     * get incorrect values
+     * get incorrect data
      *
-     * @return  array                   incorrect values
+     * @return  array                       incorrect data array
      ************************************************************************/
-    protected static function getIncorrectValues() : array
-    {
-        return [];
-    }
-    /** **********************************************************************
-     * get new queue object
-     *
-     * @return  Queue                   new queue object
-     ************************************************************************/
-    final protected static function createQueueObject() : Queue
-    {
-        return new static::$queueClassName;
-    }
+    abstract public static function getIncorrectDataValues() : array;
     /** **********************************************************************
      * check empty object
      *
      * @test
+     * @throws
      ************************************************************************/
     public function emptyObject() : void
     {
-        $queue = self::createQueueObject();
+        $queue      = $this->createQueueObject();
+        $className  = static::getQueueClassName();
 
         self::assertTrue
         (
             $queue->isEmpty(),
-            'New '.static::$queueClassName.' object is not empty'
+            "New $className object is not empty"
         );
         self::assertEquals
         (
             0,
             $queue->count(),
-            'New '.static::$queueClassName.' object values count is not zero'
+            "New $className object values count is not zero"
         );
     }
     /** **********************************************************************
@@ -69,15 +61,17 @@ abstract class QueueDataClass extends ExchangeTestCase
      *
      * @test
      * @depends emptyObject
+     * @throws
      ************************************************************************/
     public function readWriteOperations() : void
     {
-        $queue  = self::createQueueObject();
-        $values = static::getCorrectValues();
+        $queue      = $this->createQueueObject();
+        $values     = static::getCorrectDataValues();
+        $className  = static::getQueueClassName();
 
         if (count($values) <= 0)
         {
-            self::assertTrue(true);
+            self::markTestSkipped("No \"correct\" values for testing $className class");
             return;
         }
 
@@ -89,13 +83,13 @@ abstract class QueueDataClass extends ExchangeTestCase
         self::assertFalse
         (
             $queue->isEmpty(),
-            'Filled '.static::$queueClassName.' is empty'
+            "Filled $className is empty"
         );
         self::assertEquals
         (
             count($values),
             $queue->count(),
-            'Filled '.static::$queueClassName.' values count is not equal items count put'
+            "Filled $className values count is not equal items count put"
         );
 
         foreach ($values as $index => $value)
@@ -104,13 +98,13 @@ abstract class QueueDataClass extends ExchangeTestCase
             (
                 $value,
                 $queue->pop(),
-                'Value put in '.static::$queueClassName.' before not equals received'
+                "Value put in $className before not equals received"
             );
             self::assertEquals
             (
                 count($values) - $index - 1,
                 $queue->count(),
-                static::$queueClassName.' values count is not equal expected after pop'
+                "$className values count is not equal expected after pop"
             );
         }
     }
@@ -119,16 +113,25 @@ abstract class QueueDataClass extends ExchangeTestCase
      *
      * @test
      * @depends readWriteOperations
+     * @throws
      ************************************************************************/
     public function incorrectReadWriteOperations() : void
     {
-        $queue              = self::createQueueObject();
-        $incorrectValues    = static::getIncorrectValues();
+        $queue              = $this->createQueueObject();
+        $incorrectValues    = static::getIncorrectDataValues();
+        $className          = static::getQueueClassName();
+
+        if (count($incorrectValues) <= 0)
+        {
+            self::markTestSkipped("No \"incorrect\" values for testing $className class");
+            return;
+        }
 
         try
         {
+            $exceptionName = InvalidArgumentException::class;
             $queue->pop();
-            self::fail('Expect '.RuntimeException::class.' exception with pop on empty '.static::$queueClassName);
+            self::fail("Expect $exceptionName exception with pop on empty $className");
         }
         catch (RuntimeException $error)
         {
@@ -139,8 +142,11 @@ abstract class QueueDataClass extends ExchangeTestCase
         {
             try
             {
+                $exceptionName  = InvalidArgumentException::class;
+                $valuePrintable = var_export($value, true);
+
                 $queue->push($value);
-                self::fail('Expect '.InvalidArgumentException::class.' exception in '.static::$queueClassName.' on push incorrect value '.var_export($value, true));
+                self::fail("Expect $exceptionName exception in $className on push incorrect value $valuePrintable");
             }
             catch (InvalidArgumentException $error)
             {
@@ -153,28 +159,40 @@ abstract class QueueDataClass extends ExchangeTestCase
      *
      * @test
      * @depends readWriteOperations
+     * @throws
      ************************************************************************/
     public function clearingOperations() : void
     {
-        $queue = self::createQueueObject();
+        $queue      = $this->createQueueObject();
+        $className  = static::getQueueClassName();
 
-        foreach (static::getCorrectValues() as $value)
+        foreach (static::getCorrectDataValues() as $value)
         {
             $queue->push($value);
         }
-
         $queue->clear();
 
         self::assertTrue
         (
             $queue->isEmpty(),
-            static::$queueClassName.' is not empty after call "clear" method'
+            "$className is not empty after call \"clear\" method"
         );
         self::assertEquals
         (
             0,
             $queue->count(),
-            static::$queueClassName.' values count is not zero after call "clear" method'
+            "$className values count is not zero after call \"clear\" method"
         );
+    }
+    /** **********************************************************************
+     * get new queue object
+     *
+     * @return  Queue                       new queue object
+     ************************************************************************/
+    private function createQueueObject() : Queue
+    {
+        $className = static::getQueueClassName();
+
+        return new $className;
     }
 }

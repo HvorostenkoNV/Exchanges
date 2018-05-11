@@ -4,12 +4,15 @@ declare(strict_types=1);
 namespace UnitTests\ClassTesting\Exchange\Participants;
 
 use
+    RuntimeException,
     ReflectionClass,
+    SplFileInfo,
     UnitTests\Core\ExchangeTestCase,
-    UnitTests\Core\TempFilesCreator,
-    UnitTests\Core\TempDBRecordsCreator,
+    UnitTests\Core\TempFilesGenerator,
+    UnitTests\Core\TempDBRecordsGenerator,
     Main\Helpers\DB,
-    Main\Exchange\Participants\Users1C;
+    Main\Exchange\Participants\FieldsTypes\Manager as FieldsTypesManager,
+    Main\Exchange\Participants\Participant;
 /** ***********************************************************************************************
  * Test Main\Exchange\Participants\Participant classes
  *
@@ -43,6 +46,16 @@ final class ParticipantsTest extends ExchangeTestCase
                         'NAME'      => 'important',
                         'TYPE'      => 'boolean',
                         'REQUIRED'  => false
+                    ],
+                    [
+                        'NAME'      => 'someStringsValues',
+                        'TYPE'      => 'array-of-strings',
+                        'REQUIRED'  => true
+                    ],
+                    [
+                        'NAME'      => 'someBooleansValues',
+                        'TYPE'      => 'array-of-booleans',
+                        'REQUIRED'  => true
                     ]
                 ]
             ],
@@ -60,6 +73,11 @@ final class ParticipantsTest extends ExchangeTestCase
                         'NAME'      => 'code',
                         'TYPE'      => 'string',
                         'REQUIRED'  => false
+                    ],
+                    [
+                        'NAME'      => 'someIntegersValues',
+                        'TYPE'      => 'array-of-numbers',
+                        'REQUIRED'  => true
                     ]
                 ]
             ],
@@ -69,10 +87,10 @@ final class ParticipantsTest extends ExchangeTestCase
                 'fields'        => []
             ]
         ];
-    /** @var TempFilesCreator */
-    private static $tempFilesCreator        = null;
-    /** @var TempDBRecordsCreator */
-    private static $tempDBRecordsCreator    = null;
+    /** @var TempFilesGenerator */
+    private static $tempFilesGenerator      = null;
+    /** @var TempDBRecordsGenerator */
+    private static $tempDBRecordsGenerator  = null;
     /** **********************************************************************
      * construct
      ************************************************************************/
@@ -80,22 +98,26 @@ final class ParticipantsTest extends ExchangeTestCase
     {
         parent::setUpBeforeClass();
 
-        self::$tempFilesCreator     = new TempFilesCreator;
-        self::$tempDBRecordsCreator = new TempDBRecordsCreator;
-        $systemFields               = self::getParticipantsSystemFields();
+        $systemFields           = self::getParticipantsSystemFields();
+        $tempFilesGenerator     = new TempFilesGenerator;
+        $tempDBRecordsGenerator = new TempDBRecordsGenerator;
+        $participantClassName   = ParticipantForUnitTest::class;
+
+        self::$tempFilesGenerator       = $tempFilesGenerator;
+        self::$tempDBRecordsGenerator   = $tempDBRecordsGenerator;
 
         foreach (self::$tempParticipants as $participant)
         {
-            self::$tempFilesCreator->createTempClass(Users1C::class, $participant['className']);
+            $tempFilesGenerator->createTempClass($participantClassName, $participant['className']);
 
-            $tempParticipantId = self::$tempDBRecordsCreator->createTempRecord(self::$participantsTable,
+            $tempParticipantId = $tempDBRecordsGenerator->createTempRecord(self::$participantsTable,
             [
                 'NAME' => $participant['dbItemName']
             ]);
 
             foreach ($participant['fields'] as $field)
             {
-                self::$tempDBRecordsCreator->createTempRecord(self::$participantsFieldsTable,
+                $tempDBRecordsGenerator->createTempRecord(self::$participantsFieldsTable,
                 [
                     'NAME'          => $field['NAME'],
                     'TYPE'          => $systemFields[$field['TYPE']],
@@ -111,20 +133,21 @@ final class ParticipantsTest extends ExchangeTestCase
     public static function tearDownAfterClass() : void
     {
         parent::tearDownAfterClass();
-        self::$tempFilesCreator->dropCreatedTempFiles();
-        self::$tempDBRecordsCreator->dropTempChanges();
+        self::$tempFilesGenerator->dropCreatedTempData();
+        self::$tempDBRecordsGenerator->dropTempChanges();
     }
     /** **********************************************************************
      * get participants system fields
      *
      * @return  array                       participants system fields array code => id
+     * @throws
      ************************************************************************/
     private static function getParticipantsSystemFields() : array
     {
-        $result = [];
-        $table  = self::$fieldsTypesTable;
+        $result         = [];
+        $table          = self::$fieldsTypesTable;
+        $queryResult    = DB::getInstance()->query("SELECT * FROM $table");
 
-        $queryResult = DB::getInstance()->query("SELECT * FROM $table");
         while (!$queryResult->isEmpty())
         {
             $item = $queryResult->pop();
@@ -134,39 +157,33 @@ final class ParticipantsTest extends ExchangeTestCase
         return $result;
     }
     /** **********************************************************************
-     * check participant fields info
+     * check participant provides fields info
      *
      * @test
+     * @throws
      ************************************************************************/
     public function providingFieldsInfo() : void
     {
-        $systemParticipantReflection    = new ReflectionClass(Users1C::class);
-        $systemParticipantNamespace     = $systemParticipantReflection->getNamespaceName();
-
         foreach (self::$tempParticipants as $participant)
         {
-            $participantClassQualifiedName  = $systemParticipantNamespace.'\\'.$participant['className'];
-            $fieldsQueue                    = call_user_func([new $participantClassQualifiedName, 'getFields']);
-            $tempFields                     = [];
-            $currentFields                  = [];
+            $participantObject  = $this->createParticipantObject($participant['className']);
+            $participantFields  = $participantObject->getFields();
+            $tempFields         = [];
+            $currentFields      = [];
 
             foreach ($participant['fields'] as $field)
             {
                 $tempFields[$field['NAME']] = $field;
             }
 
-            foreach ($fieldsQueue->getKeys() as $key)
+            foreach ($participantFields->getKeys() as $key)
             {
-                $field          = $fieldsQueue->get($key);
-                $fieldName      = call_user_func([$field, 'getName']);
-                $fieldRequired  = call_user_func([$field, 'isRequired']);
-                $fieldType      = call_user_func([$field, 'getType']);
-
-                $currentFields[$fieldName] =
+                $field = $participantFields->get($key);
+                $currentFields[$field->getParam('name')] =
                 [
-                    'NAME'      => $fieldName,
-                    'TYPE'      => $fieldType,
-                    'REQUIRED'  => $fieldRequired
+                    'NAME'      => $field->getParam('name'),
+                    'TYPE'      => $field->getParam('type'),
+                    'REQUIRED'  => $field->getParam('required')
                 ];
             }
 
@@ -174,8 +191,163 @@ final class ParticipantsTest extends ExchangeTestCase
             (
                 $tempFields,
                 $currentFields,
-                'Expect get temp participant fields as temp created'
+                'Expect get participant fields as temp created'
             );
         }
+    }
+    /** **********************************************************************
+     * check participant getting provided data process
+     *
+     * @test
+     * @throws
+     ************************************************************************/
+    public function gettingProvidedData() : void
+    {
+        foreach (self::$tempParticipants as $participant)
+        {
+            $participantObject          = $this->createParticipantObject($participant['className']);
+            $participantProvidedData    = [];
+            $tempData                   = $this->createParticipantTempData($participant['fields']);
+            $tempXml                    = self::$tempFilesGenerator->createTempXml($tempData);
+
+            $participantObject->{'tempXmlFromUnitTest'} = $tempXml;
+            $providedData = $participantObject->getProvidedData();
+
+            while (!$providedData->isEmpty())
+            {
+                $item       = $providedData->pop();
+                $itemKeys   = $item->getKeys();
+                $itemData   = [];
+
+                foreach ($itemKeys as $key)
+                {
+                    $itemData[$key] = $item->get($key)->getValue();
+                }
+
+                $participantProvidedData[] = $itemData;
+            }
+
+            self::assertEquals
+            (
+                $tempData,
+                $participantProvidedData,
+                'Expect get same data as temp created'
+            );
+        }
+    }
+    /** **********************************************************************
+     * check incorrect participant providing provided data process
+     *
+     * @test
+     * @depends gettingProvidedData
+     * @throws
+     ************************************************************************/
+    public function incorrectGettingProvidedData() : void
+    {
+        foreach (self::$tempParticipants as $participant)
+        {
+            $participantObject = $this->createParticipantObject($participant['className']);
+            $participantObject->{'tempXmlFromUnitTest'} = new SplFileInfo('someIncorrectFilePath');
+            $providedData = $participantObject->getProvidedData();
+
+            self::assertEquals
+            (
+                0,
+                $providedData->count(),
+                'Expect get empty provided data with reading incorrect xml file'
+            );
+        }
+    }
+    /** **********************************************************************
+     * check participant providing data process
+     *
+     * @test
+     * @depends gettingProvidedData
+     * @throws
+     ************************************************************************/
+    public function providingData() : void
+    {
+        foreach (self::$tempParticipants as $participant)
+        {
+            $participantObject  = $this->createParticipantObject($participant['className']);
+            $tempData           = $this->createParticipantTempData($participant['fields']);
+            $receivedXml        = self::$tempFilesGenerator->createTempXml($tempData);
+            $deliveredXml       = self::$tempFilesGenerator->createTempXml([['test' => 'test']]);
+
+            $participantObject->{'tempXmlFromUnitTest'}     = $receivedXml;
+            $participantObject->{'createdTempXmlAnswer'}    = $deliveredXml;
+            $providedData = $participantObject->getProvidedData();
+            $participantObject->deliveryData($providedData);
+
+            if (!$receivedXml)
+            {
+                continue;
+            }
+
+            try
+            {
+                $receivedXmlContent     = $receivedXml->openFile('r')->fread($receivedXml->getSize());
+                $deliveredXmlContent    = $deliveredXml->openFile('r')->fread($deliveredXml->getSize());
+
+                self::assertEquals
+                (
+                    $receivedXmlContent,
+                    $deliveredXmlContent,
+                    'Delivered xml expect to be same as received'
+                );
+            }
+            catch (RuntimeException $exception)
+            {
+                self::fail('Unable to read temp xml files for testing. Delivered xml may not be created');
+            }
+        }
+    }
+    /** **********************************************************************
+     * create participant object by name
+     *
+     * @param   string  $name               participant short name
+     * @return  Participant                 participant
+     ************************************************************************/
+    private function createParticipantObject(string $name) : Participant
+    {
+        $systemParticipantReflection    = new ReflectionClass(ParticipantForUnitTest::class);
+        $systemParticipantNamespace     = $systemParticipantReflection->getNamespaceName();
+        $participantClassName           = $systemParticipantNamespace.'\\'.$name;
+
+        return new $participantClassName;
+    }
+    /** **********************************************************************
+     * check participant provides provided data
+     *
+     * @param   array   $fields             participant fields info
+     * @return  array                       participant temp data
+     * @throws
+     ************************************************************************/
+    private function createParticipantTempData(array $fields) : array
+    {
+        $result     = [];
+        $itemsCount = rand(2, 10);
+
+        if (count($fields) <= 0)
+        {
+            return $result;
+        }
+
+        for ($index = 1; $index <= $itemsCount; $index++)
+        {
+            $item = [];
+
+            foreach ($fields as $field)
+            {
+                if ($field['REQUIRED'] || rand(0, 1) === 0)
+                {
+                    $item[$field['NAME']] = FieldsTypesManager::getField($field['TYPE'])->getRandomValue();
+                }
+            }
+
+            $result[] = $item;
+        }
+
+        return $result;
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace UnitTests\ClassTesting\Helpers;
 
 use
+    SplFileInfo,
     UnitTests\Core\ExchangeTestCase,
     PHPUnit\Framework\Error\Error as FatalError,
     Main\Helpers\Logger;
@@ -19,6 +20,7 @@ final class LoggerTest extends ExchangeTestCase
      * check Logger is singleton
      *
      * @test
+     * @throws
      ************************************************************************/
     public function isSingleton() : void
     {
@@ -32,23 +34,25 @@ final class LoggerTest extends ExchangeTestCase
      * logs folder full check
      *
      * @test
-     * @return  string                      logs folder path
+     * @return  SplFileInfo                 logs folder
      * @throws
      ************************************************************************/
-    public function logsFolderFullCheck() : string
+    public function logsFolderFullCheck() : SplFileInfo
     {
+        $logsFolder = new SplFileInfo(LOGS_FOLDER);
+
         self::assertDirectoryIsReadable
         (
-            LOGS_FOLDER,
-            self::getMessage('NOT_READABLE', ['PATH' => LOGS_FOLDER])
+            $logsFolder->getPathname(),
+            self::getMessage('NOT_READABLE', ['PATH' => $logsFolder->getPathname()])
         );
         self::assertDirectoryIsWritable
         (
-            LOGS_FOLDER,
-            self::getMessage('NOT_WRITABLE', ['PATH' => LOGS_FOLDER])
+            $logsFolder->getPathname(),
+            self::getMessage('NOT_WRITABLE', ['PATH' => $logsFolder->getPathname()])
         );
 
-        foreach (self::getAllFiles(LOGS_FOLDER) as $file)
+        foreach (self::getAllFiles($logsFolder) as $file)
         {
             $filePath       = $file->getPathname();
             $fileExtension  = $file->getExtension();
@@ -66,18 +70,18 @@ final class LoggerTest extends ExchangeTestCase
             );
         }
 
-        return LOGS_FOLDER;
+        return $logsFolder;
     }
     /** **********************************************************************
-     * check if new log file creates on call need method
+     * check creating new log file
      *
      * @test
      * @depends logsFolderFullCheck
      * @depends isSingleton
-     * @param   string  $logsFolder         logs folder path
+     * @param   SplFileInfo $logsFolder     logs folder
      * @throws
      ************************************************************************/
-    public function logFileCreating(string $logsFolder) : void
+    public function creatingLogFile(SplFileInfo $logsFolder) : void
     {
         $logger         = Logger::getInstance();
         $logsCountStart = count(self::getAllFiles($logsFolder));
@@ -98,10 +102,10 @@ final class LoggerTest extends ExchangeTestCase
      * @test
      * @depends logsFolderFullCheck
      * @depends isSingleton
-     * @param   string  $logsFolder         logs folder path
+     * @param   SplFileInfo $logsFolder         logs folder
      * @throws
      ************************************************************************/
-    public function setedMessagesExistsInLogFile(string $logsFolder) : void
+    public function setedMessagesExistsInLogFile(SplFileInfo $logsFolder) : void
     {
         $logger             = Logger::getInstance();
         $testMessageNotice  = 'This is test notice';
@@ -112,9 +116,10 @@ final class LoggerTest extends ExchangeTestCase
         $logger->addWarning($testMessageWarning);
         $logger->write();
 
-        foreach (scandir($logsFolder, SCANDIR_SORT_DESCENDING) as $file)
+        foreach (scandir($logsFolder->getPathname(), SCANDIR_SORT_DESCENDING) as $fileName)
         {
-            $logContent = file_get_contents($logsFolder.DS.$file);
+            $file = new SplFileInfo($logsFolder->getPathname().DS.$fileName);
+            $logContent  = $file->openFile('r')->fread($file->getSize());
             break;
         }
 
@@ -132,6 +137,7 @@ final class LoggerTest extends ExchangeTestCase
      *
      * @test
      * @depends isSingleton
+     * @throws
      ************************************************************************/
     public function setingErrorStopsExecuting() : void
     {

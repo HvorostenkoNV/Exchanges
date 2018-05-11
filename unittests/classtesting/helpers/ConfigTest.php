@@ -4,8 +4,9 @@ declare(strict_types=1);
 namespace UnitTests\ClassTesting\Helpers;
 
 use
-    UnitTests\Core\ExchangeTestCase,
     PHPUnit\Framework\Error\Error as FatalError,
+    SplFileInfo,
+    UnitTests\Core\ExchangeTestCase,
     Main\Helpers\Config;
 /** ***********************************************************************************************
  * Test Main\Helpers\Config class
@@ -20,7 +21,7 @@ final class ConfigTest extends ExchangeTestCase
         $paramsFilesPermissions     = '440',
         $paramTestFolder            = 'unit_test',
         $paramTestFile              = 'params_test',
-        $paramRenamedFolder         = 'params_unit_test',
+        $paramsRenamedFolder        = 'params_unit_test',
         $testParams                 =
         [
             ['param1', 'value1'],
@@ -30,6 +31,7 @@ final class ConfigTest extends ExchangeTestCase
      * check Config is singleton
      *
      * @test
+     * @throws
      ************************************************************************/
     public function isSingleton() : void
     {
@@ -43,12 +45,13 @@ final class ConfigTest extends ExchangeTestCase
      * params folder full check
      *
      * @test
-     * @return  string                      params folder path
+     * @return  SplFileInfo                     params folder
      * @throws
      ************************************************************************/
-    public function paramsFolderFullCheck() : string
+    public function paramsFolderFullCheck() : SplFileInfo
     {
-        $dirPermissions = self::getPermissions(PARAMS_FOLDER);
+        $paramsFolder   = new SplFileInfo(PARAMS_FOLDER);
+        $dirPermissions = self::getPermissions($paramsFolder->getPathname());
 
         self::assertEquals
         (
@@ -56,13 +59,13 @@ final class ConfigTest extends ExchangeTestCase
             $dirPermissions,
             self::getMessage('WRONG_PERMISSIONS',
             [
-                'PATH'      => PARAMS_FOLDER,
+                'PATH'      => $paramsFolder->getPathname(),
                 'NEED'      => $this->paramsFolderPermissions,
                 'CURRENT'   => $dirPermissions
             ])
         );
 
-        foreach (self::getAllFiles(PARAMS_FOLDER) as $file)
+        foreach (self::getAllFiles($paramsFolder) as $file)
         {
             $filePath           = $file->getPathname();
             $filePermissions    = self::getPermissions($filePath);
@@ -98,7 +101,7 @@ final class ConfigTest extends ExchangeTestCase
             );
         }
 
-        return PARAMS_FOLDER;
+        return $paramsFolder;
     }
     /** **********************************************************************
      * check Config can read params
@@ -106,12 +109,12 @@ final class ConfigTest extends ExchangeTestCase
      * @test
      * @depends paramsFolderFullCheck
      * @depends isSingleton
-     * @param   string  $paramsPath         params folder path
+     * @param   SplFileInfo $paramsFolder       params folder
      * @throws
      ************************************************************************/
-    public function canReadParams(string $paramsPath) : void
+    public function canReadParams(SplFileInfo $paramsFolder) : void
     {
-        if ($this->createTempParams($paramsPath))
+        if ($this->createTempParams($paramsFolder))
         {
             self::resetSingletonInstance(Config::class);
 
@@ -127,11 +130,11 @@ final class ConfigTest extends ExchangeTestCase
                 (
                     $value,
                     Config::getInstance()->getParam($index),
-                    'Created test param "'.$index.'" not found or not equal test value "'.$value.'"'
+                    "Created test param not found or not equal seted"
                 );
             }
 
-            $this->dropTempParams($paramsPath);
+            $this->dropTempParams($paramsFolder);
         }
         else
         {
@@ -139,17 +142,17 @@ final class ConfigTest extends ExchangeTestCase
         }
     }
     /** **********************************************************************
-     * expecting app crush with unavailable params folder
+     * expecting application crush with unavailable params folder
      *
      * @test
      * @depends paramsFolderFullCheck
      * @depends isSingleton
-     * @param   string  $paramsPath         params folder path
+     * @param   SplFileInfo $paramsFolder       params folder
      * @throws
      ************************************************************************/
-    public function crushedWithoutParamsFolder(string $paramsPath) : void
+    public function crushedWithoutParamsFolder(SplFileInfo $paramsFolder) : void
     {
-        if (rename($paramsPath, $this->paramRenamedFolder))
+        if (rename($paramsFolder->getPathname(), $this->paramsRenamedFolder))
         {
             self::resetSingletonInstance(Config::class);
 
@@ -163,7 +166,7 @@ final class ConfigTest extends ExchangeTestCase
                 self::assertTrue(true);
             }
 
-            rename($this->paramRenamedFolder, $paramsPath);
+            rename($this->paramsRenamedFolder, $paramsFolder->getPathname());
         }
         else
         {
@@ -171,55 +174,59 @@ final class ConfigTest extends ExchangeTestCase
         }
     }
     /** **********************************************************************
-     * creating temp params
+     * creating temp application params
      *
-     * @param   string  $paramsPath         params folder path
+     * @param   SplFileInfo $paramsFolder       params folder
      * @return  bool
      ************************************************************************/
-    private function createTempParams(string $paramsPath) : bool
+    private function createTempParams(SplFileInfo $paramsFolder) : bool
     {
-        $paramsTestFolderPath   = $paramsPath.DS.$this->paramTestFolder;
-        $paramsTestParamFile    = $paramsTestFolderPath.DS.$this->paramTestFile.'.php';
+        $paramsTestFolder   = new SplFileInfo($paramsFolder->getPathname().DS.$this->paramTestFolder);
+        $paramsTestFile     = new SplFileInfo($paramsTestFolder->getPathname().DS.$this->paramTestFile.'.php');
 
-        if (!is_dir($paramsTestFolderPath) && is_writable($paramsPath))
+        if (!$paramsTestFolder->isDir() && $paramsFolder->isWritable())
         {
-            if (mkdir($paramsTestFolderPath))
+            if (mkdir($paramsTestFolder->getPathname()))
             {
-                if (!file_exists($paramsTestParamFile))
+                if (!$paramsTestFile->isFile())
                 {
-                    $file       = fopen($paramsTestParamFile, 'w');
-                    $content    = '
+                    $firstParam         = $this->testParams[0][0];
+                    $firstParamValue    = $this->testParams[0][1];
+                    $secondParam        = $this->testParams[1][0];
+                    $secondParamValue   = $this->testParams[1][1];
+                    $content            = "
                     <?php return
                     [
-                        \''.$this->testParams[0][0].'\' => \''.$this->testParams[0][1].'\',
-                        \''.$this->testParams[1][0].'\' => \''.$this->testParams[1][1].'\'
-                    ];';
+                        '$firstParam'   => '$firstParamValue',
+                        '$secondParam'  => '$secondParamValue'
+                    ];";
 
-                    fwrite($file, $content);
-                    fclose($file);
+                    $paramsTestFile
+                        ->openFile('w')
+                        ->fwrite($content);
                 }
             }
         }
 
-        return file_exists($paramsTestParamFile);
+        return $paramsTestFile->isFile();
     }
     /** **********************************************************************
-     * deleting temp params
+     * delete temp application params
      *
-     * @param   string  $paramsPath         params folder path
+     * @param   SplFileInfo $paramsFolder       params folder
      ************************************************************************/
-    private function dropTempParams(string $paramsPath) : void
+    private function dropTempParams(SplFileInfo $paramsFolder) : void
     {
-        $paramsTestFolderPath   = $paramsPath.DS.$this->paramTestFolder;
-        $paramsTestParamFile    = $paramsTestFolderPath.DS.$this->paramTestFile.'.php';
+        $paramsTestFolder   = new SplFileInfo($paramsFolder->getPathname().DS.$this->paramTestFolder);
+        $paramsTestFile     = new SplFileInfo($paramsTestFolder->getPathname().DS.$this->paramTestFile.'.php');
 
-        if (is_file($paramsTestParamFile))
+        if ($paramsTestFile->isFile())
         {
-            if (unlink($paramsTestParamFile))
+            if (unlink($paramsTestFile->getPathname()))
             {
-                if (is_dir($paramsTestFolderPath))
+                if ($paramsTestFolder->isDir())
                 {
-                    rmdir($paramsTestFolderPath);
+                    rmdir($paramsTestFolder->getPathname());
                 }
             }
         }

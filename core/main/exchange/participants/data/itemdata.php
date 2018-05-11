@@ -25,13 +25,14 @@ class ItemData extends MapData
     {
         foreach ($data as $key => $value)
         {
-            if (!is_string($key) || strlen($key) <= 0)
+            if (!$value instanceof FieldValue)
             {
-                throw new InvalidArgumentException('incorrect array data: data keys must be string');
+                $needClassName = FieldValue::class;
+                throw new InvalidArgumentException("values must be instance of \"$needClassName\"");
             }
-            if (!$this->checkValueValid($value))
+            if ($key !== $value->getField()->getParam('name'))
             {
-                throw new InvalidArgumentException('incorrect array data: data values must be scalar or array of scalar values with same type');
+                throw new InvalidArgumentException('keys must fields names');
             }
         }
 
@@ -84,61 +85,16 @@ class ItemData extends MapData
      ************************************************************************/
     public function set($key, $value) : void
     {
-        if (!is_string($key) || strlen($key) <= 0)
+        if (!$value instanceof FieldValue)
         {
-            throw new InvalidArgumentException('key must be string');
+            $needClassName = FieldValue::class;
+            throw new InvalidArgumentException("values must be instance of \"$needClassName\"");
         }
-        if (!$this->checkValueValid($value))
+        if ($key !== $value->getField()->getParam('name'))
         {
-            throw new InvalidArgumentException('value must be scalar or array of scalar values with same type');
+            throw new InvalidArgumentException('keys must fields names');
         }
 
         parent::set($key, $value);
-    }
-    /** **********************************************************************
-     * check value valid
-     *
-     * @param   mixed   $value              value
-     * @return  bool                        value valid
-     ************************************************************************/
-    private function checkValueValid($value)
-    {
-        switch (gettype($value))
-        {
-            case 'boolean':
-            case 'integer':
-            case 'double':
-            case 'string':
-                return true;
-                break;
-            case 'array':
-                if (count($value) == 0)
-                {
-                    return true;
-                }
-
-                $valuesType = gettype(array_values($value)[0]);
-
-                if (!in_array($valuesType, ['boolean', 'integer', 'double', 'string']))
-                {
-                    return false;
-                }
-
-                foreach ($value as $arrayValue)
-                {
-                    if (gettype($arrayValue) != $valuesType)
-                    {
-                        return false;
-                    }
-                }
-
-                return true;
-                break;
-            case 'object':
-            case 'resource':
-            case 'null':
-            default:
-                return false;
-        }
     }
 }

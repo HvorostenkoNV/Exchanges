@@ -6,6 +6,7 @@ namespace UnitTests\ClassTesting\Helpers;
 use
     InvalidArgumentException,
     DomainException,
+    SplFileInfo,
     UnitTests\Core\ExchangeTestCase,
     Main\Helpers\Config,
     Main\Helpers\Localization;
@@ -69,17 +70,17 @@ final class LocalizationTest extends ExchangeTestCase
      * @test
      * @depends locFolderParamExist
      * @param   string  $locFolderParam         loc folder param value
-     * @return  string                          loc folder path
+     * @return  SplFileInfo                     loc folder
      * @throws
      ************************************************************************/
-    public function locFolderFullCheck(string $locFolderParam) : string
+    public function locFolderFullCheck(string $locFolderParam) : SplFileInfo
     {
-        $locFolder = DOCUMENT_ROOT.DS.$locFolderParam;
+        $locFolder = new SplFileInfo(DOCUMENT_ROOT.DS.$locFolderParam);
 
         self::assertDirectoryIsReadable
         (
-            $locFolder,
-            self::getMessage('NOT_READABLE', ['PATH' => $locFolder])
+            $locFolder->getPathname(),
+            self::getMessage('NOT_READABLE', ['PATH' => $locFolder->getPathname()])
         );
 
         foreach (self::getAllFiles($locFolder) as $file)
@@ -121,17 +122,17 @@ final class LocalizationTest extends ExchangeTestCase
      * @depends defaultLocFolderParamExist
      * @param   string  $locFolder              loc folder path
      * @param   string  $defaultLangParam       default loc folder param value
-     * @return  string                          default loc folder path
+     * @return  SplFileInfo                     default loc folder
      * @throws
      ************************************************************************/
-    public function defaultLocFolderFullCheck(string $locFolder, string $defaultLangParam) : string
+    public function defaultLocFolderFullCheck(string $locFolder, string $defaultLangParam) : SplFileInfo
     {
-        $defaultLangFolder = $locFolder.DS.$defaultLangParam;
+        $defaultLangFolder = new SplFileInfo($locFolder.DS.$defaultLangParam);
 
         self::assertDirectoryIsReadable
         (
-            $defaultLangFolder,
-            self::getMessage('NOT_READABLE', ['PATH' => $defaultLangFolder])
+            $defaultLangFolder->getPathname(),
+            self::getMessage('NOT_READABLE', ['PATH' => $defaultLangFolder->getPathname()])
         );
 
         return $defaultLangFolder;
@@ -140,15 +141,17 @@ final class LocalizationTest extends ExchangeTestCase
      * check throwing exception while construct with incorrect params
      *
      * @test
+     * @throws
      ************************************************************************/
     public function exceptionWithIncorrectParams() : void
     {
         try
         {
             new Localization('');
-            self::fail('Expect '.InvalidArgumentException::class.' exception on creating loc object with empty path argument');
+            $exceptionName = InvalidArgumentException::class;
+            self::fail("Expect $exceptionName exception on creating loc object with empty path argument");
         }
-        catch (InvalidArgumentException $error)
+        catch (InvalidArgumentException $exception)
         {
             self::assertTrue(true);
         }
@@ -158,23 +161,24 @@ final class LocalizationTest extends ExchangeTestCase
      *
      * @test
      * @depends locFolderFullCheck
-     * @param   string  $locFolder              loc folder path
+     * @param   SplFileInfo $locFolder          loc folder
      * @throws
      ************************************************************************/
-    public function exceptionWithFolderNotExist(string $locFolder) : void
+    public function exceptionWithFolderNotExist(SplFileInfo $locFolder) : void
     {
-        $wrongLocFolder = 'test';
-        while (is_dir($locFolder.DS.$wrongLocFolder))
+        $wrongLocFolder = new SplFileInfo($locFolder->getPathname().DS.'test');
+        while ($wrongLocFolder->isDir())
         {
-            $wrongLocFolder .= '1';
+            $wrongLocFolder = new SplFileInfo($wrongLocFolder->getPathname().'1');
         }
 
         try
         {
-            new Localization($wrongLocFolder);
-            self::fail('Expect '.DomainException::class.' exception on creating loc object with incorrect path argument');
+            new Localization($wrongLocFolder->getBasename());
+            $exceptionName = DomainException::class;
+            self::fail("Expect $exceptionName exception on creating loc object with incorrect path argument");
         }
-        catch (DomainException $error)
+        catch (DomainException $exception)
         {
             self::assertTrue(true);
         }
@@ -184,10 +188,10 @@ final class LocalizationTest extends ExchangeTestCase
      *
      * @test
      * @depends locFolderFullCheck
-     * @param   string  $locFolder              loc folder path
+     * @param   SplFileInfo $locFolder          loc folder
      * @throws
      ************************************************************************/
-    public function canReadParams(string $locFolder) : void
+    public function canReadParams(SplFileInfo $locFolder) : void
     {
         if ($this->createTempLocParams($locFolder))
         {
@@ -204,7 +208,7 @@ final class LocalizationTest extends ExchangeTestCase
                 (
                     $value,
                     $localization->getMessage($index),
-                    'Created test loc message "'.$index.'" not found or not equal test value "'.$value.'"'
+                    "Created test loc message not found or not equal seted"
                 );
             }
 
@@ -216,55 +220,59 @@ final class LocalizationTest extends ExchangeTestCase
         }
     }
     /** **********************************************************************
-     * creating temp loc params
+     * creating temp application loc params
      *
-     * @param   string  $locFolder              loc folder path
+     * @param   SplFileInfo $locFolder          loc folder
      * @return  bool
      ************************************************************************/
-    private function createTempLocParams(string $locFolder) : bool
+    private function createTempLocParams(SplFileInfo $locFolder) : bool
     {
-        $locTestFolderPath  = $locFolder.DS.$this->locTestFolder;
-        $locTestParamFile   = $locTestFolderPath.DS.$this->locTestFile.'.php';
+        $locTestFolder  = new SplFileInfo($locFolder->getPathname().DS.$this->locTestFolder);
+        $locTestFile    = new SplFileInfo($locTestFolder->getPathname().DS.$this->locTestFile.'.php');
 
-        if (!is_dir($locTestFolderPath) && is_writable($locFolder))
+        if (!$locTestFolder->isDir() && $locFolder->isWritable())
         {
-            if (mkdir($locTestFolderPath))
+            if (mkdir($locTestFolder->getPathname()))
             {
-                if (!file_exists($locTestParamFile))
+                if (!$locTestFile->isFile())
                 {
-                    $file       = fopen($locTestParamFile, 'w');
-                    $content    = '
+                    $firstParam         = $this->locTestParams[0][0];
+                    $firstParamValue    = $this->locTestParams[0][1];
+                    $secondParam        = $this->locTestParams[1][0];
+                    $secondParamValue   = $this->locTestParams[1][1];
+                    $content            = "
                     <?php return
                     [
-                        \''.$this->locTestParams[0][0].'\' => \''.$this->locTestParams[0][1].'\',
-                        \''.$this->locTestParams[1][0].'\' => \''.$this->locTestParams[1][1].'\'
-                    ];';
+                        '$firstParam'   => '$firstParamValue',
+                        '$secondParam'  => '$secondParamValue'
+                    ];";
 
-                    fwrite($file, $content);
-                    fclose($file);
+                    $locTestFile
+                        ->openFile('w')
+                        ->fwrite($content);
                 }
             }
         }
 
-        return file_exists($locTestParamFile);
+        return $locTestFile->isFile();
     }
     /** **********************************************************************
-     * deleting temp loc params
+     * delete temp application loc params
      *
-     * @param   string  $locFolder              loc folder path
+     * @param   SplFileInfo $locFolder          loc folder
      ************************************************************************/
-    private function dropTempLocParams(string $locFolder) : void
+    private function dropTempLocParams(SplFileInfo $locFolder) : void
     {
-        $locTestFolderPath  = $locFolder.DS.$this->locTestFolder;
-        $locTestParamFile   = $locTestFolderPath.DS.$this->locTestFile.'.php';
+        $locTestFolder  = new SplFileInfo($locFolder->getPathname().DS.$this->locTestFolder);
+        $locTestFile    = new SplFileInfo($locTestFolder->getPathname().DS.$this->locTestFile.'.php');
 
-        if (is_file($locTestParamFile))
+        if ($locTestFile->isFile())
         {
-            if (unlink($locTestParamFile))
+            if (unlink($locTestFile->getPathname()))
             {
-                if (is_dir($locTestFolderPath))
+                if ($locTestFolder->isDir())
                 {
-                    rmdir($locTestFolderPath);
+                    rmdir($locTestFolder->getPathname());
                 }
             }
         }

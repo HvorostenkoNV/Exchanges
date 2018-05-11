@@ -19,11 +19,18 @@ class MapData implements Map
      * construct
      *
      * @param   array   $data               data
+     * @throws  InvalidArgumentException    incorrect key type
      ************************************************************************/
     public function __construct(array $data = [])
     {
         foreach ($data as $key => $value)
         {
+            if (!is_string($key) && !is_int($key))
+            {
+                $keyType = gettype($key);
+                throw new InvalidArgumentException("key must be string or integer, $keyType caught");
+            }
+
             $hashedValue                        = $this->getVariableHash($value);
             $this->data[$key]                   = $value;
             $this->hashedValues[$hashedValue]   = null;
@@ -122,7 +129,8 @@ class MapData implements Map
     {
         if (!is_string($key) && !is_int($key))
         {
-            throw new InvalidArgumentException('Incorrect key type');
+            $keyType = gettype($key);
+            throw new InvalidArgumentException("key must be string or integer, $keyType caught");
         }
 
         $hashedValue                        = $this->getVariableHash($value);
@@ -152,7 +160,7 @@ class MapData implements Map
             case 'resource':
                 return strval((int) $value);
                 break;
-            case 'null':
+            case 'NULL':
                 return 'null-value';
                 break;
             case 'string':

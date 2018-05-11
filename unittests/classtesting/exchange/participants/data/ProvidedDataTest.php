@@ -16,44 +16,52 @@ use
  *************************************************************************************************/
 final class ProvidedDataTest extends QueueDataClass
 {
-    protected static $queueClassName = ProvidedData::class;
+    /** **********************************************************************
+     * get Queue class name
+     *
+     * @return  string                      Queue class name
+     ************************************************************************/
+    public static function getQueueClassName() : string
+    {
+        return ProvidedData::class;
+    }
     /** **********************************************************************
      * get correct data
      *
-     * @return  array                   correct data array
+     * @return  array                       correct data array
      * @throws
      ************************************************************************/
-    protected static function getCorrectValues() : array
+    public static function getCorrectDataValues() : array
     {
-        parent::getCorrectValues();
+        $result             = [];
+        $itemsCorrectData   = ItemDataTest::getCorrectData();
 
-        $result = [];
-
-        for ($index = 1; $index <= 3; $index++)
+        for ($index = 1; $index <= 10; $index++)
         {
-            $fieldsValues = new ItemData;
-            $fieldsValues->set('field', 'value');
-            $result[] = $fieldsValues;
+            $result[] = new ItemData($itemsCorrectData);
         }
 
         return $result;
     }
     /** **********************************************************************
-     * get incorrect values
+     * get incorrect data
      *
-     * @return  array                   incorrect values
+     * @return  array                       incorrect data array
      ************************************************************************/
-    protected static function getIncorrectValues() : array
+    public static function getIncorrectDataValues() : array
     {
-        parent::getIncorrectValues();
-
         return
         [
             'string',
-            1,
-            1.5,
+            '',
+            2,
+            2.5,
+            0,
             true,
+            false,
             [1, 2, 3],
+            ['string', '', 2.5, 0, true, false],
+            [],
             new ProvidedData,
             new MapData,
             new ItemData,

@@ -13,9 +13,10 @@ use
  * @package exchange_unit_tests
  * @author  Hvorostenko
  *************************************************************************************************/
-final class TempDBRecordsCreator
+final class TempDBRecordsGenerator
 {
-    private static $pdo = null;
+    private static
+        $pdo = null;
     private
         $tempDBTables   = [],
         $tempDBRecords  = [];

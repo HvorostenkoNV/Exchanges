@@ -18,7 +18,7 @@ final class DBFieldsValuesTest extends MapDataClass
      *
      * @return  string                      Map class name
      ************************************************************************/
-    protected static function getMapClassName() : string
+    public static function getMapClassName() : string
     {
         return DBFieldsValues::class;
     }
@@ -26,44 +26,52 @@ final class DBFieldsValuesTest extends MapDataClass
      * get correct data
      * @return  array                       correct data array
      ************************************************************************/
-    protected static function getCorrectData() : array
+    public static function getCorrectData() : array
     {
         return
         [
-            'One'   => 'string',
-            'two'   => 1,
-            'three' => 1.5,
-            'four'  => null
+            'one'   => 'string',
+            'two'   => '',
+            'three' => 2,
+            'four'  => 2.5,
+            'five'  => 0,
+            'six'   => null
         ];
     }
     /** **********************************************************************
      * get incorrect keys
-     * @return  array                       incorrect keys
+     * @return  array                       incorrect data keys
      ************************************************************************/
-    protected static function getIncorrectKeys() : array
+    public static function getIncorrectDataKeys() : array
     {
         return
         [
             '',
-            1,
-            5.5,
+            2,
+            2.5,
+            0,
             true,
+            false,
             [1, 2, 3],
+            ['string', '', 2.5, 0, true, false],
+            [],
             new DBFieldsValues,
             null
         ];
     }
     /** **********************************************************************
      * get incorrect values
-     * @return  array                       incorrect values
+     * @return  array                       incorrect data values
      ************************************************************************/
-    protected static function getIncorrectValues() : array
+    public static function getIncorrectDataValues() : array
     {
         return
         [
             true,
+            false,
             [1, 2, 3],
-            new DBFieldsValues
+            ['string', '', 2.5, 0, true, false],
+            []
         ];
     }
 }

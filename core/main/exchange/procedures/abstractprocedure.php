@@ -41,7 +41,7 @@ abstract class AbstractProcedure implements Procedure
             $error          = $exception->getMessage();
             $procedureName  = static::class;
 
-            $logger->addWarning("failed to get \"$procedureName\" procedure participants: $error");
+            $logger->addWarning("Failed to get \"$procedureName\" procedure participants: $error");
             return $result;
         }
 
@@ -59,7 +59,7 @@ abstract class AbstractProcedure implements Procedure
                 $error          = $exception->getMessage();
                 $procedureName  = static::class;
 
-                $logger->addWarning("failed to create participant \"$participantClassName\" for procedure \"$procedureName\": $error");
+                $logger->addWarning("Failed to create participant \"$participantClassName\" for procedure \"$procedureName\": $error");
             }
         }
 

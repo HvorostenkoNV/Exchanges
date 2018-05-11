@@ -17,23 +17,25 @@ final class SystemTest extends ExchangeTestCase
      * check PHP version
      *
      * @test
+     * @throws
      ************************************************************************/
     public function phpVersion() : void
     {
         $phpVersionExplode  = explode('.', phpversion());
         $phpVersion         = floatval($phpVersionExplode[0].'.'.$phpVersionExplode[1]);
+        $needPhpVersion     = $this->needPhpVersion;
 
         self::assertTrue
         (
             $phpVersion >= $this->needPhpVersion,
-            'PHP version have to be '.$this->needPhpVersion.' or higher'
+            "PHP version have to be $needPhpVersion or higher"
         );
     }
     /** **********************************************************************
      * check document root constant exist
      *
      * @test
-     * @return  string                  document root constant value
+     * @return  string                          document root constant value
      * @throws
      ************************************************************************/
     public function documentRootConstantExist() : string
@@ -51,8 +53,10 @@ final class SystemTest extends ExchangeTestCase
      *
      * @test
      * @depends documentRootConstantExist
+     * @param   string  $documentRoot           document root path
+     * @throws
      ************************************************************************/
-    public function paramsFolderConstantExist() : void
+    public function paramsFolderConstantExist(string $documentRoot) : void
     {
         self::assertTrue
         (
@@ -61,7 +65,7 @@ final class SystemTest extends ExchangeTestCase
         );
         self::assertNotEquals
         (
-            DOCUMENT_ROOT, PARAMS_FOLDER,
+            $documentRoot, PARAMS_FOLDER,
             'Params constant equals document root'
         );
     }
@@ -70,8 +74,10 @@ final class SystemTest extends ExchangeTestCase
      *
      * @test
      * @depends documentRootConstantExist
+     * @param   string  $documentRoot           document root path
+     * @throws
      ************************************************************************/
-    public function logsFolderConstantExist() : void
+    public function logsFolderConstantExist(string $documentRoot) : void
     {
         self::assertTrue
         (
@@ -80,7 +86,7 @@ final class SystemTest extends ExchangeTestCase
         );
         self::assertNotEquals
         (
-            DOCUMENT_ROOT, LOGS_FOLDER,
+            $documentRoot, LOGS_FOLDER,
             'Logs constant equals document root'
         );
     }

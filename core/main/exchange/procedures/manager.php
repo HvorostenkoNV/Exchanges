@@ -6,6 +6,7 @@ namespace Main\Exchange\Procedures;
 use
     Throwable,
     RuntimeException,
+    InvalidArgumentException,
     Main\Data\MapData,
     Main\Helpers\DB,
     Main\Helpers\Logger,
@@ -42,7 +43,7 @@ class Manager
         catch (RuntimeException $exception)
         {
             $error = $exception->getMessage();
-            $logger->addWarning("failed to get procedures: $error");
+            $logger->addWarning("Failed to get procedures: $error");
             return $result;
         }
 
@@ -58,7 +59,7 @@ class Manager
             catch (Throwable $exception)
             {
                 $error = $exception->getMessage();
-                $logger->addWarning("failed to create procedure \"$procedureClassName\": $error");
+                $logger->addWarning("Failed to create procedure \"$procedureClassName\": $error");
             }
         }
 
@@ -85,13 +86,20 @@ class Manager
             }
         );
 
-        if (is_bool($activity))
+        try
         {
-            $result->set('ACTIVITY', $activity);
+            if (is_bool($activity))
+            {
+                $result->set('ACTIVITY', $activity);
+            }
+            if (count($names) > 0)
+            {
+                $result->set('NAME', $names);
+            }
         }
-        if (count($names) > 0)
+        catch (InvalidArgumentException $exception)
         {
-            $result->set('NAME', $names);
+
         }
 
         return $result;

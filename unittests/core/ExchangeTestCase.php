@@ -19,7 +19,7 @@ use
  *************************************************************************************************/
 abstract class ExchangeTestCase extends TestCase
 {
-    private static $messages   =
+    private static $messages =
     [
         'SINGLETON_IMPLEMENTATION_FAILED'   => 'There is a possibility to create more than one instance of #CLASS_NAME# class',
         'CONSTANT_NOT_DEFINED'              => 'Constant "#CONSTANT_NAME#" is not defined',
@@ -119,16 +119,16 @@ abstract class ExchangeTestCase extends TestCase
     /** **********************************************************************
      * get all files in dir
      *
-     * @param   string  $path               full dir path
-     * @return  SplFileInfo[]               array of SplFileInfo objects
+     * @param   SplFileInfo $folder         folder
+     * @return  SplFileInfo[]               folder files
      ************************************************************************/
-    protected static function getAllFiles(string $path) : array
+    protected static function getAllFiles(SplFileInfo $folder) : array
     {
         $result = [];
 
         try
         {
-            $directory  = new RecursiveDirectoryIterator($path);
+            $directory  = new RecursiveDirectoryIterator($folder->getPathname());
             $iterator   = new RecursiveIteratorIterator($directory);
 
             while ($iterator->valid())

@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace UnitTests\ClassTesting;
 
 use
+    PHPUnit\Framework\ExpectationFailedException                as UnitTestExpectationFailedException,
+    SebastianBergmann\RecursionContext\InvalidArgumentException as UnitTestInvalidArgumentException,
     UnitTests\Core\ExchangeTestCase,
     Main\Application;
 /** ***********************************************************************************************
@@ -18,6 +20,8 @@ final class ApplicationTest extends ExchangeTestCase
      * check application is singleton
      *
      * @test
+     * @throws  UnitTestExpectationFailedException
+     * @throws  UnitTestInvalidArgumentException
      ************************************************************************/
     public function isSingleton() : void
     {

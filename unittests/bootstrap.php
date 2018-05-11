@@ -9,7 +9,9 @@ require $_SERVER['DOCUMENT_ROOT'].DIRECTORY_SEPARATOR.'core'.DIRECTORY_SEPARATOR
 
 spl_autoload_register(function($className)
 {
-    $classNameString    = strtolower($className);
+    $classNameExplode   = explode('\\', $className);
+    $classShortName     = array_pop($classNameExplode);
+    $classNameString    = strtolower(implode('\\', $classNameExplode)).'\\'.$classShortName;
     $classNameString    = str_replace('\\', DIRECTORY_SEPARATOR, $classNameString);
     $classFilePath      = $_SERVER['DOCUMENT_ROOT'].DIRECTORY_SEPARATOR.$classNameString.'.php';
     $file               = new SplFileInfo($classFilePath);

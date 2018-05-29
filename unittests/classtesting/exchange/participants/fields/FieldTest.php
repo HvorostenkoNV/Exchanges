@@ -19,21 +19,25 @@ use
 final class FieldTest extends ExchangeTestCase
 {
     /** **********************************************************************
-     * check creating object
+     * check correct creating object
      *
      * @test
      * @throws
      ************************************************************************/
-    public function creatingObject() : void
+    public function correctCreatingObject() : void
     {
-        $correctFieldParams     = $this->getCorrectData();
-        $incorrectFieldParams   = $this->getIncorrectData();
-
-        foreach ($correctFieldParams as $params)
+        foreach ($this->getCorrectData() as $values)
         {
             try
             {
-                new ParticipantField(new MapData($params));
+                $params = new MapData;
+
+                foreach ($values as $key => $value)
+                {
+                    $params->set($key, $value);
+                }
+
+                new ParticipantField($params);
                 self::assertTrue(true);
             }
             catch (Throwable $exception)
@@ -42,13 +46,29 @@ final class FieldTest extends ExchangeTestCase
                 self::fail("Error on creating new participant field: $error");
             }
         }
+    }
+    /** **********************************************************************
+     * check incorrect creating object
+     *
+     * @test
+     * @throws
+     ************************************************************************/
+    public function incorrectCreatingObject() : void
+    {
+        $exceptionName = InvalidArgumentException::class;
 
-        foreach ($incorrectFieldParams as $params)
+        foreach ($this->getIncorrectData() as $values)
         {
             try
             {
-                $exceptionName = InvalidArgumentException::class;
-                new ParticipantField(new MapData($params));
+                $params = new MapData;
+
+                foreach ($values as $key => $value)
+                {
+                    $params->set($key, $value);
+                }
+
+                new ParticipantField($params);
                 self::fail("Expect \"$exceptionName\" on creating new participant field with incorrect params");
             }
             catch (InvalidArgumentException $exception)
@@ -61,17 +81,22 @@ final class FieldTest extends ExchangeTestCase
      * check field params reading operations
      *
      * @test
-     * @depends creatingObject
+     * @depends correctCreatingObject
      * @throws
      ************************************************************************/
     public function paramsReading() : void
     {
-        $correctFieldParams = $this->getCorrectData();
-
-        foreach ($correctFieldParams as $params)
+        foreach ($this->getCorrectData() as $values)
         {
-            $field = new ParticipantField(new MapData($params));
-            foreach ($params as $key => $value)
+            $params = new MapData;
+
+            foreach ($values as $key => $value)
+            {
+                $params->set($key, $value);
+            }
+
+            $field = new ParticipantField($params);
+            foreach ($values as $key => $value)
             {
                 self::assertEquals
                 (
@@ -80,6 +105,35 @@ final class FieldTest extends ExchangeTestCase
                     "Geted \"$key\" param not equals seted before"
                 );
             }
+        }
+    }
+    /** **********************************************************************
+     * check getting field type operation
+     *
+     * @test
+     * @depends correctCreatingObject
+     * @throws
+     ************************************************************************/
+    public function gettingFieldType() : void
+    {
+        foreach ($this->getCorrectData() as $values)
+        {
+            $params     = new MapData;
+            $fieldType  = $values['type'];
+
+            foreach ($values as $key => $value)
+            {
+                $params->set($key, $value);
+            }
+
+            $participantField = new ParticipantField($params);
+
+            self::assertEquals
+            (
+                FieldsTypesManager::getField($fieldType),
+                $participantField->getFieldType(),
+                'Expect get same field type object as was seted by type'
+            );
         }
     }
     /** **********************************************************************

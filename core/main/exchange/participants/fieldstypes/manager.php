@@ -12,7 +12,7 @@ use
 /** ***********************************************************************************************
  * Participant fields types manager
  *
- * @package exchange_exchange
+ * @package exchange_exchange_participants
  * @author  Hvorostenko
  *************************************************************************************************/
 class Manager

@@ -85,7 +85,7 @@ final class BooleanFieldTest extends ParticipantFieldClass
                 [1, 2.5, 0, 'someString', '', true, false, [], new MapData, null]
             ],
             [new MapData],
-            [null,          '']
+            [null]
         ];
     }
 }

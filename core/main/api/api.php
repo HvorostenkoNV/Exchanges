@@ -7,7 +7,7 @@ use Main\Singleton;
 /** ***********************************************************************************************
  * API class, API entrance point
  *
- * @package exchange_main
+ * @package exchange_api
  * @method  static API getInstance
  * @author  Hvorostenko
  * TODO

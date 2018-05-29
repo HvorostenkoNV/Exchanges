@@ -11,11 +11,14 @@ use
     Main\Helpers\Logger,
     Main\Helpers\Data\DBQueryResult,
     Main\Exchange\Participants\Participant,
-    Main\Exchange\Procedures\Data\ParticipantsQueue;
+    Main\Exchange\Procedures\Data\ParticipantsSet,
+    Main\Exchange\Procedures\Rules\FieldsMatchingRules,
+    Main\Exchange\Procedures\Rules\DataMatchingRules,
+    Main\Exchange\Procedures\Rules\DataCombiningRules;
 /** ***********************************************************************************************
  * Application procedure abstract class
  *
- * @package exchange_exchange
+ * @package exchange_exchange_procedures
  * @author  Hvorostenko
  *************************************************************************************************/
 abstract class AbstractProcedure implements Procedure
@@ -23,12 +26,12 @@ abstract class AbstractProcedure implements Procedure
     /** **********************************************************************
      * get participants
      *
-     * @return  ParticipantsQueue           participants collection
+     * @return  ParticipantsSet             participants collection
      * @throws
      ************************************************************************/
-    final public function getParticipants() : ParticipantsQueue
+    final public function getParticipants() : ParticipantsSet
     {
-        $result         = new ParticipantsQueue;
+        $result         = new ParticipantsSet;
         $logger         = Logger::getInstance();
         $queryResult    = null;
 
@@ -58,12 +61,41 @@ abstract class AbstractProcedure implements Procedure
             {
                 $error          = $exception->getMessage();
                 $procedureName  = static::class;
-
                 $logger->addWarning("Failed to create participant \"$participantClassName\" for procedure \"$procedureName\": $error");
             }
         }
 
+        $result->rewind();
         return $result;
+    }
+    /** **********************************************************************
+     * get participants fields matching rules
+     *
+     * @return  FieldsMatchingRules         participants
+     * //TODO
+     ************************************************************************/
+    final public function getFieldsMatchingRules() : FieldsMatchingRules
+    {
+        return new FieldsMatchingRules;
+    }
+    /** **********************************************************************
+     * get participants data matching rules
+     *
+     * @return  DataMatchingRules           participants
+     ************************************************************************/
+    final public function getDataMatchingRules() : DataMatchingRules
+    {
+        return new DataMatchingRules;
+    }
+    /** **********************************************************************
+     * get participants fields values combining rules
+     *
+     * @return  DataCombiningRules              participants
+     * //TODO
+     ************************************************************************/
+    final public function getDataCombiningRules() : DataCombiningRules
+    {
+        return new DataCombiningRules;
     }
     /** **********************************************************************
      * query procedure participant

@@ -5,12 +5,13 @@ namespace Main\Exchange\Participants\Fields;
 
 use
     InvalidArgumentException,
-    Main\Data\MapData,
-    Main\Exchange\Participants\FieldsTypes\Manager as FieldsTypesManager;
+    Main\Data\Map,
+    Main\Exchange\Participants\FieldsTypes\Manager  as FieldsTypesManager,
+    Main\Exchange\Participants\FieldsTypes\Field    as FieldType;
 /** ***********************************************************************************************
  * Participant field
  *
- * @package exchange_exchange
+ * @package exchange_exchange_participants
  * @author  Hvorostenko
  *************************************************************************************************/
 class Field
@@ -21,10 +22,10 @@ class Field
     /** **********************************************************************
      * construct
      *
-     * @param   MapData     $params         field params
+     * @param   Map $params                 field params
      * @throws  InvalidArgumentException    incorrect params
      ************************************************************************/
-    final public function __construct(MapData $params)
+    final public function __construct(Map $params)
     {
         try
         {
@@ -49,13 +50,22 @@ class Field
             : null;
     }
     /** **********************************************************************
+     * get field type
+     *
+     * @return  FieldType                   field type object
+     ************************************************************************/
+    final public function getFieldType() : FieldType
+    {
+        return $this->type;
+    }
+    /** **********************************************************************
      * validate field params
      *
-     * @param   MapData $params             field params
-     * @return  MapData                     field validated params
+     * @param   Map $params                 field params
+     * @return  Map                         field validated params
      * @throws  InvalidArgumentException    incorrect params
      ************************************************************************/
-    protected function validateParams(MapData $params) : MapData
+    private function validateParams(Map $params) : Map
     {
         $type       = $params->hasKey('type')       ? $params->get('type')      : '';
         $name       = $params->hasKey('name')       ? $params->get('name')      : '';

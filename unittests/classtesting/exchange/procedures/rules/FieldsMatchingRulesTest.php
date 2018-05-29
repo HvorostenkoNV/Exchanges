@@ -8,14 +8,14 @@ use
     Main\Exchange\Participants\Users1C      as Users1CParticipant,
     Main\Exchange\Participants\UsersAD      as UsersADParticipant,
     Main\Exchange\Participants\UsersBitrix  as UsersBitrixParticipant,
-    Main\Exchange\Procedures\Rules\MatchingRules;
+    Main\Exchange\Procedures\Rules\FieldsMatchingRules;
 /** ***********************************************************************************************
- * Test Main\Exchange\Procedures\Rules\MatchingRules class
+ * Test Main\Exchange\Procedures\Rules\FieldsMatchingRules class
  *
  * @package exchange_unit_tests
  * @author  Hvorostenko
  *************************************************************************************************/
-final class MatchingRulesTest extends ExchangeTestCase
+final class FieldsMatchingRulesTest extends ExchangeTestCase
 {
     /** **********************************************************************
      * testing aliases read/write operations
@@ -25,18 +25,18 @@ final class MatchingRulesTest extends ExchangeTestCase
      ************************************************************************/
     public function aliasesReadWriteOperations() : void
     {
-        $matchingRules  = new MatchingRules;
-        $fieldAlias     = 'fieldAlias';
+        $rules      = new FieldsMatchingRules;
+        $fieldAlias = 'fieldAlias';
 
         foreach ([new Users1CParticipant, new UsersADParticipant, new UsersBitrixParticipant] as $participant)
         {
             $fieldName = get_class($participant).'Field';
 
-            $matchingRules->attachFieldAlias($participant, $fieldName, $fieldAlias);
+            $rules->attachFieldAlias($participant, $fieldName, $fieldAlias);
             self::assertEquals
             (
                 $fieldName,
-                $matchingRules->getFieldByAlias($participant, $fieldAlias),
+                $rules->getFieldByAlias($participant, $fieldAlias),
                 'Expect get field name by alias same as seted'
             );
         }
@@ -50,16 +50,16 @@ final class MatchingRulesTest extends ExchangeTestCase
      ************************************************************************/
     public function aliasesDropOperation() : void
     {
-        $matchingRules  = new MatchingRules;
+        $rules          = new FieldsMatchingRules;
         $participant    = new Users1CParticipant;
         $fieldAlias     = 'fieldAlias';
 
-        $matchingRules->attachFieldAlias($participant, 'field', $fieldAlias);
-        $matchingRules->dropFieldAlias($participant, $fieldAlias);
+        $rules->attachFieldAlias($participant, 'field', $fieldAlias);
+        $rules->dropFieldAlias($participant, $fieldAlias);
 
         self::assertNull
         (
-            $matchingRules->getFieldByAlias($participant, $fieldAlias),
+            $rules->getFieldByAlias($participant, $fieldAlias),
             'Expect null on getting field by alias after drop alias'
         );
     }

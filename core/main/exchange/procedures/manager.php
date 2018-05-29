@@ -7,16 +7,17 @@ use
     Throwable,
     RuntimeException,
     InvalidArgumentException,
+    Main\Data\Map,
     Main\Data\MapData,
     Main\Helpers\DB,
     Main\Helpers\Logger,
     Main\Helpers\Data\DBQueryResult,
-    Main\Exchange\Procedures\Data\ProceduresQueue;
+    Main\Exchange\Procedures\Data\ProceduresSet;
 /** ***********************************************************************************************
  * Application procedures manager
  * Provides procedures ability work with
  *
- * @package exchange_exchange
+ * @package exchange_exchange_procedures
  * @author  Hvorostenko
  *************************************************************************************************/
 class Manager
@@ -24,13 +25,13 @@ class Manager
     /** **********************************************************************
      * get procedures by filter
      *
-     * @param   MapData|null    $filter     filter
-     * @return  ProceduresQueue             queue of procedures
+     * @param   Map|null    $filter         filter
+     * @return  ProceduresSet               queue of procedures
      * @throws
      ************************************************************************/
-    public static function getProcedures(MapData $filter = null) : ProceduresQueue
+    public static function getProcedures(Map $filter = null) : ProceduresSet
     {
-        $result         = new ProceduresQueue();
+        $result         = new ProceduresSet;
         $db             = null;
         $logger         = Logger::getInstance();
         $filter         = self::validateFilter($filter);
@@ -63,17 +64,18 @@ class Manager
             }
         }
 
+        $result->rewind();
         return $result;
     }
     /** **********************************************************************
      * validate procedures filter
      *
-     * @param   MapData|null    $filter     filter
-     * @return  MapData                     validated filter
+     * @param   Map|null    $filter         filter
+     * @return  Map                         validated filter
      ************************************************************************/
-    private static function validateFilter(MapData $filter = null) : MapData
+    private static function validateFilter(Map $filter = null) : Map
     {
-        $result     = new MapData();
+        $result     = new MapData;
         $activity   = $filter ? $filter->get('ACTIVITY')    : null;
         $names      = $filter ? $filter->get('NAME')        : null;
 
@@ -107,11 +109,11 @@ class Manager
     /** **********************************************************************
      * query procedures from database
      *
-     * @param   MapData $filter             filter
+     * @param   Map $filter                 filter
      * @return  DBQueryResult               query result
      * @throws  RuntimeException            db connection error
      ************************************************************************/
-    private static function queryProcedures(MapData $filter) : DBQueryResult
+    private static function queryProcedures(Map $filter) : DBQueryResult
     {
         $sqlQuery       = 'SELECT NAME FROM procedures';
         $sqlQueryParams = [];

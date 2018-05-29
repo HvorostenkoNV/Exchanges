@@ -7,7 +7,7 @@ use Countable;
 /** ***********************************************************************************************
  * Data interface, base project data interface
  *
- * @package exchange_main
+ * @package exchange_data
  * @author  Hvorostenko
  *************************************************************************************************/
 interface Data extends Countable

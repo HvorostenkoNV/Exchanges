@@ -8,10 +8,10 @@ use Main\Exchange\Participants\Participant;
  * Participant data combining rules.
  * Describes different participant data combining process
  *
- * @package exchange_exchange
+ * @package exchange_exchange_procedures
  * @author  Hvorostenko
  *************************************************************************************************/
-class CombiningRules implements Rules
+class DataCombiningRules implements Rules
 {
     private
         $priorities         = [],

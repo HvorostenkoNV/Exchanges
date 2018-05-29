@@ -11,7 +11,7 @@ use
 /** ***********************************************************************************************
  * Test Main\Exchange\Participants\FieldsTypes\Manager classes
  *
- * @package exchange_exchange
+ * @package exchange_unit_tests
  * @author  Hvorostenko
  *************************************************************************************************/
 final class ManagerTest extends ExchangeTestCase

@@ -8,14 +8,14 @@ use
     Main\Exchange\Participants\Users1C      as Users1CParticipant,
     Main\Exchange\Participants\UsersAD      as UsersADParticipant,
     Main\Exchange\Participants\UsersBitrix  as UsersBitrixParticipant,
-    Main\Exchange\Procedures\Rules\CombiningRules;
+    Main\Exchange\Procedures\Rules\DataCombiningRules;
 /** ***********************************************************************************************
- * Test Main\Exchange\Procedures\Rules\MatchingRules class
+ * Test Main\Exchange\Procedures\Rules\DataCombiningRules class
  *
  * @package exchange_unit_tests
  * @author  Hvorostenko
  *************************************************************************************************/
-final class CombiningRulesTest extends ExchangeTestCase
+final class DataCombiningRulesTest extends ExchangeTestCase
 {
     /** **********************************************************************
      * testing priority read/write operations
@@ -25,18 +25,18 @@ final class CombiningRulesTest extends ExchangeTestCase
      ************************************************************************/
     public function priorityReadWriteOperations() : void
     {
-        $combiningRules = new CombiningRules;
+        $rules = new DataCombiningRules;
 
         foreach ([new Users1CParticipant, new UsersADParticipant, new UsersBitrixParticipant] as $index => $participant)
         {
             $fieldName      = get_class($participant).'Field';
             $fieldPriority  = $index + 1;
 
-            $combiningRules->attachFieldPriority($participant, $fieldName, $fieldPriority);
+            $rules->attachFieldPriority($participant, $fieldName, $fieldPriority);
             self::assertEquals
             (
                 $fieldPriority,
-                $combiningRules->getFieldPriority($participant, $fieldName),
+                $rules->getFieldPriority($participant, $fieldName),
                 'Expect get field priority as seted'
             );
         }
@@ -50,17 +50,17 @@ final class CombiningRulesTest extends ExchangeTestCase
      ************************************************************************/
     public function priorityDropOperation() : void
     {
-        $combiningRules = new CombiningRules;
+        $rules          = new DataCombiningRules;
         $participant    = new Users1CParticipant;
         $fieldName      = 'someField';
 
-        $combiningRules->attachFieldPriority($participant, $fieldName, 10);
-        $combiningRules->dropFieldPriority($participant, $fieldName);
+        $rules->attachFieldPriority($participant, $fieldName, 10);
+        $rules->dropFieldPriority($participant, $fieldName);
 
         self::assertEquals
         (
             0,
-            $combiningRules->getFieldPriority($participant, $fieldName),
+            $rules->getFieldPriority($participant, $fieldName),
             'Expect null on getting field priority after drop priority'
         );
     }
@@ -72,23 +72,23 @@ final class CombiningRulesTest extends ExchangeTestCase
      ************************************************************************/
     public function emptyPriorityReadWriteOperations() : void
     {
-        $combiningRules = new CombiningRules;
+        $rules = new DataCombiningRules;
 
         foreach ([new Users1CParticipant, new UsersADParticipant, new UsersBitrixParticipant] as $index => $participant)
         {
             $fieldName = get_class($participant).'Field';
 
-            $combiningRules->attachEmptyFieldHasPriority($participant, $fieldName);
+            $rules->attachEmptyFieldHasPriority($participant, $fieldName);
             self::assertTrue
             (
-                $combiningRules->checkEmptyFieldHasPriority($participant, $fieldName),
+                $rules->checkEmptyFieldHasPriority($participant, $fieldName),
                 'Expect true on checking field has priority even if empty after seting true'
             );
 
-            $combiningRules->detachEmptyFieldHasPriority($participant, $fieldName);
+            $rules->detachEmptyFieldHasPriority($participant, $fieldName);
             self::assertFalse
             (
-                $combiningRules->checkEmptyFieldHasPriority($participant, $fieldName),
+                $rules->checkEmptyFieldHasPriority($participant, $fieldName),
                 'Expect false on checking field has priority even if empty after seting false'
             );
         }

@@ -6,13 +6,14 @@ namespace UnitTests\Core;
 use
     Throwable,
     RuntimeException,
-    InvalidArgumentException,
     ReflectionException,
     UnexpectedValueException,
     ReflectionClass,
     SplFileInfo,
     RecursiveDirectoryIterator,
-    DOMDocument;
+    DOMDocument,
+    DOMNode,
+    Main\Helpers\Config;
 /** ***********************************************************************************************
  * Class for creating/deleting application temp files
  * using in UNIT-testing
@@ -79,13 +80,12 @@ final class TempFilesGenerator
         }
     }
     /** **********************************************************************
-     * create temp class file based on other class file
-     * using for creating family temp class file
+     * create temp XML
      *
-     * @param   array   $info                   xml info
+     * @param   array   $data                   xml data
      * @return  SplFileInfo|null                new xml file
      ************************************************************************/
-    public function createTempXml(array $info) : ?SplFileInfo
+    public function createTempXml(array $data) : ?SplFileInfo
     {
         $tempXmlFilesFolder = new SplFileInfo($_SERVER['DOCUMENT_ROOT'].DS.self::$tempXmlFilesFolder);
 
@@ -97,16 +97,12 @@ final class TempFilesGenerator
         try
         {
             $newXmlFilePath = $this->generateNewTempXmlPath($tempXmlFilesFolder);
-            $xml            = $this->generateNewTempXmlStructure($info);
+            $xml            = $this->generateNewTempXmlStructure($data);
             $xml->save($newXmlFilePath);
 
             return new SplFileInfo($newXmlFilePath);
         }
         catch (RuntimeException $exception)
-        {
-            return null;
-        }
-        catch (InvalidArgumentException $exception)
         {
             return null;
         }
@@ -144,79 +140,79 @@ final class TempFilesGenerator
 
             return $folder->getPathname().DS.'tempXmlFile'.($filesCount + 1).'.xml';
         }
-        catch (UnexpectedValueException|RuntimeException $exception)
+        catch (UnexpectedValueException $exception)
         {
             throw new RuntimeException($exception->getMessage());
+        }
+        catch (RuntimeException $exception)
+        {
+            throw $exception;
         }
     }
     /** **********************************************************************
      * get generated new temp XML file path
      *
-     * @param   array   $info                   xml info
+     * @param   array   $data                   xml info
      * @return  DOMDocument                     new xml structure
-     * @throws  InvalidArgumentException        xml info array is empty
      ************************************************************************/
-    private function generateNewTempXmlStructure(array $info) : DOMDocument
+    private function generateNewTempXmlStructure(array $data) : DOMDocument
     {
-        if (count($info) <= 0)
-        {
-            throw new InvalidArgumentException('info array is empty');
-        }
+        $config         = Config::getInstance();
+        $rootTagName    = $config->getParam('markup.xml.rootTagName');
+        $version        = $config->getParam('markup.xml.version');
+        $encoding       = $config->getParam('markup.xml.encoding');
+        $document       = new DOMDocument;
+        $rootNode       = $document->appendChild($document->createElement($rootTagName));
 
-        $document   = new DOMDocument;
-        $rootNode   = $document->appendChild($document->createElement('DOCUMENT'));
-
-        $document->xmlVersion           = '1.0';
-        $document->encoding             = 'UTF-8';
+        $document->xmlVersion           = $version;
+        $document->encoding             = $encoding;
         $document->preserveWhiteSpace   = false;
         $document->formatOutput         = true;
 
-        foreach ($info as $item)
-        {
-            $itemNode = $rootNode->appendChild($document->createElement('RECORD'));
-            foreach ($item as $index => $value)
-            {
-                $valueNode = $itemNode->appendChild($document->createElement($index));
-
-                if (is_array($value))
-                {
-                    foreach ($value as $subValue)
-                    {
-                        $subValueNode = $valueNode->appendChild($document->createElement('VALUE'));
-                        $subValueNode->nodeValue = $this->getXmlNodePrintableValue($subValue);
-                    }
-                }
-                else
-                {
-                    $valueNode->nodeValue = $this->getXmlNodePrintableValue($value);
-                }
-            }
-        }
+        $this->buildXmlStructure($document, $rootNode, $data);
 
         return $document;
     }
     /** **********************************************************************
-     * get new temp XML file path
+     * get generated new temp XML file path
+     *
+     * @param   DOMDocument $document           xml document
+     * @param   DOMNode     $node               xml node
+     * @param   array       $data               data
+     ************************************************************************/
+    private function buildXmlStructure(DOMDocument $document, DOMNode $node, array $data) : void
+    {
+        foreach ($data as $key => $value)
+        {
+            $newNodeName    = is_numeric($key) ? 'item'.$key : $key;
+            $newNode        = $node->appendChild($document->createElement($newNodeName));
+
+            if (is_array($value))
+            {
+                $this->buildXmlStructure($document, $newNode, $value);
+            }
+            else
+            {
+                $newNode->nodeValue = $this->getValuePrintable($value);
+            }
+        }
+    }
+    /** **********************************************************************
+     * get value printable
      *
      * @param   mixed   $value                  value
-     * @return  mixed   $value                  value
+     * @return  mixed                           value printable
      ************************************************************************/
-    private function getXmlNodePrintableValue($value)
+    private function getValuePrintable($value)
     {
         switch (gettype($value))
         {
-            case 'integer':
-            case 'double':
             case 'string':
-            case 'NULL':
                 return $value;
             case 'boolean':
                 return $value ? 'Y' : 'N';
-            case 'array':
-            case 'object':
-            case 'resource':
             default:
-                return null;
+                return (string) $value;
         }
     }
     /** **********************************************************************

@@ -4,12 +4,13 @@ declare(strict_types=1);
 namespace Main\Helpers;
 
 use
+    InvalidArgumentException,
     RuntimeException,
     PDOException,
     PDO,
     PDOStatement,
     Main\Singleton,
-    Main\Helpers\Data\DBFieldsValues,
+    Main\Helpers\Data\DBRow,
     Main\Helpers\Data\DBQueryResult;
 /** ***********************************************************************************************
  * Application DB class
@@ -91,7 +92,21 @@ class DB
 
             foreach ($queryResult as $row)
             {
-                $result->push(new DBFieldsValues($row));
+                try
+                {
+                    $fieldValues = new DBRow;
+
+                    foreach ($row as $key => $value)
+                    {
+                        $fieldValues->set($key, $value);
+                    }
+
+                    $result->push($fieldValues);
+                }
+                catch (InvalidArgumentException $exception)
+                {
+
+                }
             }
             if ($newInsertedId != $pdoLastInsertId)
             {

@@ -7,7 +7,7 @@ use DomainException;
 /** ***********************************************************************************************
  * Participant "string" field type
  *
- * @package exchange_exchange
+ * @package exchange_exchange_participants
  * @author  Hvorostenko
  *************************************************************************************************/
 class StringField extends AbstractField

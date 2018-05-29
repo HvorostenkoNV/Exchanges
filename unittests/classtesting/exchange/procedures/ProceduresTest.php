@@ -125,7 +125,7 @@ final class ProceduresTest extends ExchangeTestCase
         foreach (self::$tempProcedures as $procedure)
         {
             $procedureClassQualifiedName    = $systemProcedureNamespace.'\\'.$procedure['className'];
-            $participantsQueue              = call_user_func([new $procedureClassQualifiedName, 'getParticipants']);
+            $participantsSet                = call_user_func([new $procedureClassQualifiedName, 'getParticipants']);
             $tempParticipants               = [];
             $currentParticipants            = [];
 
@@ -134,11 +134,13 @@ final class ProceduresTest extends ExchangeTestCase
                 $tempParticipants[] = $participant['className'];
             }
 
-            while (!$participantsQueue->isEmpty())
+            while ($participantsSet->valid())
             {
-                $participant            = $participantsQueue->pop();
+                $participant            = $participantsSet->current();
                 $participantReflection  = new ReflectionClass($participant);
                 $currentParticipants[]  = $participantReflection->getShortName();
+
+                $participantsSet->next();
             }
 
             self::assertEquals

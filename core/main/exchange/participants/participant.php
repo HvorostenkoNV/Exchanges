@@ -4,12 +4,13 @@ declare(strict_types=1);
 namespace Main\Exchange\Participants;
 
 use
-    Main\Exchange\Participants\Fields\FieldsMap,
-    Main\Exchange\Participants\Data\Data as ParticipantData;
+    Main\Exchange\Participants\Fields\FieldsSet,
+    Main\Exchange\Participants\Data\ProvidedData,
+    Main\Exchange\Participants\Data\DataForDelivery;
 /** ***********************************************************************************************
  * Application participant interface
  *
- * @package exchange_exchange
+ * @package exchange_exchange_participants
  * @author  Hvorostenko
  *************************************************************************************************/
 interface Participant
@@ -17,20 +18,20 @@ interface Participant
     /** **********************************************************************
      * get participant fields params
      *
-     * @return  FieldsMap                   fields params
+     * @return  FieldsSet                   fields params
      ************************************************************************/
-    public function getFields() : FieldsMap;
+    public function getFields() : FieldsSet;
     /** **********************************************************************
      * get participant provided raw data
      *
-     * @return  ParticipantData             provided data
+     * @return  ProvidedData                provided data
      ************************************************************************/
-    public function getProvidedData() : ParticipantData;
+    public function getProvidedData() : ProvidedData;
     /** **********************************************************************
      * delivery data to the participant
      *
-     * @param   ParticipantData $data       data for delivery
+     * @param   DataForDelivery $data       data for delivery
      * @return  bool                        delivering data result
      ************************************************************************/
-    public function deliveryData(ParticipantData $data) : bool;
+    public function deliveryData(DataForDelivery $data) : bool;
 }

@@ -1,0 +1,199 @@
+@startuml
+
+namespace Main.Exchange.DataProcessors #BBB {
+    class Manager {
+        +getCollector(Procedure $procedure) : Collector
+        +getMatcher(Procedure $procedure) : Matcher
+        +getCombiner(Procedure $procedure) : Combiner
+        +getProvider(Procedure $procedure) : Provider
+    }
+
+    interface Processor {
+        +__construct(Procedure $procedure)
+        +getProcedure() : Procedure
+    }
+
+    abstract AbstractProcessor {
+        +__construct(Procedure $procedure)
+        +getProcedure() : Procedure
+    }
+
+    class Collector {
+        +collectData() : CollectedData
+    }
+
+    class Matcher {
+        +matchItems(CollectedData $data) : MatcherResult
+    }
+
+    class Combiner {
+        +combineItems(MatcherResult $data) : CombinedData
+    }
+
+    class Provider {
+        +provideData(CombinedData $data) : ProviderResult
+    }
+    /' ------------------------------------------- '/
+    /' ----------------- Results ----------------- '/
+    /' ------------------------------------------- '/
+    namespace Results #FFF {
+        interface Result {
+
+        }
+        /' ---------------------------- '/
+        /' ------- CollectedData ------ '/
+        /' ---------------------------- '/
+        class CollectedData < extends Main.Data.MapData > {
+            +set(Participants.Participant $key, Participants.Data.ProvidedData $value) : void
+            +get(Participants.Participant $key) : ?Participants.Data.ProvidedData
+        }
+
+        note bottom of CollectedData
+        [
+            Participant =>
+            [
+                [
+                    participantField => participantFieldValue,
+                    participantField => participantFieldValue
+                ],
+                [
+                    participantField => participantFieldValue,
+                    participantField => participantFieldValue
+                ]
+            ],
+            Participant =>
+            [
+                [
+                    participantField => participantFieldValue,
+                    participantField => participantFieldValue
+                ],
+                [
+                    participantField => participantFieldValue,
+                    participantField => participantFieldValue
+                ]
+            ]
+        ]
+        endnote
+        /' ---------------------------- '/
+        /' ------- MatcherResult ------ '/
+        /' ---------------------------- '/
+        class MatcherResult < extends Main.Data.SetData > {
+            +current() : ?Data.ParticipantItemDataSet
+            +delete(Data.ParticipantItemDataSet $object) : void
+            +push(Data.ParticipantItemDataSet $object) :void
+        }
+
+        note bottom of MatcherResult
+        [
+            commonItem =>
+            [
+                Participant =>
+                [
+                    participantField => participantFieldValue,
+                    participantField => participantFieldValue
+                ],
+                Participant =>
+                [
+                    participantField => participantFieldValue,
+                    participantField => participantFieldValue
+                ]
+            ],
+            commonItem =>
+            [
+                Participant =>
+                [
+                    participantField => participantFieldValue,
+                    participantField => participantFieldValue
+                ],
+                Participant =>
+                [
+                    participantField => participantFieldValue,
+                    participantField => participantFieldValue
+                ]
+            ]
+        ]
+        endnote
+        /' ---------------------------- '/
+        /' ------- CombinedData ------- '/
+        /' ---------------------------- '/
+        class CombinedData < extends Main.Data.SetData > {
+            +current() : ?Data.CommonItemDataSet
+            +delete(Data.CommonItemDataSet $object) : void
+            +push(Data.CommonItemDataSet $object) :void
+        }
+
+        note bottom of CombinedData
+        [
+            commonItem =>
+            [
+                commonField => commonFieldValue,
+                commonField => commonFieldValue
+            ],
+            commonItem =>
+            [
+                commonField => commonFieldValue,
+                commonField => commonFieldValue
+            ]
+        ]
+        endnote
+        /' ---------------------------- '/
+        /' ------ ProviderResult ------ '/
+        /' ---------------------------- '/
+        class ProviderResult < extends Main.Data.MapData > {
+            +set(Participants.Participant $key, bool $value) : void
+            +get(Participants.Participant $key) : bool
+        }
+        /' ---------------------------- '/
+        /' --------- Relations -------- '/
+        /' ---------------------------- '/
+        Result  <|--    CollectedData
+        Result  <|--    MatcherResult
+        Result  <|--    CombinedData
+        Result  <|--    ProviderResult
+    }
+    /' ------------------------------------------- '/
+    /' ------------------ Data ------------------- '/
+    /' ------------------------------------------- '/
+    namespace Data #FFF {
+        class ParticipantItemData < extends Main.Data.MapData > {
+            +set(Participants.Participant $key, Participants.Data.ItemData $value) : void
+            +get(Participants.Participant $key) : ?Participants.Data.ItemData
+        }
+
+        class ParticipantItemDataSet < extends Main.Data.SetData > {
+            +current() : ?ParticipantItemData
+            +delete(ParticipantItemData $object) : void
+            +push(ParticipantItemData $object) :void
+        }
+
+        class CommonItemData < extends Main.Data.MapData > {
+            +set(Procedures.Fields.ProcedureField $key, mixed $value) : void
+            +get(Procedures.Fields.ProcedureField $key) : mixed
+        }
+
+        class CommonItemDataSet < extends Main.Data.SetData > {
+            +current() : ?CommonItemData
+            +delete(CommonItemData $object) : void
+            +push(CommonItemData $object) :void
+        }
+
+        ParticipantItemDataSet  o-- ParticipantItemData
+        CommonItemDataSet       o-- CommonItemData
+    }
+    /' ------------------------------------------- '/
+    /' ---------------- Relations ---------------- '/
+    /' ------------------------------------------- '/
+    Manager             -       Processor
+    Processor           <|--    AbstractProcessor
+    AbstractProcessor   <|--    Collector
+    AbstractProcessor   <|--    Matcher
+    AbstractProcessor   <|--    Combiner
+    AbstractProcessor   <|--    Provider
+
+    Main.Exchange.DataProcessors.Results.MatcherResult  o-- Main.Exchange.DataProcessors.Data.ParticipantItemDataSet
+    Main.Exchange.DataProcessors.Results.CombinedData   o-- Main.Exchange.DataProcessors.Data.CommonItemDataSet
+
+    Processor o-- Main.Exchange.DataProcessors.Results.Result
+}
+
+@enduml

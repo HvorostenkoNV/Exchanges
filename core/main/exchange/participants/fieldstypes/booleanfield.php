@@ -7,7 +7,7 @@ use DomainException;
 /** ***********************************************************************************************
  * Participant "boolean" field type
  *
- * @package exchange_exchange
+ * @package exchange_exchange_participants
  * @author  Hvorostenko
  *************************************************************************************************/
 class BooleanField extends AbstractField
@@ -64,7 +64,6 @@ class BooleanField extends AbstractField
             case 'boolean':
                 return $value ? 'Y' : 'N';
             case 'NULL':
-                return '';
             case 'integer':
             case 'double':
             case 'string':

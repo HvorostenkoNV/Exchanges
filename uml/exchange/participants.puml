@@ -1,0 +1,123 @@
+@startuml
+
+namespace Main.Exchange.Participants #BBB {
+    interface Participant {
+        +getFields() : Fields.FieldsSet
+        +getProvidedData() : Data.ProvidedData
+        +deliveryData(Data.DataForDelivery $data) : bool
+    }
+
+    abstract AbstractParticipants {
+        +getFields() : Fields.FieldsSet
+        +getProvidedData() : Data.ProvidedData
+        +deliveryData(Data.DataForDelivery $data) : bool
+
+        -{abstract}readProvidedData() : Data.ProvidedData
+        -{abstract}provideDataForDelivery(Data.DataForDelivery $data) : bool
+    }
+
+    class Users1C {
+        -{abstract}readProvidedData() : Data.ProvidedData
+        -{abstract}provideDataForDelivery(Data.DataForDelivery $data) : bool
+    }
+
+    class UsersAD {
+        -{abstract}readProvidedData() : Data.ProvidedData
+        -{abstract}provideDataForDelivery(Data.DataForDelivery $data) : bool
+    }
+
+    class UsersBitrix {
+        -{abstract}readProvidedData() : Data.ProvidedData
+        -{abstract}provideDataForDelivery(Data.DataForDelivery $data) : bool
+    }
+    /' ------------------------------------------- '/
+    /' ------------------ Data ------------------- '/
+    /' ------------------------------------------- '/
+    namespace Data #FFF {
+        interface Data {
+
+        }
+
+        class ProvidedData < extends Main.Data.QueueData > {
+            +pop() : ItemData
+            +push(ItemData $data) : void
+        }
+
+        class DataForDelivery < extends Main.Data.QueueData > {
+            +pop() : ItemData
+            +push(ItemData $data) : void
+        }
+
+        class ItemData < extends Main.Data.MapData > {
+            +get(Fields.Field $key) : mixed
+            +set(Fields.Field $key, mixed $value) : void
+        }
+
+        Data    <|--    ProvidedData
+        Data    <|--    DataForDelivery
+
+        ProvidedData    o-- ItemData
+        DataForDelivery o-- ItemData
+    }
+    /' ------------------------------------------- '/
+    /' ----------------- Fields ------------------ '/
+    /' ------------------------------------------- '/
+    namespace Fields #FFF {
+        class Field {
+            +__construct(Main.Data.Map $params)
+            +getParam(string $param) : mixed
+            +getFieldType() : FieldsTypes.Field
+        }
+
+        class FieldsSet < extends Main.Data.SetData > {
+            +current() : ?Field
+            +delete(Field $object) : void
+            +push(Field $object) :void
+        }
+
+        FieldsSet o-- Field
+    }
+    /' ------------------------------------------- '/
+    /' --------------- FieldsTypes --------------- '/
+    /' ------------------------------------------- '/
+    namespace FieldsTypes #FFF {
+        interface Field {
+            +validateValue(mixed $value) : mixed
+            +convertValueForPrint(mixed $value) : mixed
+            +getRandomValue() : mixed
+        }
+
+        abstract AbstractField {
+            +validateValue(mixed $value) : mixed
+            +convertValueForPrint(mixed $value) : mixed
+            +getRandomValue() : mixed
+        }
+
+        class String {
+
+        }
+
+        class Number {
+
+        }
+
+        Field           <|--    AbstractField
+        AbstractField   <|--    String
+        AbstractField   <|--    Number
+    }
+    /' ------------------------------------------- '/
+    /' ---------------- Relations ---------------- '/
+    /' ------------------------------------------- '/
+    Participant             <|--    AbstractParticipants
+    AbstractParticipants    <|--    Users1C
+    AbstractParticipants    <|--    UsersAD
+    AbstractParticipants    <|--    UsersBitrix
+
+    Participant o-- Main.Exchange.Participants.Data.Data
+    Participant o-- Main.Exchange.Participants.Fields.FieldsSet
+
+    Main.Exchange.Participants.Fields.Field     o-- Main.Exchange.Participants.FieldsTypes.Field
+    Main.Exchange.Participants.Data.ItemData    o-- Main.Exchange.Participants.Fields.Field
+}
+
+@enduml

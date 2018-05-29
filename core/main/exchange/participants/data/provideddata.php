@@ -10,9 +10,9 @@ use
 /** ***********************************************************************************************
  * Participants provided data. from participant.
  * Queue data, collection type of "First In, First Out"
- * Collection of DBFieldsValues objects
+ * Collection of ItemData objects
  *
- * @package exchange_exchange
+ * @package exchange_exchange_participants
  * @author  Hvorostenko
  *************************************************************************************************/
 class ProvidedData extends QueueData implements Data

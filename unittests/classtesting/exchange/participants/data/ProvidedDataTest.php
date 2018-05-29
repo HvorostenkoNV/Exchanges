@@ -38,7 +38,14 @@ final class ProvidedDataTest extends QueueDataClass
 
         for ($index = 1; $index <= 10; $index++)
         {
-            $result[] = new ItemData($itemsCorrectData);
+            $itemData = new ItemData;
+
+            foreach ($itemsCorrectData as $values)
+            {
+                $itemData->set($values[0], $values[1]);
+            }
+
+            $result[] = $itemData;
         }
 
         return $result;

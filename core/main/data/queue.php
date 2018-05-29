@@ -7,7 +7,7 @@ use RuntimeException;
 /** ***********************************************************************************************
  * Queue interface, collection type of "First In, First Out"
  *
- * @package exchange_main
+ * @package exchange_data
  * @author  Hvorostenko
  *************************************************************************************************/
 interface Queue extends Data

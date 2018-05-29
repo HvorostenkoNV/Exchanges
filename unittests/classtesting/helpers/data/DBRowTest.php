@@ -5,13 +5,14 @@ namespace UnitTests\ClassTesting\Helpers\Data;
 
 use
     UnitTests\Core\MapDataClass,
-    Main\Helpers\Data\DBFieldsValues;
+    Main\Helpers\Data\DBRow;
 /** ***********************************************************************************************
- * Test Main\Helpers\Data\DBFieldsValues class
+ * Test Main\Helpers\Data\DBRow class
+ *
  * @package exchange_unit_tests
  * @author  Hvorostenko
  *************************************************************************************************/
-final class DBFieldsValuesTest extends MapDataClass
+final class DBRowTest extends MapDataClass
 {
     /** **********************************************************************
      * get Map class name
@@ -20,7 +21,7 @@ final class DBFieldsValuesTest extends MapDataClass
      ************************************************************************/
     public static function getMapClassName() : string
     {
-        return DBFieldsValues::class;
+        return DBRow::class;
     }
     /** **********************************************************************
      * get correct data
@@ -28,15 +29,19 @@ final class DBFieldsValuesTest extends MapDataClass
      ************************************************************************/
     public static function getCorrectData() : array
     {
-        return
-        [
-            'one'   => 'string',
-            'two'   => '',
-            'three' => 2,
-            'four'  => 2.5,
-            'five'  => 0,
-            'six'   => null
-        ];
+        $result = [];
+        $keys   = self::getCorrectDataKeys();
+        $values = self::getCorrectDataValues();
+
+        foreach ($keys as $key)
+        {
+            foreach ($values as $value)
+            {
+                $result[] = [$key, $value];
+            }
+        }
+
+        return $result;
     }
     /** **********************************************************************
      * get incorrect keys
@@ -55,7 +60,7 @@ final class DBFieldsValuesTest extends MapDataClass
             [1, 2, 3],
             ['string', '', 2.5, 0, true, false],
             [],
-            new DBFieldsValues,
+            new DBRow,
             null
         ];
     }
@@ -72,6 +77,35 @@ final class DBFieldsValuesTest extends MapDataClass
             [1, 2, 3],
             ['string', '', 2.5, 0, true, false],
             []
+        ];
+    }
+    /** **********************************************************************
+     * get incorrect keys
+     *
+     * @return  array                       incorrect data keys
+     ************************************************************************/
+    public static function getCorrectDataKeys() : array
+    {
+        return
+        [
+            'string'
+        ];
+    }
+    /** **********************************************************************
+     * get incorrect values
+     *
+     * @return  array                       incorrect data values
+     ************************************************************************/
+    public static function getCorrectDataValues() : array
+    {
+        return
+        [
+            'string',
+            '',
+            2,
+            2.5,
+            0,
+            null
         ];
     }
 }

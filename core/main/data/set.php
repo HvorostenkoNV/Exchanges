@@ -7,7 +7,7 @@ use Iterator;
 /** ***********************************************************************************************
  * Set interface, collection of unique objects
  *
- * @package exchange_main
+ * @package exchange_data
  * @author  Hvorostenko
  *************************************************************************************************/
 interface Set extends Data, Iterator
@@ -15,15 +15,15 @@ interface Set extends Data, Iterator
     /** **********************************************************************
      * get current item
      *
-     * @return  object|null                 current item or null
+     * @return  mixed|null                  current item or null
      ************************************************************************/
-    public function current() : ?object;
+    public function current();
     /** **********************************************************************
      * drop item from set
      *
      * @param   object  $object             item for drop
      ************************************************************************/
-    public function delete(object $object) : void;
+    public function delete($object) : void;
     /** **********************************************************************
      * move forward to next item
      ************************************************************************/
@@ -39,7 +39,7 @@ interface Set extends Data, Iterator
      *
      * @param   object  $object             pushed item
      ************************************************************************/
-    public function push(object $object) :void;
+    public function push($object) :void;
     /** **********************************************************************
      * rewind iterator to the first item
      ************************************************************************/

@@ -1,20 +1,52 @@
 <?php
+declare(strict_types=1);
+
 namespace Main\Exchange\DataProcessors\Results;
 
+use
+    Main\Exchange\Participants\Participant,
+    Main\Exchange\Participants\Data\ItemData;
+/** ***********************************************************************************************
+ * Participants matched data
+ * Describes matching between items of different participants data
+ *
+ * @package exchange_exchange_dataprocessors
+ * @author  Hvorostenko
+ *************************************************************************************************/
 class MatcherResult implements Result
 {
-    public function __construct(array $data)
+    /** **********************************************************************
+     * set participant item
+     *
+     * @param   int         $itemId         item ID
+     * @param   Participant $participant    participant
+     * @param   ItemData    $itemData       item data
+     * //TODO
+     ************************************************************************/
+    public function setItem(int $itemId, Participant $participant, ItemData $itemData) : void
     {
-        // TODO
-    }
 
-    public function getGeneralId(string $participantClassName, int $id) : int
-    {
-        // TODO
     }
-
-    public function getParticipantId(int $generalId) : int
+    /** **********************************************************************
+     * get participant item
+     *
+     * @param   int         $itemId         item ID
+     * @param   Participant $participant    participant
+     * @return  ItemData|null               item data
+     * //TODO
+     ************************************************************************/
+    public function getItem(int $itemId, Participant $participant) : ?ItemData
     {
-        // TODO
+        return new ItemData;
+    }
+    /** **********************************************************************
+     * get items ID array
+     *
+     * @return  int[]                       items ID array
+     * //TODO
+     ************************************************************************/
+    public function getItemsId() : array
+    {
+        return [];
     }
 }

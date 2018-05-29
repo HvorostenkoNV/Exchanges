@@ -5,7 +5,7 @@ namespace Main;
 /** ***********************************************************************************************
  * Singleton trait, provides singleton functional
  *
- * @package exchange_main
+ * @package exchange
  * @author  Hvorostenko
  *************************************************************************************************/
 trait Singleton

@@ -4,26 +4,26 @@ declare(strict_types=1);
 namespace UnitTests\ClassTesting\Helpers\Data;
 
 use
-    UnitTests\Core\QueueDataClass,
+    UnitTests\Core\SetDataClass,
     Main\Exchange\Participants\Users1C      as Users1CParticipant,
     Main\Exchange\Participants\UsersAD      as UsersADParticipant,
     Main\Exchange\Participants\UsersBitrix  as UsersBitrixParticipant,
-    Main\Exchange\Procedures\Data\ParticipantsQueue;
+    Main\Exchange\Procedures\Data\ParticipantsSet;
 /** ***********************************************************************************************
- * Test Main\Exchange\Procedures\Data\ProceduresQueue class
+ * Test Main\Exchange\Procedures\Data\ParticipantsQueueTest class
  * @package exchange_unit_tests
  * @author  Hvorostenko
  *************************************************************************************************/
-final class ParticipantsQueueTest extends QueueDataClass
+final class ParticipantsSetTest extends SetDataClass
 {
     /** **********************************************************************
      * get Queue class name
      *
      * @return  string                      Queue class name
      ************************************************************************/
-    public static function getQueueClassName() : string
+    public static function getSetClassName() : string
     {
-        return ParticipantsQueue::class;
+        return ParticipantsSet::class;
     }
     /** **********************************************************************
      * get correct data
@@ -58,7 +58,7 @@ final class ParticipantsQueueTest extends QueueDataClass
             [1, 2, 3],
             ['string', '', 2.5, 0, true, false],
             [],
-            new ParticipantsQueue,
+            new ParticipantsSet,
             null
         ];
     }

@@ -1,0 +1,92 @@
+@startuml
+
+namespace Main.Exchange.Procedures #BBB {
+    class Manager {
+        +{static}getProcedures(Main.Data.Map $filter = null) : Data.ProceduresSet
+    }
+
+    interface Procedure {
+        +getParticipants() : Data.ParticipantsSet
+        +getFields() : Fields.ProceduresFieldsSet
+        +getDataCombiningRules() : Rules.DataCombiningRules
+    }
+
+    abstract AbstractProcedure {
+        +getParticipants() : Data.ParticipantsSet
+        +getFields() : Fields.ProceduresFieldsSet
+        +getDataCombiningRules() : Rules.DataCombiningRules
+    }
+
+    class UsersExchange {
+
+    }
+    /' ------------------------------------------- '/
+    /' ------------------ Data ------------------- '/
+    /' ------------------------------------------- '/
+    namespace Data #FFF {
+        class ParticipantsSet < extends Main.Data.SetData > {
+            +current() : ?Participants.Participant
+            +delete(Participants.Participant $object) : void
+            +push(Participants.Participant $object) :void
+        }
+
+        class ProceduresSet < extends Main.Data.SetData > {
+            +current() : ?Procedures.Procedure
+            +delete(Procedures.Procedure $object) : void
+            +push(Procedures.Procedure $object) :void
+        }
+
+        class DataCombiningRules < extends Main.Data.MapData > {
+            +set(Data.ParticipantsSet $key, Fields.ProceduresFieldsSet $value) : void
+            +get(Data.ParticipantsSet $key) : Fields.ProceduresFieldsSet
+        }
+    }
+    /' ------------------------------------------- '/
+    /' ----------------- Fields ------------------ '/
+    /' ------------------------------------------- '/
+    namespace Fields #FFF {
+        class ParticipantField {
+            +__construct(Main.Data.Map $params, Participants.Participant $participant, Participants.Fields.Field $field)
+            +getParam(string $param) : mixed
+            +getParticipant() : Participants.Participant
+            +getParticipantField() : Participants.Fields.Field
+        }
+
+        class ParticipantsFieldsSet < extends Main.Data.SetData > {
+            +current() : ?ParticipantField
+            +delete(ParticipantField $object) : void
+            +push(ParticipantField $object) :void
+        }
+
+        class ProcedureField {
+            +__construct(Main.Data.Map $params, Data.ParticipantsFieldsSet $field)
+            +getParam(string $param) : mixed
+            +hasParticipant(Participants.Participant $participant) : bool
+            +hasParticipantField(Participants.Fields.Field $field) : bool
+            +getProceduresParticipantsFields() : ParticipantsFieldsSet
+        }
+
+        class ProceduresFieldsSet < extends Main.Data.SetData > {
+            +current() : ?ProcedureField
+            +delete(ProcedureField $object) : void
+            +push(ProcedureField $object) :void
+        }
+
+        ProceduresFieldsSet     o-- ProcedureField
+        ProcedureField          o-- ParticipantsFieldsSet
+        ParticipantsFieldsSet   o-- ParticipantField
+    }
+    /' ------------------------------------------- '/
+    /' ---------------- Relations ---------------- '/
+    /' ------------------------------------------- '/
+    Manager             -       Procedure
+    Procedure           <|--    AbstractProcedure
+    AbstractProcedure   <|--    UsersExchange
+
+    Manager     o-- Main.Exchange.Procedures.Data.ProceduresSet
+    Procedure   o-- Main.Exchange.Procedures.Data.ParticipantsSet
+    Procedure   o-- Main.Exchange.Procedures.Fields.ProceduresFieldsSet
+    Procedure   o-- Main.Exchange.Procedures.Data.DataCombiningRules
+}
+
+@enduml

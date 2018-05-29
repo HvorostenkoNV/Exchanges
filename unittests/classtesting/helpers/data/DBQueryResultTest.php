@@ -6,7 +6,7 @@ namespace UnitTests\ClassTesting\Helpers\Data;
 use
     UnitTests\Core\QueueDataClass,
     Main\Data\MapData,
-    Main\Helpers\Data\DBFieldsValues,
+    Main\Helpers\Data\DBRow,
     Main\Helpers\Data\DBQueryResult;
 /** ***********************************************************************************************
  * Test Main\Helpers\Data\DBQueryResult class
@@ -36,7 +36,7 @@ final class DBQueryResultTest extends QueueDataClass
 
         for ($index = 1; $index <= 3; $index++)
         {
-            $fieldsValues = new DBFieldsValues;
+            $fieldsValues = new DBRow;
             $fieldsValues->set('field', 'value');
             $result[] = $fieldsValues;
         }
@@ -63,7 +63,7 @@ final class DBQueryResultTest extends QueueDataClass
             ['string', '', 2.5, 0, true, false],
             [],
             new DBQueryResult,
-            new DBFieldsValues,
+            new DBRow,
             new MapData,
             null
         ];

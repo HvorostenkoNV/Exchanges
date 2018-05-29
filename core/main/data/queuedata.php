@@ -9,7 +9,7 @@ use
 /** ***********************************************************************************************
  * Queue data, collection type of "First In, First Out"
  *
- * @package exchange_main
+ * @package exchange_data
  * @author  Hvorostenko
  *************************************************************************************************/
 class QueueData implements Queue

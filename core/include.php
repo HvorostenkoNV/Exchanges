@@ -4,7 +4,8 @@ declare(strict_types=1);
 use Main\Helpers\Logger;
 /** ***********************************************************************************************
  * main bootstrap file
- * @package exchange_main
+ *
+ * @package exchange
  * @author  Hvorostenko
  *************************************************************************************************/
 define('DOCUMENT_ROOT',     $_SERVER['DOCUMENT_ROOT']);

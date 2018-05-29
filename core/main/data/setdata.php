@@ -7,7 +7,7 @@ use SplObjectStorage;
 /** ***********************************************************************************************
  * Set data, set of unique objects
  *
- * @package exchange_main
+ * @package exchange_data
  * @author  Hvorostenko
  *************************************************************************************************/
 class SetData implements Set
@@ -39,9 +39,9 @@ class SetData implements Set
     /** **********************************************************************
      * get current item
      *
-     * @return  object|null                 current item or null
+     * @return  mixed|null                  current item or null
      ************************************************************************/
-    public function current() : ?object
+    public function current()
     {
         return $this->set->current();
     }
@@ -50,7 +50,7 @@ class SetData implements Set
      *
      * @param   object  $object             item for drop
      ************************************************************************/
-    public function delete(object $object) : void
+    public function delete($object) : void
     {
         $this->set->detach($object);
     }
@@ -84,7 +84,7 @@ class SetData implements Set
      *
      * @param   object  $object             pushed item
      ************************************************************************/
-    public function push(object $object) :void
+    public function push($object) :void
     {
         $this->set->attach($object);
     }

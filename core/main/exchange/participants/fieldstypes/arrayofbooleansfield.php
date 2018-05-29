@@ -9,7 +9,7 @@ use
 /** ***********************************************************************************************
  * Participant "array of booleans" field type
  *
- * @package exchange_exchange
+ * @package exchange_exchange_participants
  * @author  Hvorostenko
  *************************************************************************************************/
 class ArrayOfBooleansField extends AbstractField

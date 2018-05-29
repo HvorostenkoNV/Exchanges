@@ -9,7 +9,7 @@ use
     Main\Data\QueueData;
 /** ***********************************************************************************************
  * DB query data, collection type of "First In, First Out"
- * Collection of DBFieldsValues objects
+ * Collection of DBRow objects
  * Based on db query
  *
  * @package exchange_helpers
@@ -20,7 +20,7 @@ class DBQueryResult extends QueueData
     /** **********************************************************************
      * extract queue data from the start
      *
-     * @return  DBFieldsValues              data
+     * @return  DBRow                       data
      * @throws  RuntimeException            if no data for extract
      ************************************************************************/
     public function pop()
@@ -30,14 +30,14 @@ class DBQueryResult extends QueueData
     /** **********************************************************************
      * push data to the end
      *
-     * @param   DBFieldsValues  $data       data
+     * @param   DBRow   $data               data
      * @throws  InvalidArgumentException    incorrect pushed data
      ************************************************************************/
     public function push($data) : void
     {
-        if (!$data instanceof DBFieldsValues || $data->count() <= 0)
+        if (!$data instanceof DBRow || $data->count() <= 0)
         {
-            $needClassName = DBFieldsValues::class;
+            $needClassName = DBRow::class;
             throw new InvalidArgumentException("pushed data required to be not empty $needClassName object");
         }
 

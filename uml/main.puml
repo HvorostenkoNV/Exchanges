@@ -1,0 +1,94 @@
+@startuml
+
+namespace Main #BBB {
+    class Application << (S,#CC0000) Singleton >> {
+        +getExchange() : Exchange.Exchange
+        +getAdministration() : Administration.Administration
+        +getAPI() : API.API
+    }
+    /' ------------------------------------------- '/
+    /' ------------------ Data ------------------- '/
+    /' ------------------------------------------- '/
+    namespace Data #FFF {
+        interface Data {
+            +clear() : void
+            +count() : int
+            +isEmpty() : bool
+        }
+
+        interface Map {
+            +delete($key) : void
+            +get($key)
+            +getKeys() : array
+            +hasKey($key) : bool
+            +hasValue($value) : bool
+            +set($key, $value) : void
+        }
+
+        interface Queue {
+            +pop()
+            +push($data) : void
+        }
+
+        interface Set {
+            +current() : ?object
+            +delete(object $object) : void
+            +next() : void
+            +key() : int
+            +push(object $object) :void
+            +rewind() : void
+            +valid() : bool
+        }
+
+        class MapData {
+
+        }
+
+        class QueueData {
+
+        }
+
+        class SetData {
+
+        }
+
+        Data    <|-- Map
+        Data    <|-- Queue
+        Data    <|-- Set
+        Map     <|-- MapData
+        Queue   <|-- QueueData
+        Set     <|-- SetData
+    }
+    /' ------------------------------------------- '/
+    /' ---------------- Exchange ----------------- '/
+    /' ------------------------------------------- '/
+    namespace Exchange #FFF {
+        class Exchange << (S,#CC0000) Singleton >> {
+            +run() : void
+        }
+    }
+    /' ------------------------------------------- '/
+    /' -------------- Administration ------------- '/
+    /' ------------------------------------------- '/
+    namespace Administration #FFF {
+        class Administration << (S,#CC0000) Singleton >> {
+            +run() : void
+        }
+    }
+    /' ------------------------------------------- '/
+    /' ------------------- API ------------------- '/
+    /' ------------------------------------------- '/
+    namespace API #FFF {
+        class API << (S,#CC0000) Singleton >> {
+            +run() : void
+        }
+    }
+    /' ------------------------------------------- '/
+    /' ---------------- Relations ---------------- '/
+    /' ------------------------------------------- '/
+    Application .. Main.Exchange.Exchange
+    Application .. Main.Administration.Administration
+    Application .. Main.API.API
+}
+
+@enduml

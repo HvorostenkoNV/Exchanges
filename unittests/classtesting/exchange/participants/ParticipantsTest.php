@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace UnitTests\ClassTesting\Exchange\Participants;
 
 use
-    RuntimeException,
     ReflectionClass,
     SplFileInfo,
     UnitTests\Core\ExchangeTestCase,
@@ -12,7 +11,8 @@ use
     UnitTests\Core\TempDBRecordsGenerator,
     Main\Helpers\DB,
     Main\Exchange\Participants\FieldsTypes\Manager as FieldsTypesManager,
-    Main\Exchange\Participants\Participant;
+    Main\Exchange\Participants\Participant,
+    Main\Exchange\Participants\Data\DataForDelivery;
 /** ***********************************************************************************************
  * Test Main\Exchange\Participants\Participant classes
  *
@@ -176,15 +176,18 @@ final class ParticipantsTest extends ExchangeTestCase
                 $tempFields[$field['NAME']] = $field;
             }
 
-            foreach ($participantFields->getKeys() as $key)
+            while ($participantFields->valid())
             {
-                $field = $participantFields->get($key);
+                $field = $participantFields->current();
+
                 $currentFields[$field->getParam('name')] =
                 [
                     'NAME'      => $field->getParam('name'),
                     'TYPE'      => $field->getParam('type'),
                     'REQUIRED'  => $field->getParam('required')
                 ];
+
+                $participantFields->next();
             }
 
             self::assertEquals
@@ -216,12 +219,13 @@ final class ParticipantsTest extends ExchangeTestCase
             while (!$providedData->isEmpty())
             {
                 $item       = $providedData->pop();
-                $itemKeys   = $item->getKeys();
                 $itemData   = [];
 
-                foreach ($itemKeys as $key)
+                foreach ($item->getKeys() as $field)
                 {
-                    $itemData[$key] = $item->get($key)->getValue();
+                    $fieldName              = $field->getParam('name');
+                    $value                  = $item->get($field);
+                    $itemData[$fieldName]   = $value;
                 }
 
                 $participantProvidedData[] = $itemData;
@@ -276,30 +280,25 @@ final class ParticipantsTest extends ExchangeTestCase
 
             $participantObject->{'tempXmlFromUnitTest'}     = $receivedXml;
             $participantObject->{'createdTempXmlAnswer'}    = $deliveredXml;
-            $providedData = $participantObject->getProvidedData();
-            $participantObject->deliveryData($providedData);
 
-            if (!$receivedXml)
-            {
-                continue;
-            }
+            $providedData       = $participantObject->getProvidedData();
+            $dataForDelivery    = new DataForDelivery;
 
-            try
+            while (!$providedData->isEmpty())
             {
-                $receivedXmlContent     = $receivedXml->openFile('r')->fread($receivedXml->getSize());
-                $deliveredXmlContent    = $deliveredXml->openFile('r')->fread($deliveredXml->getSize());
+                $dataForDelivery->push($providedData->pop());
+            }
+            $participantObject->deliveryData($dataForDelivery);
 
-                self::assertEquals
-                (
-                    $receivedXmlContent,
-                    $deliveredXmlContent,
-                    'Delivered xml expect to be same as received'
-                );
-            }
-            catch (RuntimeException $exception)
-            {
-                self::fail('Unable to read temp xml files for testing. Delivered xml may not be created');
-            }
+            $receivedXmlContent     = $receivedXml->openFile('r')->fread($receivedXml->getSize());
+            $deliveredXmlContent    = $deliveredXml->openFile('r')->fread($deliveredXml->getSize());
+
+            self::assertEquals
+            (
+                $receivedXmlContent,
+                $deliveredXmlContent,
+                'Delivered xml expect to be same as received'
+            );
         }
     }
     /** **********************************************************************

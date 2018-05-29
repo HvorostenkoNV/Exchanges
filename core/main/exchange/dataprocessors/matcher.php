@@ -1,26 +1,29 @@
 <?php
+declare(strict_types=1);
+
 namespace Main\Exchange\DataProcessors;
 
-use Main\Exchange\DataProcessors\Results\
-    {
-        CollectorResult,
-        MatcherResult
-    };
-
+use
+    Main\Exchange\DataProcessors\Results\CollectedData,
+    Main\Exchange\DataProcessors\Results\MatcherResult;
+/** ***********************************************************************************************
+ * Matcher data-processor
+ * match items off different participants
+ *
+ * @package exchange_exchange_dataprocessors
+ * @author  Hvorostenko
+ *************************************************************************************************/
 class Matcher extends AbstractProcessor
 {
-    public function setCollectedData(CollectorResult $data) : void
+    /** **********************************************************************
+     * collect procedure participants data
+     *
+     * @param   CollectedData   $collectedData  collected data
+     * @return  MatcherResult                   matcher result
+     * //TODO
+     ************************************************************************/
+    public function matchItems(CollectedData $collectedData) : MatcherResult
     {
-        // TODO
-    }
-
-    public function process() : void
-    {
-        // TODO
-    }
-
-    public function getMatchedData() : MatcherResult
-    {
-        // TODO
+        return new MatcherResult;
     }
 }

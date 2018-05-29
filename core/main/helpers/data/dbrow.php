@@ -13,36 +13,8 @@ use
  * @package exchange_helpers
  * @author  Hvorostenko
  *************************************************************************************************/
-class DBFieldsValues extends MapData
+class DBRow extends MapData
 {
-    /** **********************************************************************
-     * construct
-     *
-     * @param   array   $data               data
-     * @throws  InvalidArgumentException    incorrect data array argument
-     ************************************************************************/
-    public function __construct(array $data = [])
-    {
-        foreach ($data as $key => $value)
-        {
-            if (!is_string($key))
-            {
-                $keyType = gettype($key);
-                throw new InvalidArgumentException("keys must be string, \"$keyType\" caught");
-            }
-            if (strlen($key) <= 0)
-            {
-                throw new InvalidArgumentException('keys must be not empty string');
-            }
-            if (!$this->checkValueValid($value))
-            {
-                $valueType = gettype($value);
-                throw new InvalidArgumentException("values must be string, integer, float or null, \"$valueType\" caught");
-            }
-        }
-
-        parent::__construct($data);
-    }
     /** **********************************************************************
      * delete value by key
      *
@@ -82,6 +54,16 @@ class DBFieldsValues extends MapData
         return parent::hasKey($key);
     }
     /** **********************************************************************
+     * check map has value
+     *
+     * @param   mixed   $value              value
+     * @return  bool                        map has value
+     ************************************************************************/
+    public function hasValue($value) : bool
+    {
+        return parent::hasValue($value);
+    }
+    /** **********************************************************************
      * attach value to key
      *
      * @param   string  $key                value key
@@ -99,36 +81,12 @@ class DBFieldsValues extends MapData
         {
             throw new InvalidArgumentException('key must be not empty string');
         }
-        if (!$this->checkValueValid($value))
+        if (!is_string($value) && !is_numeric($value) && !is_null($value))
         {
             $valueType = gettype($value);
             throw new InvalidArgumentException("value must be string, integer, float or null, \"$valueType\" caught");
         }
 
         parent::set($key, $value);
-    }
-    /** **********************************************************************
-     * check value valid
-     *
-     * @param   mixed   $value              value
-     * @return  bool                        value valid
-     ************************************************************************/
-    private function checkValueValid($value)
-    {
-        switch (gettype($value))
-        {
-            case 'integer':
-            case 'double':
-            case 'string':
-            case 'NULL':
-                return true;
-                break;
-            case 'boolean':
-            case 'array':
-            case 'object':
-            case 'resource':
-            default:
-                return false;
-        }
     }
 }

@@ -8,10 +8,10 @@ use Main\Exchange\Participants\Participant;
  * Participant fields matching rules.
  * Describes matches between same fields of different participants
  *
- * @package exchange_exchange
+ * @package exchange_exchange_participants
  * @author  Hvorostenko
  *************************************************************************************************/
-class MatchingRules implements Rules
+class FieldsMatchingRules implements Rules
 {
     private $aliases = [];
     /** **********************************************************************

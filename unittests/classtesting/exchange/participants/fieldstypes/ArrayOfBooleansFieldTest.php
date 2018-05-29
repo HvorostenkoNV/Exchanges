@@ -48,8 +48,8 @@ final class ArrayOfBooleansFieldTest extends ParticipantFieldClass
             [false,         [false]],
             [[],            []],
             [
-                [1,     2.5,    0,      'someString',   '', true,   false,  [], new MapData,    null],
-                [true,          false,                      true,   false]
+                [1,     2.5,    0,      'someString',   '',     true,   false,  [], new MapData,    null],
+                [true,          false,                          true,   false]
             ],
             [new MapData,   []],
             [null,          []]

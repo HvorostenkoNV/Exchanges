@@ -9,7 +9,7 @@ use
 /** ***********************************************************************************************
  * Participant "array of strings" field type
  *
- * @package exchange_exchange
+ * @package exchange_exchange_participants
  * @author  Hvorostenko
  *************************************************************************************************/
 class ArrayOfStringsField extends AbstractField

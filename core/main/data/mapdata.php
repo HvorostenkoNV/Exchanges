@@ -2,62 +2,26 @@
 declare(strict_types=1);
 
 namespace Main\Data;
-
-use InvalidArgumentException;
 /** ***********************************************************************************************
  * Map data, collection of key => values
  *
- * @package exchange_main
+ * @package exchange_data
  * @author  Hvorostenko
  *************************************************************************************************/
 class MapData implements Map
 {
     private
-        $data           = [],
-        $hashedValues   = [];
-    /** **********************************************************************
-     * construct
-     *
-     * @param   array   $data               data
-     * @throws  InvalidArgumentException    incorrect key type
-     ************************************************************************/
-    public function __construct(array $data = [])
-    {
-        foreach ($data as $key => $value)
-        {
-            if (!is_string($key) && !is_int($key))
-            {
-                $keyType = gettype($key);
-                throw new InvalidArgumentException("key must be string or integer, $keyType caught");
-            }
-
-            $hashedValue                        = $this->getVariableHash($value);
-            $this->data[$key]                   = $value;
-            $this->hashedValues[$hashedValue]   = null;
-        }
-    }
-    /** **********************************************************************
-     * delete value by key
-     *
-     * @param   mixed   $key                value key
-     ************************************************************************/
-    public function delete($key) : void
-    {
-        if (array_key_exists($key, $this->data))
-        {
-            $value          = $this->data[$key];
-            $hashedValue    = $this->getVariableHash($value);
-
-            unset($this->data[$key], $this->hashedValues[$hashedValue]);
-        }
-    }
+        $hashedKeys     = [],
+        $hashedValues   = [],
+        $relations      = [];
     /** **********************************************************************
      * clear map
      ************************************************************************/
     public function clear() : void
     {
-        $this->data         = [];
+        $this->hashedKeys   = [];
         $this->hashedValues = [];
+        $this->relations    = [];
     }
     /** **********************************************************************
      * get map count
@@ -66,7 +30,28 @@ class MapData implements Map
      ************************************************************************/
     public function count() : int
     {
-        return count($this->data);
+        return count($this->relations);
+    }
+    /** **********************************************************************
+     * delete value by key
+     *
+     * @param   mixed   $key                value key
+     ************************************************************************/
+    public function delete($key) : void
+    {
+        $hashedKey      = $this->getVariableHash($key);
+        $hasKey         = array_key_exists($hashedKey, $this->relations);
+        $hashedValue    = $hasKey ? $this->relations[$hashedKey] : null;
+
+        if ($hasKey)
+        {
+            unset
+            (
+                $this->hashedKeys[$hashedKey],
+                $this->hashedValues[$hashedValue],
+                $this->relations[$hashedKey]
+            );
+        }
     }
     /** **********************************************************************
      * get value by key
@@ -76,8 +61,12 @@ class MapData implements Map
      ************************************************************************/
     public function get($key)
     {
-        return array_key_exists($key, $this->data)
-            ? $this->data[$key]
+        $hashedKey      = $this->getVariableHash($key);
+        $hasKey         = array_key_exists($hashedKey, $this->relations);
+        $hashedValue    = $hasKey ? $this->relations[$hashedKey] : null;
+
+        return $hasKey
+            ? $this->hashedValues[$hashedValue]
             : null;
     }
     /** **********************************************************************
@@ -87,7 +76,7 @@ class MapData implements Map
      ************************************************************************/
     public function getKeys() : array
     {
-        return array_keys($this->data);
+        return array_values($this->hashedKeys);
     }
     /** **********************************************************************
      * check map has key
@@ -97,7 +86,9 @@ class MapData implements Map
      ************************************************************************/
     public function hasKey($key) : bool
     {
-        return array_key_exists($key, $this->data);
+        $hashedKey = $this->getVariableHash($key);
+
+        return array_key_exists($hashedKey, $this->relations);
     }
     /** **********************************************************************
      * check map has value
@@ -107,7 +98,9 @@ class MapData implements Map
      ************************************************************************/
     public function hasValue($value) : bool
     {
-        return array_key_exists($this->getVariableHash($value), $this->hashedValues);
+        $hashedValue = $this->getVariableHash($value);
+
+        return array_key_exists($hashedValue, $this->hashedValues);
     }
     /** **********************************************************************
      * check map is empty
@@ -116,30 +109,25 @@ class MapData implements Map
      ************************************************************************/
     public function isEmpty() : bool
     {
-        return count($this->data) <= 0;
+        return count($this->relations) <= 0;
     }
     /** **********************************************************************
      * attach value to key
      *
      * @param   mixed   $key                key
      * @param   mixed   $value              value
-     * @throws  InvalidArgumentException    incorrect key type
      ************************************************************************/
     public function set($key, $value) : void
     {
-        if (!is_string($key) && !is_int($key))
-        {
-            $keyType = gettype($key);
-            throw new InvalidArgumentException("key must be string or integer, $keyType caught");
-        }
+        $hashedKey      = $this->getVariableHash($key);
+        $hashedValue    = $this->getVariableHash($value);
 
-        $hashedValue                        = $this->getVariableHash($value);
-        $this->data[$key]                   = $value;
-        $this->hashedValues[$hashedValue]   = null;
+        $this->hashedKeys[$hashedKey]       = $key;
+        $this->hashedValues[$hashedValue]   = $value;
+        $this->relations[$hashedKey]        = $hashedValue;
     }
     /** **********************************************************************
      * get variable hash
-     * using variable hash as unique value for variable keeping and identification
      *
      * @param   mixed   $value              value
      * @return  string                      variable hash
@@ -150,19 +138,14 @@ class MapData implements Map
         {
             case 'boolean':
                 return 'boolean-'.json_encode($value);
-                break;
             case 'array':
                 return json_encode($value);
-                break;
             case 'object':
                 return spl_object_hash($value);
-                break;
             case 'resource':
                 return strval((int) $value);
-                break;
             case 'NULL':
                 return 'null-value';
-                break;
             case 'string':
             case 'integer':
             case 'double':

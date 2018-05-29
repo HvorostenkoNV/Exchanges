@@ -30,21 +30,19 @@ final class MapDataTest extends MapDataClass
      ************************************************************************/
     public static function getCorrectData() : array
     {
-        return
-        [
-            1       => 'string',
-            2       => '',
-            'three' => 2,
-            'four'  => 2.5,
-            5       => 0,
-            6       => true,
-            7       => false,
-            8       => [1, 2, 3],
-            9       => ['string', '', 2.5, 0, true, false],
-            10      => [],
-            11      => new MapData,
-            12      => null
-        ];
+        $result = [];
+        $keys   = self::getCorrectDataKeys();
+        $values = self::getCorrectDataValues();
+
+        foreach ($keys as $key)
+        {
+            foreach ($values as $value)
+            {
+                $result[] = [$key, $value];
+            }
+        }
+
+        return $result;
     }
     /** **********************************************************************
      * get incorrect keys
@@ -53,8 +51,28 @@ final class MapDataTest extends MapDataClass
      ************************************************************************/
     public static function getIncorrectDataKeys() : array
     {
+        return [];
+    }
+    /** **********************************************************************
+     * get incorrect values
+     *
+     * @return  array                       incorrect data values
+     ************************************************************************/
+    public static function getIncorrectDataValues() : array
+    {
+        return [];
+    }
+    /** **********************************************************************
+     * get incorrect keys
+     *
+     * @return  array                       incorrect data keys
+     ************************************************************************/
+    public static function getCorrectDataKeys() : array
+    {
         return
         [
+            'string',
+            '',
             2,
             2.5,
             0,
@@ -72,8 +90,22 @@ final class MapDataTest extends MapDataClass
      *
      * @return  array                       incorrect data values
      ************************************************************************/
-    public static function getIncorrectDataValues() : array
+    public static function getCorrectDataValues() : array
     {
-        return [];
+        return
+        [
+            'string',
+            '',
+            2,
+            2.5,
+            0,
+            true,
+            false,
+            [1, 2, 3],
+            ['string', '', 2.5, 0, true, false],
+            [],
+            new MapData,
+            null
+        ];
     }
 }

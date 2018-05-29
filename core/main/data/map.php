@@ -5,17 +5,11 @@ namespace Main\Data;
 /** ***********************************************************************************************
  * Map data interface, collection of key => values
  *
- * @package exchange_main
+ * @package exchange_data
  * @author  Hvorostenko
  *************************************************************************************************/
 interface Map extends Data
 {
-    /** **********************************************************************
-     * construct
-     *
-     * @param   array   $data               data
-     ************************************************************************/
-    public function __construct(array $data = []);
     /** **********************************************************************
      * delete value by key
      *

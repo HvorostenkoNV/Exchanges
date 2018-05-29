@@ -102,78 +102,74 @@
       <DataType>varchar(50)|0</DataType>
       <NotNull>1</NotNull>
     </column>
-    <column id="30" parent="9" name="IS_DEFAULT">
-      <Position>4</Position>
-      <DataType>char(1)|0</DataType>
-    </column>
-    <index id="31" parent="9" name="CODE_UNIQUE">
+    <index id="30" parent="9" name="CODE_UNIQUE">
       <ColNames>CODE</ColNames>
       <Unique>1</Unique>
     </index>
-    <key id="32" parent="9" name="PRIMARY">
+    <key id="31" parent="9" name="PRIMARY">
       <ColNames>ID</ColNames>
       <Primary>1</Primary>
     </key>
-    <key id="33" parent="9" name="CODE_UNIQUE">
+    <key id="32" parent="9" name="CODE_UNIQUE">
       <ColNames>CODE</ColNames>
       <UnderlyingIndexName>CODE_UNIQUE</UnderlyingIndexName>
     </key>
-    <column id="34" parent="10" name="ID">
+    <column id="33" parent="10" name="ID">
       <Position>1</Position>
       <DataType>int(11)|0</DataType>
       <NotNull>1</NotNull>
       <SequenceIdentity>1</SequenceIdentity>
     </column>
-    <column id="35" parent="10" name="NAME">
+    <column id="34" parent="10" name="NAME">
       <Position>2</Position>
       <DataType>varchar(100)|0</DataType>
       <NotNull>1</NotNull>
     </column>
-    <column id="36" parent="10" name="ACTIVITY">
+    <column id="35" parent="10" name="ACTIVITY">
       <Position>3</Position>
       <DataType>char(1)|0</DataType>
       <NotNull>1</NotNull>
       <DefaultExpression>&apos;N&apos;</DefaultExpression>
     </column>
-    <index id="37" parent="10" name="NAME_UNIQUE">
+    <index id="36" parent="10" name="NAME_UNIQUE">
       <ColNames>NAME</ColNames>
       <Unique>1</Unique>
     </index>
-    <key id="38" parent="10" name="PRIMARY">
+    <key id="37" parent="10" name="PRIMARY">
       <ColNames>ID</ColNames>
       <Primary>1</Primary>
     </key>
-    <key id="39" parent="10" name="NAME_UNIQUE">
+    <key id="38" parent="10" name="NAME_UNIQUE">
       <ColNames>NAME</ColNames>
       <UnderlyingIndexName>NAME_UNIQUE</UnderlyingIndexName>
     </key>
-    <column id="40" parent="11" name="ID">
+    <column id="39" parent="11" name="ID">
       <Position>1</Position>
       <DataType>int(11)|0</DataType>
       <NotNull>1</NotNull>
       <SequenceIdentity>1</SequenceIdentity>
     </column>
-    <column id="41" parent="11" name="PROCEDURE">
+    <column id="40" parent="11" name="PROCEDURE">
       <Position>2</Position>
       <DataType>int(11)|0</DataType>
       <NotNull>1</NotNull>
     </column>
-    <column id="42" parent="11" name="PARTICIPANT">
+    <column id="41" parent="11" name="PARTICIPANT">
       <Position>3</Position>
       <DataType>int(11)|0</DataType>
       <NotNull>1</NotNull>
     </column>
-    <index id="43" parent="11" name="PROCEDURE_PARTICIPANT_FK">
+    <index id="42" parent="11" name="PROCEDURE_PARTICIPANT_FK">
       <ColNames>PROCEDURE</ColNames>
     </index>
-    <index id="44" parent="11" name="PARTICIPANT_PROCEDURE_FK">
+    <index id="43" parent="11" name="PARTICIPANT_PROCEDURE_FK">
       <ColNames>PARTICIPANT</ColNames>
     </index>
-    <key id="45" parent="11" name="PRIMARY">
+    <key id="44" parent="11" name="PRIMARY">
       <ColNames>ID</ColNames>
       <Primary>1</Primary>
     </key>
-    <foreign-key id="46" parent="11" name="PROCEDURE_PARTICIPANT_FK">
+    <foreign-key id="45" parent="11" name="PROCEDURE_PARTICIPANT_FK">
       <ColNames>PROCEDURE</ColNames>
       <RefSchemaName>exchange</RefSchemaName>
       <RefTableName>procedures</RefTableName>
@@ -181,7 +177,7 @@
       <OnUpdate>update</OnUpdate>
       <OnDelete>delete</OnDelete>
     </foreign-key>
-    <foreign-key id="47" parent="11" name="PARTICIPANT_PROCEDURE_FK">
+    <foreign-key id="46" parent="11" name="PARTICIPANT_PROCEDURE_FK">
       <ColNames>PARTICIPANT</ColNames>
       <RefSchemaName>exchange</RefSchemaName>
       <RefTableName>participants</RefTableName>

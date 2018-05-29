@@ -33,65 +33,29 @@ abstract class SetDataClass extends ExchangeTestCase
      ************************************************************************/
     abstract public static function getIncorrectDataValues() : array;
     /** **********************************************************************
-     * check empty object
+     * check read/write value operations
      *
      * @test
      * @throws
      ************************************************************************/
-    public function emptyObject() : void
+    public function readWriteValue() : void
     {
-        $set        = $this->createSetObject();
-        $className  = static::getSetClassName();
+        $set            = $this->createSetObject();
+        $className      = static::getSetClassName();
+        $correctValues  = static::getCorrectDataValues();
 
-        self::assertTrue
-        (
-            $set->isEmpty(),
-            "New $className object is not empty"
-        );
-        self::assertEquals
-        (
-            0,
-            $set->count(),
-            "New $className object values count is not zero"
-        );
-    }
-    /** **********************************************************************
-     * check read/write operations
-     *
-     * @test
-     * @depends emptyObject
-     * @throws
-     ************************************************************************/
-    public function readWriteOperations() : void
-    {
-        $set        = $this->createSetObject();
-        $values     = static::getCorrectDataValues();
-        $className  = static::getSetClassName();
-
-        if (count($values) <= 0)
+        if (count($correctValues) <= 0)
         {
-            self::markTestSkipped("No \"correct\" values for testing $className class");
+            self::markTestSkipped("No \"correct\" values for testing \"$className\" class");
             return;
         }
 
-        foreach ($values as $value)
+        foreach ($correctValues as $value)
         {
             $set->push($value);
         }
 
-        self::assertFalse
-        (
-            $set->isEmpty(),
-            "Filled $className is empty"
-        );
-        self::assertEquals
-        (
-            count($values),
-            $set->count(),
-            "Filled $className values count is not equal items count put"
-        );
-
-        for ($repeatLoop = 1; $repeatLoop <= 3; $repeatLoop++)
+        for ($repeatLoop = 1; $repeatLoop <= 5; $repeatLoop++)
         {
             $startValuesIndex = 0;
 
@@ -99,9 +63,9 @@ abstract class SetDataClass extends ExchangeTestCase
             {
                 self::assertEquals
                 (
-                    $values[$startValuesIndex],
+                    $correctValues[$startValuesIndex],
                     $set->current(),
-                    "Value put in $className before not equals received"
+                    "Expect get value equals seted before in \"$className\""
                 );
                 self::assertEquals
                 (
@@ -118,39 +82,80 @@ abstract class SetDataClass extends ExchangeTestCase
         }
     }
     /** **********************************************************************
-     * check incorrect read/write operations
+     * check counting operations
      *
      * @test
-     * @depends readWriteOperations
+     * @depends readWriteValue
      * @throws
      ************************************************************************/
-    public function incorrectReadWriteOperations() : void
+    public function counting() : void
+    {
+        $set            = $this->createSetObject();
+        $className      = static::getSetClassName();
+        $correctValues  = static::getCorrectDataValues();
+
+        self::assertTrue
+        (
+            $set->isEmpty(),
+            "New \"$className\" object is not empty"
+        );
+        self::assertEquals
+        (
+            0,
+            $set->count(),
+            "New \"$className\" object values count is not zero"
+        );
+
+        foreach ($correctValues as $values)
+        {
+            $set->push($values);
+        }
+
+        self::assertFalse
+        (
+            $set->isEmpty(),
+            "Filled \"$className\" is empty"
+        );
+        self::assertEquals
+        (
+            count($correctValues),
+            $set->count(),
+            "Filled \"$className\" values count is not equal items count put"
+        );
+    }
+    /** **********************************************************************
+     * check read/write value operations with incorrect values
+     *
+     * @test
+     * @depends readWriteValue
+     * @throws
+     ************************************************************************/
+    public function usingIncorrectValues() : void
     {
         $set                = $this->createSetObject();
-        $incorrectValues    = static::getIncorrectDataValues();
         $className          = static::getSetClassName();
+        $incorrectValues    = static::getIncorrectDataValues();
+        $exceptionName      = InvalidArgumentException::class;
 
         if (count($incorrectValues) <= 0)
         {
-            self::markTestSkipped("No \"incorrect\" values for testing $className class");
+            self::markTestSkipped("No \"incorrect\" data values for testing \"$className\" class");
             return;
         }
 
         self::assertNull
         (
             $set->current(),
-            "Empty $className must return null on call \"current\" method"
+            "Empty \"$className\" must return null on call \"current\" method"
         );
 
         foreach ($incorrectValues as $value)
         {
             try
             {
-                $exceptionName  = InvalidArgumentException::class;
                 $valuePrintable = var_export($value, true);
-
                 $set->push($value);
-                self::fail("Expect $exceptionName exception in $className on push incorrect value $valuePrintable");
+                self::fail("Expect \"$exceptionName\" exception in \"$className\" on seting incorrect value \"$valuePrintable\"");
             }
             catch (InvalidArgumentException $error)
             {
@@ -162,40 +167,40 @@ abstract class SetDataClass extends ExchangeTestCase
      * check clearing operations
      *
      * @test
-     * @depends readWriteOperations
+     * @depends readWriteValue
      * @throws
      ************************************************************************/
     public function clearingOperations() : void
     {
-        $set        = $this->createSetObject();
-        $values     = static::getCorrectDataValues();
-        $className  = static::getSetClassName();
+        $set                = $this->createSetObject();
+        $className          = static::getSetClassName();
+        $correctValues      = static::getCorrectDataValues();
+        $randomCorrectValue = $correctValues[array_rand($correctValues)];
 
-        foreach ($values as $value)
+        foreach ($correctValues as $value)
         {
             $set->push($value);
         }
 
-        $set->delete($values[array_rand($values)]);
+        $set->delete($randomCorrectValue);
         self::assertEquals
         (
-            count($values) - 1,
+            count($correctValues) - 1,
             $set->count(),
-            "$className values count not less by one after delete one item"
+            "Expect get count less by one after delete one item in \"$className\""
         );
 
         $set->clear();
-
         self::assertTrue
         (
             $set->isEmpty(),
-            "$className is not empty after call \"clear\" method"
+            "\"$className\" is not empty after call \"clear\" method"
         );
         self::assertEquals
         (
             0,
             $set->count(),
-            "$className values count is not zero after call \"clear\" method"
+            "\"$className\" values count is not zero after call \"clear\" method"
         );
     }
     /** **********************************************************************

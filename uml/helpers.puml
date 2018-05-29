@@ -1,0 +1,72 @@
+@startuml
+
+namespace Main.Helpers #BBB {
+    class Config << (S,#CC0000) Singleton >> {
+        +getParam(string $param) : string
+    }
+
+    class DB << (S,#CC0000) Singleton >> {
+        +query(string $sqlQuery, array $params = []) : Data.DBQueryResult
+        +hasLastError() : bool
+        +getLastError() : string
+        +getLastInsertId() : int
+    }
+
+    class Logger << (S,#CC0000) Singleton >> {
+        +addNotice(string $message) : void
+        +addWarning(string $message) : void
+        +addError(string $message) : void
+    }
+
+    class Localization {
+        +__construct(string $lang)
+        +getMessage(string $message) : string
+    }
+    /' ------------------------------------------- '/
+    /' ------------------ Data ------------------- '/
+    /' ------------------------------------------- '/
+    namespace Data #FFF {
+        class DBRow < extends Main.Data.MapData > {
+            +get(string $key) : mixed
+            +set(string $key, mixed $value) : void
+        }
+
+        class DBQueryResult < extends Main.Data.QueueData > {
+            +pop() : DBRow
+            +push(DBRow $data) : void
+        }
+
+        DBQueryResult *-- DBRow
+    }
+    /' ------------------------------------------- '/
+    /' --------------- MarkupData ---------------- '/
+    /' ------------------------------------------- '/
+    namespace MarkupData #FFF {
+        interface Data {
+            +__construct(SplFileInfo $file)
+            +read() : array
+            +write(array $data) : bool
+        }
+
+        abstract AbstractData {
+            +__construct(SplFileInfo $file)
+            +read() : array
+            +write(array $data) : bool
+            -{abstract}parseData(string $content) : array
+            -{abstract}prepareDataForWriting(array $data) : string
+        }
+
+        class XML {
+
+        }
+
+        Data            <|--    AbstractData
+        AbstractData    <|--    XML
+    }
+    /' ------------------------------------------- '/
+    /' ---------------- Relations ---------------- '/
+    /' ------------------------------------------- '/
+    DB o-- Main.Helpers.Data.DBQueryResult
+}
+
+@enduml

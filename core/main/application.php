@@ -11,7 +11,7 @@ use
 /** ***********************************************************************************************
  * Application class, application entrance point
  *
- * @package exchange_main
+ * @package exchange
  * @method  static Application getInstance
  * @author  Hvorostenko
  *************************************************************************************************/

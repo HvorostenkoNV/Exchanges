@@ -4,24 +4,24 @@ declare(strict_types=1);
 namespace UnitTests\ClassTesting\Helpers\Data;
 
 use
-    UnitTests\Core\QueueDataClass,
+    UnitTests\Core\SetDataClass,
     Main\Exchange\Procedures\UsersExchange,
-    Main\Exchange\Procedures\Data\ProceduresQueue;
+    Main\Exchange\Procedures\Data\ProceduresSet;
 /** ***********************************************************************************************
- * Test Main\Exchange\Procedures\Data\ProceduresQueue class
+ * Test Main\Exchange\Procedures\Data\ProceduresSet class
  * @package exchange_unit_tests
  * @author  Hvorostenko
  *************************************************************************************************/
-final class ProceduresQueueTest extends QueueDataClass
+final class ProceduresSetTest extends SetDataClass
 {
     /** **********************************************************************
      * get Queue class name
      *
      * @return  string                      Queue class name
      ************************************************************************/
-    public static function getQueueClassName() : string
+    public static function getSetClassName() : string
     {
-        return ProceduresQueue::class;
+        return ProceduresSet::class;
     }
     /** **********************************************************************
      * get correct data
@@ -54,7 +54,7 @@ final class ProceduresQueueTest extends QueueDataClass
             [1, 2, 3],
             ['string', '', 2.5, 0, true, false],
             [],
-            new ProceduresQueue,
+            new ProceduresSet,
             null
         ];
     }

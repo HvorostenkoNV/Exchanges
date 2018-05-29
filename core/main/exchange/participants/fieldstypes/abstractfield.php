@@ -7,7 +7,7 @@ use DomainException;
 /** ***********************************************************************************************
  * Participant abstract field type
  *
- * @package exchange_exchange
+ * @package exchange_exchange_participants
  * @author  Hvorostenko
  *************************************************************************************************/
 abstract class AbstractField implements Field

@@ -7,7 +7,7 @@ use DomainException;
 /** ***********************************************************************************************
  * Participant field type interface
  *
- * @package exchange_exchange
+ * @package exchange_exchange_participants
  * @author  Hvorostenko
  *************************************************************************************************/
 interface Field

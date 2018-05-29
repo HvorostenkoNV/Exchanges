@@ -2,7 +2,8 @@
 declare(strict_types=1);
 /** ***********************************************************************************************
  * Application main params
- * @package exchange_main
+ *
+ * @package exchange_params
  * @author  Hvorostenko
  *************************************************************************************************/
 return

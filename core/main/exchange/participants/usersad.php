@@ -4,12 +4,12 @@ declare(strict_types=1);
 namespace Main\Exchange\Participants;
 
 use
-    Main\Exchange\Participants\Data\Data,
-    Main\Exchange\Participants\Data\ProvidedData;
+    Main\Exchange\Participants\Data\ProvidedData,
+    Main\Exchange\Participants\Data\DataForDelivery;
 /** ***********************************************************************************************
  * Application participant UsersAD
  *
- * @package exchange_exchange
+ * @package exchange_exchange_participants
  * @author  Hvorostenko
  *************************************************************************************************/
 class UsersAD extends AbstractParticipants
@@ -17,21 +17,21 @@ class UsersAD extends AbstractParticipants
     /** **********************************************************************
      * read participant provided data and get it
      *
-     * @return  Data                    data
+     * @return  ProvidedData                data
      * TODO
      ************************************************************************/
-    protected function readProvidedData() : Data
+    protected function readProvidedData() : ProvidedData
     {
         return new ProvidedData;
     }
     /** **********************************************************************
      * provide delivered data to the participant
      *
-     * @param   Data    $data           data to write
-     * @return  bool                    process result
+     * @param   DataForDelivery $data       data to write
+     * @return  bool                        process result
      * TODO
      ************************************************************************/
-    protected function provideDataForDelivery(Data $data) : bool
+    protected function provideDataForDelivery(DataForDelivery $data) : bool
     {
         return false;
     }

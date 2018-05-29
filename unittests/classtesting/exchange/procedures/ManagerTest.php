@@ -74,91 +74,115 @@ final class ManagerTest extends ExchangeTestCase
         self::$tempDBRecordsGenerator->dropTempChanges();
     }
     /** **********************************************************************
-     * check getting procedures with different filter params
+     * check getting procedures by name
      *
      * @test
      * @throws
      ************************************************************************/
-    public function providingProcedures() : void
+    public function gettingProceduresByName() : void
     {
-        $tempAllProcedures      = [];
-        $tempActiveProcedures   = [];
-        $allProcedures          = [];
-        $activeProcedures       = [];
+        $tempProcedures = [];
+        $procedures     = [];
 
         foreach (self::$tempProcedures as $procedure)
         {
-            $tempAllProcedures[] = $procedure['className'];
-            if ($procedure['activity'])
-            {
-                $tempActiveProcedures[] = $procedure['className'];
-            }
+            $tempProcedures[] = $procedure['className'];
         }
 
-        $queue = Manager::getProcedures(new MapData(['NAME' => $tempAllProcedures]));
-        while (!$queue->isEmpty())
-        {
-            $procedure              = $queue->pop();
-            $procedureReflection    = new ReflectionClass(get_class($procedure));
-            $allProcedures[]        = $procedureReflection->getShortName();
-        }
+        $filter = new MapData;
+        $filter->set('NAME', $tempProcedures);
+        $set = Manager::getProcedures($filter);
 
-        $queue = Manager::getProcedures(new MapData(['NAME' => $tempAllProcedures, 'ACTIVITY' => true]));
-        while (!$queue->isEmpty())
+        while ($set->valid())
         {
-            $procedure              = $queue->pop();
-            $procedureReflection    = new ReflectionClass(get_class($procedure));
-            $activeProcedures[]     = $procedureReflection->getShortName();
+            $procedure              = $set->current();
+            $procedureClass         = get_class($procedure);
+            $procedureReflection    = new ReflectionClass($procedureClass);
+            $procedures[]           = $procedureReflection->getShortName();
+
+            $set->next();
         }
 
         self::assertEquals
         (
-            $tempAllProcedures,
-            $allProcedures,
-            'Geted procedures not equal temp created'
-        );
-        self::assertEquals
-        (
-            $tempActiveProcedures,
-            $activeProcedures,
-            'Geted active procedures not equal temp created'
+            $tempProcedures,
+            $procedures,
+            'Geted procedures not equal temp expected'
         );
     }
     /** **********************************************************************
-     * check getting procedure by name
+     * check getting procedures by activity
      *
      * @test
      * @throws
      ************************************************************************/
-    public function providingProcedureByName() : void
+    public function gettingProceduresByActivity() : void
+    {
+        $tempProcedures = [];
+        $procedures     = [];
+
+        foreach (self::$tempProcedures as $procedure)
+        {
+            if ($procedure['activity'])
+            {
+                $tempProcedures[] = $procedure['className'];
+            }
+        }
+
+        $filter = new MapData;
+        $filter->set('NAME',        $tempProcedures);
+        $filter->set('ACTIVITY',    true);
+        $set = Manager::getProcedures($filter);
+
+        while ($set->valid())
+        {
+            $procedure              = $set->current();
+            $procedureClass         = get_class($procedure);
+            $procedureReflection    = new ReflectionClass($procedureClass);
+            $procedures[]           = $procedureReflection->getShortName();
+
+            $set->next();
+        }
+
+        self::assertEquals
+        (
+            $tempProcedures,
+            $procedures,
+            'Geted procedures not equal temp expected'
+        );
+    }
+    /** **********************************************************************
+     * check getting one procedure by name
+     *
+     * @test
+     * @throws
+     ************************************************************************/
+    public function gettingOneProcedureByName() : void
     {
         $randTempProcedure  = self::$tempProcedures[array_rand(self::$tempProcedures)];
-        $filter             = new MapData
-        ([
-            'NAME'      => $randTempProcedure['dbItemName'],
-            'ACTIVITY'  => $randTempProcedure['activity']
-        ]);
-        $queueResult        = Manager::getProcedures($filter);
+        $filter             = new MapData;
+
+        $filter->set('NAME',        $randTempProcedure['dbItemName']);
+        $filter->set('ACTIVITY',    $randTempProcedure['activity']);
+        $set = Manager::getProcedures($filter);
 
         self::assertEquals
         (
             1,
-            $queueResult->count(),
+            $set->count(),
             'Expect get one query row with filter by name'
         );
 
-        if ($queueResult->count() == 1)
-        {
-            $procedure              = $queueResult->pop();
-            $procedureReflection    = new ReflectionClass(get_class($procedure));
-            $procedureClassName     = $procedureReflection->getShortName();
+        $procedure              = $set->current();
+        $procedureClass         = get_class($procedure);
+        $procedureReflection    = new ReflectionClass($procedureClass);
+        $procedureClassName     = $procedureReflection->getShortName();
 
-            self::assertEquals
-            (
-                $randTempProcedure['dbItemName'],
-                $procedureClassName,
-                'Geted procedure not equals expected'
-            );
-        }
+        self::assertEquals
+        (
+            $randTempProcedure['dbItemName'],
+            $procedureClassName,
+            'Geted procedure not equals expected'
+        );
     }
 }

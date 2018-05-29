@@ -7,7 +7,7 @@ use Main\Singleton;
 /** ***********************************************************************************************
  * Administration class, administration entrance point
  *
- * @package exchange_main
+ * @package exchange_administration
  * @method  static Administration getInstance
  * @author  Hvorostenko
  * TODO

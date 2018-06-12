@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace UnitTests\ClassTesting\Exchange\Participants\Fields;
 
 use
-    UnitTests\Core\SetDataClass,
+    UnitTests\ClassTesting\Data\SetDataAbstractTest,
     Main\Data\MapData,
     Main\Exchange\Participants\FieldsTypes\Manager as FieldsTypesManager,
     Main\Exchange\Participants\Fields\Field,
@@ -15,7 +15,7 @@ use
  * @package exchange_unit_tests
  * @author  Hvorostenko
  *************************************************************************************************/
-final class FieldsSetTest extends SetDataClass
+final class FieldsSetTest extends SetDataAbstractTest
 {
     /** **********************************************************************
      * get Queue class name

@@ -5,7 +5,7 @@ namespace Main\Exchange\Procedures;
 
 use
     Main\Exchange\Procedures\Data\ParticipantsSet,
-    Main\Exchange\Procedures\Rules\FieldsMatchingRules,
+    Main\Exchange\Procedures\Fields\FieldsSet,
     Main\Exchange\Procedures\Rules\DataMatchingRules,
     Main\Exchange\Procedures\Rules\DataCombiningRules;
 /** ***********************************************************************************************
@@ -23,21 +23,21 @@ interface Procedure
      ************************************************************************/
     public function getParticipants() : ParticipantsSet;
     /** **********************************************************************
-     * get participants fields matching rules
+     * get fields
      *
-     * @return  FieldsMatchingRules         participants
+     * @return  FieldsSet                   fields
      ************************************************************************/
-    public function getFieldsMatchingRules() : FieldsMatchingRules;
+    public function getFields() : FieldsSet;
     /** **********************************************************************
-     * get participants data matching rules
+     * get data matching rules
      *
-     * @return  DataMatchingRules           participants
+     * @return  DataMatchingRules           data matching rules
      ************************************************************************/
     public function getDataMatchingRules() : DataMatchingRules;
     /** **********************************************************************
-     * get participants fields values combining rules
+     * get data combining rules
      *
-     * @return  DataCombiningRules          participants
+     * @return  DataCombiningRules          data combining rules
      ************************************************************************/
     public function getDataCombiningRules() : DataCombiningRules;
 }

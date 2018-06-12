@@ -5,7 +5,7 @@ namespace Main\Exchange\DataProcessors;
 
 use
     Main\Exchange\DataProcessors\Results\CollectedData,
-    Main\Exchange\DataProcessors\Results\MatcherResult;
+    Main\Exchange\DataProcessors\Results\MatchedData;
 /** ***********************************************************************************************
  * Matcher data-processor
  * match items off different participants
@@ -18,12 +18,11 @@ class Matcher extends AbstractProcessor
     /** **********************************************************************
      * collect procedure participants data
      *
-     * @param   CollectedData   $collectedData  collected data
-     * @return  MatcherResult                   matcher result
-     * //TODO
+     * @param   CollectedData $collectedData    collected data
+     * @return  MatchedData                     matcher result
      ************************************************************************/
-    public function matchItems(CollectedData $collectedData) : MatcherResult
+    public function matchItems(CollectedData $collectedData) : MatchedData
     {
-        return new MatcherResult;
+        return new MatchedData;
     }
 }

@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace UnitTests\ClassTesting\Helpers\Data;
 
 use
-    UnitTests\Core\MapDataClass,
+    UnitTests\ClassTesting\Data\MapDataAbstractTest,
     Main\Helpers\Data\DBRow;
 /** ***********************************************************************************************
  * Test Main\Helpers\Data\DBRow class
@@ -12,7 +12,7 @@ use
  * @package exchange_unit_tests
  * @author  Hvorostenko
  *************************************************************************************************/
-final class DBRowTest extends MapDataClass
+final class DBRowTest extends MapDataAbstractTest
 {
     /** **********************************************************************
      * get Map class name
@@ -84,7 +84,7 @@ final class DBRowTest extends MapDataClass
      *
      * @return  array                       incorrect data keys
      ************************************************************************/
-    public static function getCorrectDataKeys() : array
+    private static function getCorrectDataKeys() : array
     {
         return
         [
@@ -96,7 +96,7 @@ final class DBRowTest extends MapDataClass
      *
      * @return  array                       incorrect data values
      ************************************************************************/
-    public static function getCorrectDataValues() : array
+    private static function getCorrectDataValues() : array
     {
         return
         [

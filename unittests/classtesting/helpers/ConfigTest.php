@@ -6,7 +6,7 @@ namespace UnitTests\ClassTesting\Helpers;
 use
     PHPUnit\Framework\Error\Error as FatalError,
     SplFileInfo,
-    UnitTests\Core\ExchangeTestCase,
+    UnitTests\AbstractTestCase,
     Main\Helpers\Config;
 /** ***********************************************************************************************
  * Test Main\Helpers\Config class
@@ -14,7 +14,7 @@ use
  * @package exchange_unit_tests
  * @author  Hvorostenko
  *************************************************************************************************/
-final class ConfigTest extends ExchangeTestCase
+final class ConfigTest extends AbstractTestCase
 {
     private
         $paramsFolderPermissions    = '540',

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace UnitTests\Core;
+namespace UnitTests;
 
 use
     Throwable,
@@ -17,7 +17,7 @@ use
  * @package exchange_unit_tests
  * @author  Hvorostenko
  *************************************************************************************************/
-abstract class ExchangeTestCase extends TestCase
+abstract class AbstractTestCase extends TestCase
 {
     private static $messages =
     [

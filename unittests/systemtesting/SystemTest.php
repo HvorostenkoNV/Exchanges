@@ -3,14 +3,14 @@ declare(strict_types=1);
 
 namespace UnitTests\SystemTesting;
 
-use UnitTests\Core\ExchangeTestCase;
+use UnitTests\AbstractTestCase;
 /** ***********************************************************************************************
  * Test system
  *
  * @package exchange_unit_tests
  * @author  Hvorostenko
  *************************************************************************************************/
-final class SystemTest extends ExchangeTestCase
+final class SystemTest extends AbstractTestCase
 {
     private $needPhpVersion = 7.2;
     /** **********************************************************************

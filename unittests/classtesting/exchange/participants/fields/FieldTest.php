@@ -6,7 +6,7 @@ namespace UnitTests\ClassTesting\Exchange\Participants\Fields;
 use
     Throwable,
     InvalidArgumentException,
-    UnitTests\Core\ExchangeTestCase,
+    UnitTests\AbstractTestCase,
     Main\Data\MapData,
     Main\Exchange\Participants\FieldsTypes\Manager  as FieldsTypesManager,
     Main\Exchange\Participants\Fields\Field         as ParticipantField;
@@ -16,7 +16,7 @@ use
  * @package exchange_unit_tests
  * @author  Hvorostenko
  *************************************************************************************************/
-final class FieldTest extends ExchangeTestCase
+final class FieldTest extends AbstractTestCase
 {
     /** **********************************************************************
      * check correct creating object

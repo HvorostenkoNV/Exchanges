@@ -30,15 +30,15 @@ class DBQueryResult extends QueueData
     /** **********************************************************************
      * push data to the end
      *
-     * @param   DBRow   $data               data
+     * @param   DBRow $data                 data
      * @throws  InvalidArgumentException    incorrect pushed data
      ************************************************************************/
     public function push($data) : void
     {
         if (!$data instanceof DBRow || $data->count() <= 0)
         {
-            $needClassName = DBRow::class;
-            throw new InvalidArgumentException("pushed data required to be not empty $needClassName object");
+            $needClass = DBRow::class;
+            throw new InvalidArgumentException("pushed data required to be not empty $needClass object");
         }
 
         parent::push($data);

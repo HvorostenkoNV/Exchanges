@@ -5,7 +5,7 @@ namespace UnitTests\ClassTesting\Exchange\Participants\FieldsTypes;
 
 use
     InvalidArgumentException,
-    UnitTests\Core\ExchangeTestCase,
+    UnitTests\AbstractTestCase,
     Main\Helpers\DB,
     Main\Exchange\Participants\FieldsTypes\Manager;
 /** ***********************************************************************************************
@@ -14,10 +14,10 @@ use
  * @package exchange_unit_tests
  * @author  Hvorostenko
  *************************************************************************************************/
-final class ManagerTest extends ExchangeTestCase
+final class ManagerTest extends AbstractTestCase
 {
 
-    private static $fieldsTypesTable = 'participants_fields_types';
+    private static $fieldsTypesTable = 'fields_types';
     /** **********************************************************************
      * check available fields types
      *

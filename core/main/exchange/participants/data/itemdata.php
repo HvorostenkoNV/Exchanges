@@ -7,7 +7,6 @@ use
     DomainException,
     InvalidArgumentException,
     Main\Data\MapData,
-    Main\Exchange\Participants\FieldsTypes\Manager as FieldsTypesManager,
     Main\Exchange\Participants\Fields\Field;
 /** ***********************************************************************************************
  * Participants item map data, item fields data.
@@ -21,7 +20,7 @@ class ItemData extends MapData
     /** **********************************************************************
      * delete value by key
      *
-     * @param   Field   $key                value key
+     * @param   Field $key                  value key
      ************************************************************************/
     public function delete($key) : void
     {
@@ -30,7 +29,7 @@ class ItemData extends MapData
     /** **********************************************************************
      * get value by key
      *
-     * @param   Field   $key                value key
+     * @param   Field $key                  value key
      * @return  mixed                       value
      ************************************************************************/
     public function get($key)
@@ -49,7 +48,7 @@ class ItemData extends MapData
     /** **********************************************************************
      * check map has key
      *
-     * @param   Field   $key                key to check
+     * @param   Field $key                  key to check
      * @return  bool                        map has key
      ************************************************************************/
     public function hasKey($key) : bool
@@ -59,7 +58,7 @@ class ItemData extends MapData
     /** **********************************************************************
      * check map has value
      *
-     * @param   mixed   $value              value
+     * @param   mixed $value                value
      * @return  bool                        map has value
      ************************************************************************/
     public function hasValue($value) : bool
@@ -77,8 +76,8 @@ class ItemData extends MapData
     {
         if (!$key instanceof Field)
         {
-            $needClassName = Field::class;
-            throw new InvalidArgumentException("key must be instance of \"$needClassName\"");
+            $needClass = Field::class;
+            throw new InvalidArgumentException("key must be instance of \"$needClass\"");
         }
 
         try

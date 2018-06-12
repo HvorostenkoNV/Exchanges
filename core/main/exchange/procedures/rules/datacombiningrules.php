@@ -3,114 +3,86 @@ declare(strict_types=1);
 
 namespace Main\Exchange\Procedures\Rules;
 
-use Main\Exchange\Participants\Participant;
+use
+    InvalidArgumentException,
+    Main\Data\MapData,
+    Main\Exchange\Procedures\Fields\ParticipantField;
 /** ***********************************************************************************************
- * Participant data combining rules.
- * Describes different participant data combining process
+ * Data combining rules
+ * Display participants fields weight
  *
  * @package exchange_exchange_procedures
  * @author  Hvorostenko
  *************************************************************************************************/
-class DataCombiningRules implements Rules
+class DataCombiningRules extends MapData
 {
-    private
-        $priorities         = [],
-        $emptyPriorities    = [];
     /** **********************************************************************
-     * attach participant field priority
+     * delete value by key
      *
-     * @param   Participant $participant        participant
-     * @param   string      $fieldName          field name
-     * @param   int         $priority           field priority
+     * @param   ParticipantField $key       value key
      ************************************************************************/
-    public function attachFieldPriority(Participant $participant, string $fieldName, int $priority) : void
+    public function delete($key) : void
     {
-        if (strlen($fieldName) > 0 && $priority > 0)
-        {
-            $fieldFullName = $this->getFieldFullName($participant, $fieldName);
-            $this->priorities[$fieldFullName] = $priority;
-        }
+        parent::delete($key);
     }
     /** **********************************************************************
-     * get participant field priority
+     * get value by key
      *
-     * @param   Participant $participant        participant
-     * @param   string      $fieldName          field name
-     * @return  int                             field priority
+     * @param   ParticipantField $key       value key
+     * @return  int                         value
      ************************************************************************/
-    public function getFieldPriority(Participant $participant, string $fieldName) : int
+    public function get($key)
     {
-        $fieldFullName = $this->getFieldFullName($participant, $fieldName);
+        return parent::get($key);
+    }
+    /** **********************************************************************
+     * get map keys
+     *
+     * @return  ParticipantField[]          array of keys
+     ************************************************************************/
+    public function getKeys() : array
+    {
+        return parent::getKeys();
+    }
+    /** **********************************************************************
+     * check map has key
+     *
+     * @param   ParticipantField $key       key to check
+     * @return  bool                        map has key
+     ************************************************************************/
+    public function hasKey($key) : bool
+    {
+        return parent::hasKey($key);
+    }
+    /** **********************************************************************
+     * check map has value
+     *
+     * @param   int $value                  value
+     * @return  bool                        map has value
+     ************************************************************************/
+    public function hasValue($value) : bool
+    {
+        return parent::hasValue($value);
+    }
+    /** **********************************************************************
+     * attach value to key
+     *
+     * @param   ParticipantField    $key    value key
+     * @param   int                 $value  value
+     * @throws  InvalidArgumentException    incorrect key or value
+     ************************************************************************/
+    public function set($key, $value) : void
+    {
+        if (!$key instanceof ParticipantField)
+        {
+            $needClass = ParticipantField::class;
+            throw new InvalidArgumentException("key must be instance of \"$needClass\"");
+        }
+        if (!is_int($value))
+        {
+            throw new InvalidArgumentException("value must be integer");
+        }
 
-        return array_key_exists($fieldFullName, $this->priorities)
-            ? $this->priorities[$fieldFullName]
-            : 0;
-    }
-    /** **********************************************************************
-     * drop participant field priority
-     *
-     * @param   Participant $participant        participant
-     * @param   string      $fieldName          field name
-     ************************************************************************/
-    public function dropFieldPriority(Participant $participant, string $fieldName) : void
-    {
-        $fieldFullName = $this->getFieldFullName($participant, $fieldName);
-
-        if (array_key_exists($fieldFullName, $this->priorities))
-        {
-            unset($this->priorities[$fieldFullName]);
-        }
-    }
-    /** **********************************************************************
-     * attach participant field has priority even if its value is empty
-     *
-     * @param   Participant $participant        participant
-     * @param   string      $fieldName          field name
-     ************************************************************************/
-    public function attachEmptyFieldHasPriority(Participant $participant, string $fieldName) : void
-    {
-        if (strlen($fieldName) > 0)
-        {
-            $fieldFullName = $this->getFieldFullName($participant, $fieldName);
-            $this->emptyPriorities[$fieldFullName] = null;
-        }
-    }
-    /** **********************************************************************
-     * check participant field has priority even if its value is empty
-     *
-     * @param   Participant $participant        participant
-     * @param   string      $fieldName          field name
-     * @return  bool                            empty field has priority
-     ************************************************************************/
-    public function checkEmptyFieldHasPriority(Participant $participant, string $fieldName) : bool
-    {
-        $fieldFullName = $this->getFieldFullName($participant, $fieldName);
-        return array_key_exists($fieldFullName, $this->emptyPriorities);
-    }
-    /** **********************************************************************
-     * detach participant field has priority even if its value is empty
-     *
-     * @param   Participant $participant        participant
-     * @param   string      $fieldName          field name
-     ************************************************************************/
-    public function detachEmptyFieldHasPriority(Participant $participant, string $fieldName) : void
-    {
-        $fieldFullName = $this->getFieldFullName($participant, $fieldName);
-
-        if (array_key_exists($fieldFullName, $this->emptyPriorities))
-        {
-            unset($this->emptyPriorities[$fieldFullName]);
-        }
-    }
-    /** **********************************************************************
-     * get item index
-     *
-     * @param   Participant $participant        participant
-     * @param   string      $fieldName          field name
-     * @return  string                          item index
-     ************************************************************************/
-    private function getFieldFullName(Participant $participant, string $fieldName) : string
-    {
-        return get_class($participant).'@'.$fieldName;
+        parent::set($key, $value);
     }
 }

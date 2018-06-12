@@ -43,7 +43,7 @@ class Logger
      ************************************************************************/
     private function __construct()
     {
-        $this->addString('note', 'Logger object created');
+        $this->addNotice('Logger object created');
     }
     /** **********************************************************************
      * add notice into log file

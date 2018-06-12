@@ -1,10 +1,11 @@
 <?php
 declare(strict_types=1);
 
-namespace UnitTests\Core;
+namespace UnitTests\ClassTesting\Data;
 
 use
     InvalidArgumentException,
+    UnitTests\AbstractTestCase,
     Main\Data\Set;
 /** ***********************************************************************************************
  * Parent class for testing Main\Data\Set classes
@@ -12,7 +13,7 @@ use
  * @package exchange_unit_tests
  * @author  Hvorostenko
  *************************************************************************************************/
-abstract class SetDataClass extends ExchangeTestCase
+abstract class SetDataAbstractTest extends AbstractTestCase
 {
     /** **********************************************************************
      * get Queue class name

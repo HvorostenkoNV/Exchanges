@@ -6,7 +6,7 @@ namespace UnitTests\ClassTesting\Exchange\Participants\Data;
 use
     InvalidArgumentException,
     ReflectionClass,
-    UnitTests\Core\MapDataClass,
+    UnitTests\ClassTesting\Data\MapDataAbstractTest,
     UnitTests\ClassTesting\Exchange\Participants\FieldsTypes\ParticipantFieldClass  as FieldTypeTest,
     UnitTests\ClassTesting\Exchange\Participants\FieldsTypes\StringFieldTest        as RandomFieldTypeTest,
     Main\Data\MapData,
@@ -20,7 +20,7 @@ use
  * @package exchange_unit_tests
  * @author  Hvorostenko
  *************************************************************************************************/
-final class ItemDataTest extends MapDataClass
+final class ItemDataTest extends MapDataAbstractTest
 {
     /** **********************************************************************
      * get Map class name

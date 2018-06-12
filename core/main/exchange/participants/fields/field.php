@@ -25,7 +25,7 @@ class Field
      * @param   Map $params                 field params
      * @throws  InvalidArgumentException    incorrect params
      ************************************************************************/
-    final public function __construct(Map $params)
+    public function __construct(Map $params)
     {
         try
         {
@@ -43,7 +43,7 @@ class Field
      * @param   string $param               param name
      * @return  mixed                       param value
      ************************************************************************/
-    final public function getParam(string $param)
+    public function getParam(string $param)
     {
         return $this->params->hasKey($param)
             ? $this->params->get($param)

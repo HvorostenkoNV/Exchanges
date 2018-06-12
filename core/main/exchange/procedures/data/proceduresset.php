@@ -8,7 +8,7 @@ use
     Main\Data\SetData,
     Main\Exchange\Procedures\Procedure;
 /** ***********************************************************************************************
- * Procedures collection, collection type of "First In, First Out"
+ * Procedures set
  * Collection of Procedure objects
  *
  * @package exchange_exchange_procedures
@@ -28,31 +28,24 @@ class ProceduresSet extends SetData
     /** **********************************************************************
      * drop item from set
      *
-     * @param   Procedure   $object         item for drop
-     * @throws  InvalidArgumentException    object is not Field
+     * @param   Procedure $object           item for drop
      ************************************************************************/
     public function delete($object) : void
     {
-        if (!$object instanceof Procedure)
-        {
-            $needClassName = Procedure::class;
-            throw new InvalidArgumentException("value must be instance of \"$needClassName\"");
-        }
-
         parent::delete($object);
     }
     /** **********************************************************************
      * push item to set
      *
-     * @param   Procedure   $object         pushed item
+     * @param   Procedure $object           pushed item
      * @throws  InvalidArgumentException    object is not Field
      ************************************************************************/
     public function push($object) :void
     {
         if (!$object instanceof Procedure)
         {
-            $needClassName = Procedure::class;
-            throw new InvalidArgumentException("value must be instance of \"$needClassName\"");
+            $needClass = Procedure::class;
+            throw new InvalidArgumentException("value must be instance of \"$needClass\"");
         }
 
         parent::push($object);

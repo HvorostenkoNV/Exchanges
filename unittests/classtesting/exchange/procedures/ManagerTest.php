@@ -5,11 +5,9 @@ namespace UnitTests\ClassTesting\Exchange\Procedures;
 
 use
     ReflectionClass,
-    UnitTests\Core\ExchangeTestCase,
-    UnitTests\Core\TempFilesGenerator,
-    UnitTests\Core\TempDBRecordsGenerator,
+    UnitTests\AbstractTestCase,
+    UnitTests\ProjectTempStructure\MainGenerator as TempStructureGenerator,
     Main\Data\MapData,
-    Main\Exchange\Procedures\UsersExchange,
     Main\Exchange\Procedures\Manager;
 /** ***********************************************************************************************
  * Test Main\Exchange\Procedures\Manager class
@@ -17,32 +15,10 @@ use
  * @package exchange_unit_tests
  * @author  Hvorostenko
  *************************************************************************************************/
-final class ManagerTest extends ExchangeTestCase
+final class ManagerTest extends AbstractTestCase
 {
-    private static
-        $proceduresTable    = 'procedures',
-        $tempProcedures     =
-        [
-            [
-                'dbItemName'    => 'TestManagerProcedure1',
-                'className'     => 'TestManagerProcedure1',
-                'activity'      => true
-            ],
-            [
-                'dbItemName'    => 'TestManagerProcedure2',
-                'className'     => 'TestManagerProcedure2',
-                'activity'      => true
-            ],
-            [
-                'dbItemName'    => 'TestManagerProcedure3',
-                'className'     => 'TestManagerProcedure3',
-                'activity'      => false
-            ]
-        ];
-    /** @var TempFilesGenerator */
-    private static $tempFilesGenerator      = null;
-    /** @var TempDBRecordsGenerator */
-    private static $tempDBRecordsGenerator  = null;
+    /** @var TempStructureGenerator */
+    private static $structureGenerator = null;
     /** **********************************************************************
      * construct
      ************************************************************************/
@@ -50,19 +26,8 @@ final class ManagerTest extends ExchangeTestCase
     {
         parent::setUpBeforeClass();
 
-        self::$tempFilesGenerator       = new TempFilesGenerator;
-        self::$tempDBRecordsGenerator   = new TempDBRecordsGenerator;
-
-        foreach (self::$tempProcedures as $procedure)
-        {
-            self::$tempFilesGenerator->createTempClass(UsersExchange::class, $procedure['className']);
-
-            self::$tempDBRecordsGenerator->createTempRecord(self::$proceduresTable,
-            [
-                'NAME'      => $procedure['dbItemName'],
-                'ACTIVITY'  => $procedure['activity'] ? 'Y' : 'N'
-            ]);
-        }
+        self::$structureGenerator = new TempStructureGenerator;
+        self::$structureGenerator->generate();
     }
     /** **********************************************************************
      * destruct
@@ -70,8 +35,8 @@ final class ManagerTest extends ExchangeTestCase
     public static function tearDownAfterClass() : void
     {
         parent::tearDownAfterClass();
-        self::$tempFilesGenerator->dropCreatedTempData();
-        self::$tempDBRecordsGenerator->dropTempChanges();
+
+        self::$structureGenerator->clean();
     }
     /** **********************************************************************
      * check getting procedures by name
@@ -81,32 +46,35 @@ final class ManagerTest extends ExchangeTestCase
      ************************************************************************/
     public function gettingProceduresByName() : void
     {
-        $tempProcedures = [];
-        $procedures     = [];
+        $expectedProcedures = [];
+        $getedProcedures    = [];
 
-        foreach (self::$tempProcedures as $procedure)
+        foreach (self::$structureGenerator->getStructure() as $procedureInfo)
         {
-            $tempProcedures[] = $procedure['className'];
+            $expectedProcedures[] = $procedureInfo['name'];
         }
 
         $filter = new MapData;
-        $filter->set('NAME', $tempProcedures);
+        $filter->set('NAME', $expectedProcedures);
         $set = Manager::getProcedures($filter);
 
         while ($set->valid())
         {
-            $procedure              = $set->current();
-            $procedureClass         = get_class($procedure);
-            $procedureReflection    = new ReflectionClass($procedureClass);
-            $procedures[]           = $procedureReflection->getShortName();
-
+            $procedure          = $set->current();
+            $procedureName      = $this->getObjectClassShortName($procedure);
+            $getedProcedures[]  = $procedureName;
             $set->next();
         }
 
+        asort($expectedProcedures);
+        asort($getedProcedures);
+        $expectedProcedures = array_values($expectedProcedures);
+        $getedProcedures    = array_values($getedProcedures);
+
         self::assertEquals
         (
-            $tempProcedures,
-            $procedures,
+            $expectedProcedures,
+            $getedProcedures,
             'Geted procedures not equal temp expected'
         );
     }
@@ -118,36 +86,39 @@ final class ManagerTest extends ExchangeTestCase
      ************************************************************************/
     public function gettingProceduresByActivity() : void
     {
-        $tempProcedures = [];
-        $procedures     = [];
+        $expectedProcedures = [];
+        $getedProcedures    = [];
 
-        foreach (self::$tempProcedures as $procedure)
+        foreach (self::$structureGenerator->getStructure() as $procedureInfo)
         {
-            if ($procedure['activity'])
+            if ($procedureInfo['activity'])
             {
-                $tempProcedures[] = $procedure['className'];
+                $expectedProcedures[] = $procedureInfo['name'];
             }
         }
 
         $filter = new MapData;
-        $filter->set('NAME',        $tempProcedures);
+        $filter->set('NAME',        $expectedProcedures);
         $filter->set('ACTIVITY',    true);
         $set = Manager::getProcedures($filter);
 
         while ($set->valid())
         {
-            $procedure              = $set->current();
-            $procedureClass         = get_class($procedure);
-            $procedureReflection    = new ReflectionClass($procedureClass);
-            $procedures[]           = $procedureReflection->getShortName();
-
+            $procedure          = $set->current();
+            $procedureName      = $this->getObjectClassShortName($procedure);
+            $getedProcedures[]  = $procedureName;
             $set->next();
         }
 
+        asort($expectedProcedures);
+        asort($getedProcedures);
+        $expectedProcedures = array_values($expectedProcedures);
+        $getedProcedures    = array_values($getedProcedures);
+
         self::assertEquals
         (
-            $tempProcedures,
-            $procedures,
+            $expectedProcedures,
+            $getedProcedures,
             'Geted procedures not equal temp expected'
         );
     }
@@ -159,11 +130,12 @@ final class ManagerTest extends ExchangeTestCase
      ************************************************************************/
     public function gettingOneProcedureByName() : void
     {
-        $randTempProcedure  = self::$tempProcedures[array_rand(self::$tempProcedures)];
-        $filter             = new MapData;
+        $randomStructure            = self::$structureGenerator->getStructure();
+        $randomTempProcedureInfo    = $randomStructure[array_rand($randomStructure)];
+        $filter                     = new MapData;
 
-        $filter->set('NAME',        $randTempProcedure['dbItemName']);
-        $filter->set('ACTIVITY',    $randTempProcedure['activity']);
+        $filter->set('NAME',        $randomTempProcedureInfo['name']);
+        $filter->set('ACTIVITY',    $randomTempProcedureInfo['activity']);
         $set = Manager::getProcedures($filter);
 
         self::assertEquals
@@ -173,16 +145,26 @@ final class ManagerTest extends ExchangeTestCase
             'Expect get one query row with filter by name'
         );
 
-        $procedure              = $set->current();
-        $procedureClass         = get_class($procedure);
-        $procedureReflection    = new ReflectionClass($procedureClass);
-        $procedureClassName     = $procedureReflection->getShortName();
+        $procedure      = $set->current();
+        $procedureName  = $this->getObjectClassShortName($procedure);
 
         self::assertEquals
         (
-            $randTempProcedure['dbItemName'],
-            $procedureClassName,
+            $randomTempProcedureInfo['name'],
+            $procedureName,
             'Geted procedure not equals expected'
         );
+    }
+    /** **********************************************************************
+     * get object class short name
+     *
+     * @param   object  $object                         object
+     * @return  string                                  object class short name
+     ************************************************************************/
+    private function getObjectClassShortName($object) : string
+    {
+        $objectReflection = new ReflectionClass($object);
+
+        return $objectReflection->getShortName();
     }
 }

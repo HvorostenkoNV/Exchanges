@@ -25,18 +25,24 @@ class ArrayOfStringsField extends AbstractField
     {
         $result         = [];
         $valuesArray    = is_array($value) ? $value : [$value];
+        $stringField    = null;
+
+        try
+        {
+            $stringField = Manager::getField('string');
+        }
+        catch (InvalidArgumentException $exception)
+        {
+            return $result;
+        }
 
         foreach ($valuesArray as $item)
         {
             try
             {
-                $result[] = Manager::getField('string')->validateValue($item);
+                $result[] = $stringField->validateValue($item);
             }
             catch (DomainException $exception)
-            {
-
-            }
-            catch (InvalidArgumentException $exception)
             {
 
             }
@@ -60,18 +66,24 @@ class ArrayOfStringsField extends AbstractField
     {
         $result         = [];
         $valuesArray    = is_array($value) ? $value : [$value];
+        $stringField    = null;
+
+        try
+        {
+            $stringField = Manager::getField('string');
+        }
+        catch (InvalidArgumentException $exception)
+        {
+            return $result;
+        }
 
         foreach ($valuesArray as $item)
         {
             try
             {
-                $result[] = Manager::getField('string')->convertValueForPrint($item);
+                $result[] = $stringField->convertValueForPrint($item);
             }
             catch (DomainException $exception)
-            {
-
-            }
-            catch (InvalidArgumentException $exception)
             {
 
             }

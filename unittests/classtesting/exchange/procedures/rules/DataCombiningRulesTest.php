@@ -1,13 +1,12 @@
 <?php
 declare(strict_types=1);
 
-namespace UnitTests\ClassTesting\Exchange\Procedures\Rules;
+namespace UnitTests\ClassTesting\Exchange\Procedures\Fields;
 
 use
-    UnitTests\Core\ExchangeTestCase,
-    Main\Exchange\Participants\Users1C      as Users1CParticipant,
-    Main\Exchange\Participants\UsersAD      as UsersADParticipant,
-    Main\Exchange\Participants\UsersBitrix  as UsersBitrixParticipant,
+    UnitTests\ClassTesting\Data\MapDataAbstractTest,
+    Main\Data\MapData,
+    Main\Exchange\Procedures\Fields\ParticipantField,
     Main\Exchange\Procedures\Rules\DataCombiningRules;
 /** ***********************************************************************************************
  * Test Main\Exchange\Procedures\Rules\DataCombiningRules class
@@ -15,82 +14,79 @@ use
  * @package exchange_unit_tests
  * @author  Hvorostenko
  *************************************************************************************************/
-final class DataCombiningRulesTest extends ExchangeTestCase
+final class DataCombiningRulesTest extends MapDataAbstractTest
 {
     /** **********************************************************************
-     * testing priority read/write operations
+     * get Queue class name
      *
-     * @test
-     * @throws
+     * @return  string                      Set class name
      ************************************************************************/
-    public function priorityReadWriteOperations() : void
+    public static function getMapClassName() : string
     {
-        $rules = new DataCombiningRules;
-
-        foreach ([new Users1CParticipant, new UsersADParticipant, new UsersBitrixParticipant] as $index => $participant)
-        {
-            $fieldName      = get_class($participant).'Field';
-            $fieldPriority  = $index + 1;
-
-            $rules->attachFieldPriority($participant, $fieldName, $fieldPriority);
-            self::assertEquals
-            (
-                $fieldPriority,
-                $rules->getFieldPriority($participant, $fieldName),
-                'Expect get field priority as seted'
-            );
-        }
+        return DataCombiningRules::class;
     }
     /** **********************************************************************
-     * testing fields priority drop operation
+     * get correct data
      *
-     * @test
-     * @depends priorityReadWriteOperations
-     * @throws
+     * @return  array                       correct data array
      ************************************************************************/
-    public function priorityDropOperation() : void
+    public static function getCorrectData() : array
     {
-        $rules          = new DataCombiningRules;
-        $participant    = new Users1CParticipant;
-        $fieldName      = 'someField';
+        $result = [];
 
-        $rules->attachFieldPriority($participant, $fieldName, 10);
-        $rules->dropFieldPriority($participant, $fieldName);
+        foreach (ParticipantFieldTest::getParamsForFieldConstruct() as $arrayInfo)
+        {
+            $participant        = $arrayInfo[0];
+            $field              = $arrayInfo[1];
+            $participantField   = new ParticipantField($participant, $field);
 
-        self::assertEquals
-        (
+            $result[] = [$participantField, rand(0, 100)];
+        }
+
+        return $result;
+    }
+    /** **********************************************************************
+     * get incorrect keys
+     *
+     * @return  array                       incorrect data keys
+     ************************************************************************/
+    public static function getIncorrectDataKeys() : array
+    {
+        return
+        [
+            'string',
+            '',
+            2,
+            2.5,
             0,
-            $rules->getFieldPriority($participant, $fieldName),
-            'Expect null on getting field priority after drop priority'
-        );
+            true,
+            false,
+            [1, 2, 3],
+            ['string', '', 2.5, 0, true, false],
+            [],
+            new MapData,
+            null
+        ];
     }
     /** **********************************************************************
-     * testing empty priority read/write operations
+     * get incorrect values
      *
-     * @test
-     * @throws
+     * @return  array                       incorrect data values
      ************************************************************************/
-    public function emptyPriorityReadWriteOperations() : void
+    public static function getIncorrectDataValues() : array
     {
-        $rules = new DataCombiningRules;
-
-        foreach ([new Users1CParticipant, new UsersADParticipant, new UsersBitrixParticipant] as $index => $participant)
-        {
-            $fieldName = get_class($participant).'Field';
-
-            $rules->attachEmptyFieldHasPriority($participant, $fieldName);
-            self::assertTrue
-            (
-                $rules->checkEmptyFieldHasPriority($participant, $fieldName),
-                'Expect true on checking field has priority even if empty after seting true'
-            );
-
-            $rules->detachEmptyFieldHasPriority($participant, $fieldName);
-            self::assertFalse
-            (
-                $rules->checkEmptyFieldHasPriority($participant, $fieldName),
-                'Expect false on checking field has priority even if empty after seting false'
-            );
-        }
+        return
+        [
+            'string',
+            '',
+            2.5,
+            true,
+            false,
+            [1, 2, 3],
+            ['string', '', 2.5, 0, true, false],
+            [],
+            new MapData,
+            null
+        ];
     }
 }

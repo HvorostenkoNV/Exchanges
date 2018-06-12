@@ -21,8 +21,6 @@ class StringField extends AbstractField
      ************************************************************************/
     public function validateValue($value)
     {
-        $valuePrintable = var_export($value, true);
-
         switch (gettype($value))
         {
             case 'string':
@@ -36,12 +34,11 @@ class StringField extends AbstractField
                 return $value ? 'Y' : 'N';
             case 'NULL':
                 return null;
-            case 'array':
-            case 'object':
-            case 'resource':
             default:
-                throw new DomainException("unable convert \"$valuePrintable\" to string");
         }
+
+        $valuePrintable = var_export($value, true);
+        throw new DomainException("unable convert \"$valuePrintable\" to string");
     }
     /** **********************************************************************
      * convert value for print
@@ -52,23 +49,17 @@ class StringField extends AbstractField
      ************************************************************************/
     public function convertValueForPrint($value)
     {
-        $valuePrintable = var_export($value, true);
-
         switch (gettype($value))
         {
             case 'string':
                 return $value;
             case 'NULL':
                 return '';
-            case 'integer':
-            case 'double':
-            case 'boolean':
-            case 'array':
-            case 'object':
-            case 'resource':
             default:
-                throw new DomainException("unable convert \"$valuePrintable\" for print");
         }
+
+        $valuePrintable = var_export($value, true);
+        throw new DomainException("unable convert \"$valuePrintable\" for print");
     }
     /** **********************************************************************
      * get random value

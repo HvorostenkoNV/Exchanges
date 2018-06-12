@@ -3,16 +3,14 @@ declare(strict_types=1);
 
 namespace UnitTests\ClassTesting\Data;
 
-use
-    UnitTests\Core\QueueDataClass,
-    Main\Data\QueueData;
+use Main\Data\QueueData;
 /** ***********************************************************************************************
  * Test Main\Data\QueueData class
  *
  * @package exchange_unit_tests
  * @author  Hvorostenko
  *************************************************************************************************/
-final class QueueDataTest extends QueueDataClass
+final class QueueDataTest extends QueueDataAbstractTest
 {
     /** **********************************************************************
      * get Queue class name

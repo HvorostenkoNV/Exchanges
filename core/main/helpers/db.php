@@ -4,9 +4,9 @@ declare(strict_types=1);
 namespace Main\Helpers;
 
 use
-    InvalidArgumentException,
     RuntimeException,
     PDOException,
+    InvalidArgumentException,
     PDO,
     PDOStatement,
     Main\Singleton,
@@ -74,54 +74,46 @@ class DB
 
         try
         {
-            $preparedQuery = $this->getPreparedQueryStatement($sqlQuery);
-        }
-        catch (PDOException $exception)
-        {
-            $error = $exception->getMessage();
-            $this->lastError = $error;
-            $logger->addWarning("Caught DB query error \"$error\" on preparing query \"$sqlQuery\"");
-            return $result;
-        }
-
-        try
-        {
+            $preparedQuery      = $this->getPreparedQueryStatement($sqlQuery);
             $pdoLastInsertId    = (int) $this->pdo->lastInsertId();
             $queryResult        = $this->executeQueryStatement($preparedQuery, $params);
             $newInsertedId      = (int) $this->pdo->lastInsertId();
 
             foreach ($queryResult as $row)
             {
-                try
+                $fieldValues = new DBRow;
+
+                foreach ($row as $key => $value)
                 {
-                    $fieldValues = new DBRow;
-
-                    foreach ($row as $key => $value)
-                    {
-                        $fieldValues->set($key, $value);
-                    }
-
-                    $result->push($fieldValues);
+                    $fieldValues->set($key, $value);
                 }
-                catch (InvalidArgumentException $exception)
-                {
 
-                }
+                $result->push($fieldValues);
             }
+
             if ($newInsertedId != $pdoLastInsertId)
             {
                 $this->lastInsertId = $newInsertedId;
             }
-
-            return $result;
         }
         catch (PDOException $exception)
         {
             $error = $exception->getMessage();
             $this->lastError = $error;
-            $logger->addWarning("Caught DB query error \"$error\" on execute query \"$sqlQuery\"");
-            return $result;
+            $logger->addWarning("Caught DB query error \"$error\" on preparing query \"$sqlQuery\"");
         }
+        catch (RuntimeException $exception)
+        {
+            $error = $exception->getMessage();
+            $this->lastError = $error;
+            $logger->addWarning("Caught DB query error \"$error\" on execute query \"$sqlQuery\"");
+        }
+        catch (InvalidArgumentException $exception)
+        {
+
+        }
+
+        return $result;
     }
     /** **********************************************************************
      * check if there was any error during last query
@@ -174,6 +166,7 @@ class DB
                 ]
             );
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
             return $pdo;
         }
         catch (PDOException $exception)
@@ -210,7 +203,7 @@ class DB
      * @param   PDOStatement    $preparedQuery      prepared query statement
      * @param   array   $params                     query params for preparing
      * @return  array                               query result in rows
-     * @throws  PDOException                        executing error
+     * @throws  RuntimeException                    executing error
      ************************************************************************/
     private function executeQueryStatement(PDOStatement $preparedQuery, array $params) : array
     {
@@ -218,12 +211,12 @@ class DB
         {
             if (!$preparedQuery->execute($params))
             {
-                throw new PDOException($preparedQuery->errorInfo()[2]);
+                throw new RuntimeException($preparedQuery->errorInfo()[2]);
             }
         }
         catch (PDOException $exception)
         {
-            throw $exception;
+            throw new RuntimeException($exception->getMessage());
         }
 
         try

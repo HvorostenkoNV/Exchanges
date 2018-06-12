@@ -8,8 +8,8 @@ use
     RuntimeException,
     PDO,
     SplFileInfo,
-    UnitTests\Core\ExchangeTestCase,
-    UnitTests\Core\TempDBRecordsGenerator,
+    UnitTests\AbstractTestCase,
+    UnitTests\ProjectTempStructure\DBGenerator,
     Main\Helpers\Config,
     Main\Helpers\DB;
 /** ***********************************************************************************************
@@ -18,7 +18,7 @@ use
  * @package exchange_unit_tests
  * @author  Hvorostenko
  *************************************************************************************************/
-final class DBTest extends ExchangeTestCase
+final class DBTest extends AbstractTestCase
 {
     private static $tempDBTable =
     [
@@ -31,8 +31,8 @@ final class DBTest extends ExchangeTestCase
         ],
         'items'     => []
     ];
-    /** @var TempDBRecordsGenerator */
-    private static $tempDBRecordsGenerator  = null;
+    /** @var DBGenerator */
+    private static $tempDBGenerator = null;
     /** **********************************************************************
      * construct
      ************************************************************************/
@@ -45,9 +45,9 @@ final class DBTest extends ExchangeTestCase
         $nameColumn = self::$tempDBTable['columns']['item_name'];
         $codeColumn = self::$tempDBTable['columns']['item_code'];
 
-        self::$tempDBRecordsGenerator = new TempDBRecordsGenerator;
+        self::$tempDBGenerator = new DBGenerator;
 
-        self::$tempDBRecordsGenerator->createTempTable($table,
+        self::$tempDBGenerator->createTempTable($table,
         [
             'ID INT AUTO_INCREMENT',
             'NAME VARCHAR(255)',
@@ -62,7 +62,7 @@ final class DBTest extends ExchangeTestCase
                 $nameColumn => "Item name $index",
                 $codeColumn => "item_code_$index"
             ];
-            self::$tempDBRecordsGenerator->createTempRecord($table, $item);
+            self::$tempDBGenerator->createTempRecord($table, $item);
             self::$tempDBTable['items'][] = $item;
         }
     }
@@ -72,7 +72,7 @@ final class DBTest extends ExchangeTestCase
     public static function tearDownAfterClass() : void
     {
         parent::tearDownAfterClass();
-        self::$tempDBRecordsGenerator->dropTempChanges();
+        self::$tempDBGenerator->dropTempChanges();
     }
     /** **********************************************************************
      * check DB class is singleton

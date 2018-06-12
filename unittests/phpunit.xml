@@ -13,5 +13,8 @@
         <var    name="DB_LOGIN"         value="root" />
         <var    name="DB_PASSWORD"      value="RooT987456@#" />
         <var    name="DB_NAME"          value="exchange" />
+        <var    name="XML_ROOT_TAG"     value="DOCUMENT" />
+        <var    name="XML_VERSION"      value="1.0" />
+        <var    name="XML_ENCODING"     value="UTF-8" />
     </php>
 </phpunit>

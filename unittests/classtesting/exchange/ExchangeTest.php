@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace UnitTests\ClassTesting\Exchange;
 
 use
-    UnitTests\Core\ExchangeTestCase,
+    UnitTests\AbstractTestCase,
     Main\Exchange\Exchange;
 /** ***********************************************************************************************
  * Test Main\Exchange\Exchange class
@@ -12,7 +12,7 @@ use
  * @package exchange_unit_tests
  * @author  Hvorostenko
  *************************************************************************************************/
-final class ExchangeTest extends ExchangeTestCase
+final class ExchangeTest extends AbstractTestCase
 {
     /** **********************************************************************
      * check Exchange is singleton

@@ -7,13 +7,15 @@ namespace Main.Exchange.Procedures #BBB {
 
     interface Procedure {
         +getParticipants() : Data.ParticipantsSet
-        +getFields() : Fields.ProceduresFieldsSet
+        +getFields() : Fields.FieldsSet
+        +getDataMatchingRules() : Rules.DataMatchingRules
         +getDataCombiningRules() : Rules.DataCombiningRules
     }
 
     abstract AbstractProcedure {
         +getParticipants() : Data.ParticipantsSet
-        +getFields() : Fields.ProceduresFieldsSet
+        +getFields() : Fields.FieldsSet
+        +getDataMatchingRules() : Rules.DataMatchingRules
         +getDataCombiningRules() : Rules.DataCombiningRules
     }
 
@@ -35,46 +37,45 @@ namespace Main.Exchange.Procedures #BBB {
             +delete(Procedures.Procedure $object) : void
             +push(Procedures.Procedure $object) :void
         }
-
-        class DataCombiningRules < extends Main.Data.MapData > {
-            +set(Data.ParticipantsSet $key, Fields.ProceduresFieldsSet $value) : void
-            +get(Data.ParticipantsSet $key) : Fields.ProceduresFieldsSet
-        }
     }
     /' ------------------------------------------- '/
     /' ----------------- Fields ------------------ '/
     /' ------------------------------------------- '/
     namespace Fields #FFF {
         class ParticipantField {
-            +__construct(Main.Data.Map $params, Participants.Participant $participant, Participants.Fields.Field $field)
-            +getParam(string $param) : mixed
+            +__construct(Participants.Participant $participant, Participants.Fields.Field $field)
             +getParticipant() : Participants.Participant
-            +getParticipantField() : Participants.Fields.Field
+            +getField() : Participants.Fields.Field
         }
 
-        class ParticipantsFieldsSet < extends Main.Data.SetData > {
+        class ProcedureField < extends Main.Data.SetData > {
             +current() : ?ParticipantField
             +delete(ParticipantField $object) : void
             +push(ParticipantField $object) :void
         }
 
-        class ProcedureField {
-            +__construct(Main.Data.Map $params, Data.ParticipantsFieldsSet $field)
-            +getParam(string $param) : mixed
-            +hasParticipant(Participants.Participant $participant) : bool
-            +hasParticipantField(Participants.Fields.Field $field) : bool
-            +getProceduresParticipantsFields() : ParticipantsFieldsSet
-        }
-
-        class ProceduresFieldsSet < extends Main.Data.SetData > {
+        class FieldsSet < extends Main.Data.SetData > {
             +current() : ?ProcedureField
             +delete(ProcedureField $object) : void
             +push(ProcedureField $object) :void
         }
 
-        ProceduresFieldsSet     o-- ProcedureField
-        ProcedureField          o-- ParticipantsFieldsSet
-        ParticipantsFieldsSet   o-- ParticipantField
+        FieldsSet       o-- ProcedureField
+        ProcedureField  o-- ParticipantField
+    }
+    /' ------------------------------------------- '/
+    /' ------------------ Rules ------------------ '/
+    /' ------------------------------------------- '/
+    namespace Rules #FFF {
+        class DataMatchingRules < extends Main.Data.MapData > {
+            +set(Fields.ParticipantField $key, Fields.FieldsSet $value) : void
+            +get(Fields.ParticipantField $key) : Fields.FieldsSet
+        }
+
+        class DataCombiningRules < extends Main.Data.MapData > {
+            +set(Participants.Fields.Field $key, int $value) : void
+            +get(Participants.Fields.Field $key) : int
+        }
     }
     /' ------------------------------------------- '/
     /' ---------------- Relations ---------------- '/
@@ -85,8 +86,9 @@ namespace Main.Exchange.Procedures #BBB {
 
     Manager     o-- Main.Exchange.Procedures.Data.ProceduresSet
     Procedure   o-- Main.Exchange.Procedures.Data.ParticipantsSet
-    Procedure   o-- Main.Exchange.Procedures.Fields.ProceduresFieldsSet
-    Procedure   o-- Main.Exchange.Procedures.Data.DataCombiningRules
+    Procedure   o-- Main.Exchange.Procedures.Fields.FieldsSet
+    Procedure   o-- Main.Exchange.Procedures.Rules.DataMatchingRules
+    Procedure   o-- Main.Exchange.Procedures.Rules.DataCombiningRules
 }
 
 @enduml

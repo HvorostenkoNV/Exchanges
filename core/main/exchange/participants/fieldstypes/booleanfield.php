@@ -21,8 +21,6 @@ class BooleanField extends AbstractField
      ************************************************************************/
     public function validateValue($value)
     {
-        $valuePrintable = var_export($value, true);
-
         if
         (
             $value  === true    ||
@@ -46,6 +44,7 @@ class BooleanField extends AbstractField
             return false;
         }
 
+        $valuePrintable = var_export($value, true);
         throw new DomainException("unable convert \"$valuePrintable\" to boolean");
     }
     /** **********************************************************************
@@ -57,22 +56,15 @@ class BooleanField extends AbstractField
      ************************************************************************/
     public function convertValueForPrint($value)
     {
-        $valuePrintable = var_export($value, true);
-
         switch (gettype($value))
         {
             case 'boolean':
                 return $value ? 'Y' : 'N';
-            case 'NULL':
-            case 'integer':
-            case 'double':
-            case 'string':
-            case 'array':
-            case 'object':
-            case 'resource':
             default:
-                throw new DomainException("unable convert \"$valuePrintable\" for print");
         }
+
+        $valuePrintable = var_export($value, true);
+        throw new DomainException("unable convert \"$valuePrintable\" for print");
     }
     /** **********************************************************************
      * get random value

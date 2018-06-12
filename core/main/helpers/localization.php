@@ -90,12 +90,10 @@ class Localization
         {
             return $this->messages[$message];
         }
-        else
-        {
-            $lang = $this->lang;
-            Logger::getInstance()->addWarning("Localization message \"$message\" for \"$lang\" language was not found");
-            return '';
-        }
+
+        $lang = $this->lang;
+        Logger::getInstance()->addWarning("Localization message \"$message\" for \"$lang\" language was not found");
+        return '';
     }
     /** **********************************************************************
      * get all localization files in folder

@@ -97,7 +97,7 @@ class Manager
 
         try
         {
-            $queryResult = DB::getInstance()->query("SELECT CODE FROM participants_fields_types");
+            $queryResult = DB::getInstance()->query("SELECT CODE FROM fields_types");
             while (!$queryResult->isEmpty())
             {
                 $result[] = $queryResult->pop()->get('CODE');

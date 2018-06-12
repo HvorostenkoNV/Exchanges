@@ -21,19 +21,17 @@ class NumberField extends AbstractField
      ************************************************************************/
     public function validateValue($value)
     {
-        $valuePrintable = var_export($value, true);
-
         switch (gettype($value))
         {
             case 'string':
-                if (!is_numeric($value))
+                if (is_numeric($value))
                 {
-                    throw new DomainException("unable convert \"$valuePrintable\" to number");
+                    return strpos($value, '.') === false
+                        ? (int) $value
+                        : (float) $value;
                 }
 
-                return strpos($value, '.') !== false
-                    ? (float) $value
-                    : (int) $value;
+                break;
             case 'integer':
             case 'double':
                 return $value;
@@ -41,12 +39,11 @@ class NumberField extends AbstractField
                 return $value ? 1 : 0;
             case 'NULL':
                 return null;
-            case 'array':
-            case 'object':
-            case 'resource':
             default:
-                throw new DomainException("unable convert \"$valuePrintable\" to number");
         }
+
+        $valuePrintable = var_export($value, true);
+        throw new DomainException("unable convert \"$valuePrintable\" to number");
     }
     /** **********************************************************************
      * convert value for print
@@ -57,8 +54,6 @@ class NumberField extends AbstractField
      ************************************************************************/
     public function convertValueForPrint($value)
     {
-        $valuePrintable = var_export($value, true);
-
         switch (gettype($value))
         {
             case 'integer':
@@ -66,14 +61,11 @@ class NumberField extends AbstractField
                 return (string) $value;
             case 'NULL':
                 return '';
-            case 'string':
-            case 'boolean':
-            case 'array':
-            case 'object':
-            case 'resource':
             default:
-                throw new DomainException("unable convert \"$valuePrintable\" for print");
         }
+
+        $valuePrintable = var_export($value, true);
+        throw new DomainException("unable convert \"$valuePrintable\" for print");
     }
     /** **********************************************************************
      * get random value

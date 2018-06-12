@@ -1,14 +1,14 @@
 <?php
 declare(strict_types=1);
 
-namespace UnitTests\ClassTesting\Helpers;
+namespace UnitTests\ClassTesting\Helpers\MarkupData;
 
 use
     RuntimeException,
     InvalidArgumentException,
     SplFileInfo,
-    UnitTests\Core\ExchangeTestCase,
-    UnitTests\Core\TempFilesGenerator,
+    UnitTests\AbstractTestCase,
+    UnitTests\ProjectTempStructure\XmlGenerator,
     Main\Helpers\MarkupData\XML,
     Main\Exchange\Participants\FieldsTypes\Manager as FieldsTypesManager;
 /** ***********************************************************************************************
@@ -17,7 +17,7 @@ use
  * @package exchange_unit_tests
  * @author  Hvorostenko
  *************************************************************************************************/
-final class XMLTest extends ExchangeTestCase
+final class XMLTest extends AbstractTestCase
 {
     /** **********************************************************************
      * check XML reading
@@ -27,9 +27,9 @@ final class XMLTest extends ExchangeTestCase
      ************************************************************************/
     public function readingXml() : void
     {
-        $tempFilesGenerator = new TempFilesGenerator;
+        $tempXmlGenerator   = new XmlGenerator;
         $randomData         = $this->getRandomData();
-        $tempXml            = $tempFilesGenerator->createTempXml($randomData);
+        $tempXml            = $tempXmlGenerator->createXml($randomData);
         $xml                = new XML($tempXml);
 
         self::assertEquals
@@ -39,7 +39,7 @@ final class XMLTest extends ExchangeTestCase
             'Expect get same xml data as was saved into file'
         );
 
-        $tempFilesGenerator->dropCreatedTempData();
+        $tempXmlGenerator->clean();
     }
     /** **********************************************************************
      * check empty XML reading
@@ -50,8 +50,8 @@ final class XMLTest extends ExchangeTestCase
      ************************************************************************/
     public function readingEmptyXml() : void
     {
-        $tempFilesGenerator = new TempFilesGenerator;
-        $tempXml            = $tempFilesGenerator->createTempXml([]);
+        $tempXmlGenerator   = new XmlGenerator;
+        $tempXml            = $tempXmlGenerator->createXml([]);
         $xml                = new XML($tempXml);
 
         self::assertEquals
@@ -61,7 +61,7 @@ final class XMLTest extends ExchangeTestCase
             'Expect get empty array on reading empty XML'
         );
 
-        $tempFilesGenerator->dropCreatedTempData();
+        $tempXmlGenerator->clean();
     }
     /** **********************************************************************
      * check incorrect XML reading
@@ -93,10 +93,10 @@ final class XMLTest extends ExchangeTestCase
      ************************************************************************/
     public function writing() : void
     {
-        $tempFilesGenerator = new TempFilesGenerator;
+        $tempXmlGenerator   = new XmlGenerator;
         $randomData         = $this->getRandomData();
-        $tempXml            = $tempFilesGenerator->createTempXml($randomData);
-        $tempXmlForFilling  = $tempFilesGenerator->createTempXml([]);
+        $tempXml            = $tempXmlGenerator->createXml($randomData);
+        $tempXmlForFilling  = $tempXmlGenerator->createXml([]);
         $xmlMarkupData      = new XML($tempXmlForFilling);
         $writingResult      = $xmlMarkupData->write($randomData);
 
@@ -115,7 +115,7 @@ final class XMLTest extends ExchangeTestCase
             'Expect get xml content as in example xml'
         );
 
-        $tempFilesGenerator->dropCreatedTempData();
+        $tempXmlGenerator->clean();
     }
     /** **********************************************************************
      * get random data for writing into XML

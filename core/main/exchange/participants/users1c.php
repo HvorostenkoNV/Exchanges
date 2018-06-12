@@ -12,7 +12,7 @@ use
  * @package exchange_exchange_participants
  * @author  Hvorostenko
  *************************************************************************************************/
-class Users1C extends AbstractParticipants
+class Users1C extends AbstractParticipant
 {
     /** **********************************************************************
      * read participant provided data and get it

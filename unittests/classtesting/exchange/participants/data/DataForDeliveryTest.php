@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace UnitTests\ClassTesting\Exchange\Participants\Data;
 
 use
-    UnitTests\Core\QueueDataClass,
+    UnitTests\ClassTesting\Data\QueueDataAbstractTest,
     Main\Data\MapData,
     Main\Exchange\Participants\Data\ItemData,
     Main\Exchange\Participants\Data\DataForDelivery;
@@ -14,7 +14,7 @@ use
  * @package exchange_unit_tests
  * @author  Hvorostenko
  *************************************************************************************************/
-final class DataForDeliveryTest extends QueueDataClass
+final class DataForDeliveryTest extends QueueDataAbstractTest
 {
     /** **********************************************************************
      * get Queue class name
@@ -71,7 +71,6 @@ final class DataForDeliveryTest extends QueueDataClass
             [],
             new DataForDelivery,
             new MapData,
-            new ItemData,
             null
         ];
     }

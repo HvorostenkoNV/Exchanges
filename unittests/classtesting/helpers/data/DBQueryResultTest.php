@@ -4,16 +4,17 @@ declare(strict_types=1);
 namespace UnitTests\ClassTesting\Helpers\Data;
 
 use
-    UnitTests\Core\QueueDataClass,
+    UnitTests\ClassTesting\Data\QueueDataAbstractTest,
     Main\Data\MapData,
     Main\Helpers\Data\DBRow,
     Main\Helpers\Data\DBQueryResult;
 /** ***********************************************************************************************
  * Test Main\Helpers\Data\DBQueryResult class
+ *
  * @package exchange_unit_tests
  * @author  Hvorostenko
  *************************************************************************************************/
-final class DBQueryResultTest extends QueueDataClass
+final class DBQueryResultTest extends QueueDataAbstractTest
 {
     /** **********************************************************************
      * get Queue class name

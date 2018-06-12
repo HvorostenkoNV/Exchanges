@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace UnitTests\Core;
+namespace UnitTests\ProjectTempStructure;
 
 use
     PDOException,
@@ -13,7 +13,7 @@ use
  * @package exchange_unit_tests
  * @author  Hvorostenko
  *************************************************************************************************/
-final class TempDBRecordsGenerator
+final class DBGenerator
 {
     private static
         $pdo = null;
@@ -34,21 +34,19 @@ final class TempDBRecordsGenerator
             $queryResult = self::getPDO()->query('SHOW TABLES');
             foreach ($queryResult->fetchAll(PDO::FETCH_ASSOC) as $row)
             {
-                $result[array_pop($row)] = [];
+                $table          = array_pop($row);
+                $result[$table] = [];
+                $queryResult    = self::getPDO()->query("SELECT * FROM $table");
+
+                foreach ($queryResult->fetchAll(PDO::FETCH_ASSOC) as $item)
+                {
+                    $result[$table][] = $item;
+                }
             }
         }
         catch (PDOException $exception)
         {
 
-        }
-
-        foreach ($result as $table => $items)
-        {
-            $queryResult = self::getPDO()->query("SELECT * FROM $table");
-            foreach ($queryResult->fetchAll(PDO::FETCH_ASSOC) as $row)
-            {
-                $result[$table][] = $row;
-            }
         }
 
         return $result;

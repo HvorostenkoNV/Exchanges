@@ -25,18 +25,24 @@ class ArrayOfNumbersField extends AbstractField
     {
         $result         = [];
         $valuesArray    = is_array($value) ? $value : [$value];
+        $numberField    = null;
+
+        try
+        {
+            $numberField = Manager::getField('number');
+        }
+        catch (InvalidArgumentException $exception)
+        {
+            return $result;
+        }
 
         foreach ($valuesArray as $item)
         {
             try
             {
-                $result[] = Manager::getField('number')->validateValue($item);
+                $result[] = $numberField->validateValue($item);
             }
             catch (DomainException $exception)
-            {
-
-            }
-            catch (InvalidArgumentException $exception)
             {
 
             }
@@ -60,18 +66,24 @@ class ArrayOfNumbersField extends AbstractField
     {
         $result         = [];
         $valuesArray    = is_array($value) ? $value : [$value];
+        $numberField    = null;
+
+        try
+        {
+            $numberField = Manager::getField('number');
+        }
+        catch (InvalidArgumentException $exception)
+        {
+            return $result;
+        }
 
         foreach ($valuesArray as $item)
         {
             try
             {
-                $result[] = Manager::getField('number')->convertValueForPrint($item);
+                $result[] = $numberField->convertValueForPrint($item);
             }
             catch (DomainException $exception)
-            {
-
-            }
-            catch (InvalidArgumentException $exception)
             {
 
             }

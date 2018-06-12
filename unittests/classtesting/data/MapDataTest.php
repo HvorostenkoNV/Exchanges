@@ -3,16 +3,14 @@ declare(strict_types=1);
 
 namespace UnitTests\ClassTesting\Data;
 
-use
-    UnitTests\Core\MapDataClass,
-    Main\Data\MapData;
+use Main\Data\MapData;
 /** ***********************************************************************************************
  * Test Main\Data\MapData class
  *
  * @package exchange_unit_tests
  * @author  Hvorostenko
  *************************************************************************************************/
-final class MapDataTest extends MapDataClass
+final class MapDataTest extends MapDataAbstractTest
 {
     /** **********************************************************************
      * get Map class name
@@ -67,7 +65,7 @@ final class MapDataTest extends MapDataClass
      *
      * @return  array                       incorrect data keys
      ************************************************************************/
-    public static function getCorrectDataKeys() : array
+    private static function getCorrectDataKeys() : array
     {
         return
         [
@@ -90,7 +88,7 @@ final class MapDataTest extends MapDataClass
      *
      * @return  array                       incorrect data values
      ************************************************************************/
-    public static function getCorrectDataValues() : array
+    private static function getCorrectDataValues() : array
     {
         return
         [

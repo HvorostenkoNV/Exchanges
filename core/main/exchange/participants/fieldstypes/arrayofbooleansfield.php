@@ -25,18 +25,24 @@ class ArrayOfBooleansField extends AbstractField
     {
         $result         = [];
         $valuesArray    = is_array($value) ? $value : [$value];
+        $booleanField   = null;
+
+        try
+        {
+            $booleanField = Manager::getField('boolean');
+        }
+        catch (InvalidArgumentException $exception)
+        {
+            return $result;
+        }
 
         foreach ($valuesArray as $item)
         {
             try
             {
-                $result[] = Manager::getField('boolean')->validateValue($item);
+                $result[] = $booleanField->validateValue($item);
             }
             catch (DomainException $exception)
-            {
-
-            }
-            catch (InvalidArgumentException $exception)
             {
 
             }
@@ -60,18 +66,24 @@ class ArrayOfBooleansField extends AbstractField
     {
         $result         = [];
         $valuesArray    = is_array($value) ? $value : [$value];
+        $booleanField   = null;
+
+        try
+        {
+            $booleanField = Manager::getField('boolean');
+        }
+        catch (InvalidArgumentException $exception)
+        {
+            return $result;
+        }
 
         foreach ($valuesArray as $item)
         {
             try
             {
-                $result[] = Manager::getField('boolean')->convertValueForPrint($item);
+                $result[] = $booleanField->convertValueForPrint($item);
             }
             catch (DomainException $exception)
-            {
-
-            }
-            catch (InvalidArgumentException $exception)
             {
 
             }

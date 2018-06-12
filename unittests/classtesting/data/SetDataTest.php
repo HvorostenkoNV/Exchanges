@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace UnitTests\ClassTesting\Data;
 
 use
-    UnitTests\Core\SetDataClass,
     Main\Data\MapData,
     Main\Data\QueueData,
     Main\Data\SetData;
@@ -14,7 +13,7 @@ use
  * @package exchange_unit_tests
  * @author  Hvorostenko
  *************************************************************************************************/
-final class SetDataTest extends SetDataClass
+final class SetDataTest extends SetDataAbstractTest
 {
     /** **********************************************************************
      * get Queue class name

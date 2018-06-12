@@ -26,31 +26,24 @@ class FieldsSet extends SetData
     /** **********************************************************************
      * drop item from set
      *
-     * @param   Field   $object             item for drop
-     * @throws  InvalidArgumentException    object is not Field
+     * @param   Field $object               item for drop
      ************************************************************************/
     public function delete($object) : void
     {
-        if (!$object instanceof Field)
-        {
-            $needClassName = Field::class;
-            throw new InvalidArgumentException("value must be instance of \"$needClassName\"");
-        }
-
         parent::delete($object);
     }
     /** **********************************************************************
      * push item to set
      *
-     * @param   Field   $object             pushed item
+     * @param   Field $object               pushed item
      * @throws  InvalidArgumentException    object is not Field
      ************************************************************************/
     public function push($object) :void
     {
         if (!$object instanceof Field)
         {
-            $needClassName = Field::class;
-            throw new InvalidArgumentException("value must be instance of \"$needClassName\"");
+            $needClass = Field::class;
+            throw new InvalidArgumentException("value must be instance of \"$needClass\"");
         }
 
         parent::push($object);
@@ -58,7 +51,7 @@ class FieldsSet extends SetData
     /** **********************************************************************
      * find field by field name
      *
-     * @param   string  $fieldName          field name
+     * @param   string $fieldName           field name
      * @return  Field|null                  field
      ************************************************************************/
     public function findField(string $fieldName) : ?Field

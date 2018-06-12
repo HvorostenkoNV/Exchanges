@@ -8,8 +8,8 @@ use
     Main\Data\SetData,
     Main\Exchange\Participants\Participant;
 /** ***********************************************************************************************
- * Procedures collection, collection type of "First In, First Out"
- * Collection of Participants objects
+ * Participants set
+ * Collection of Participant objects
  *
  * @package exchange_exchange_procedures
  * @author  Hvorostenko
@@ -29,16 +29,9 @@ class ParticipantsSet extends SetData
      * drop item from set
      *
      * @param   Participant $object         item for drop
-     * @throws  InvalidArgumentException    object is not Field
      ************************************************************************/
     public function delete($object) : void
     {
-        if (!$object instanceof Participant)
-        {
-            $needClassName = Participant::class;
-            throw new InvalidArgumentException("value must be instance of \"$needClassName\"");
-        }
-
         parent::delete($object);
     }
     /** **********************************************************************
@@ -51,8 +44,8 @@ class ParticipantsSet extends SetData
     {
         if (!$object instanceof Participant)
         {
-            $needClassName = Participant::class;
-            throw new InvalidArgumentException("value must be instance of \"$needClassName\"");
+            $needClass = Participant::class;
+            throw new InvalidArgumentException("value must be instance of \"$needClass\"");
         }
 
         parent::push($object);

@@ -21,7 +21,7 @@ namespace Main.Exchange #BBB {
         interface Procedure {
             +getParticipants() : Data.ParticipantsSet
             +getFields() : Fields.ProceduresFieldsSet
-            +getDataCombiningRules() : Rules.DataCombiningRules
+            +getDataMatchingRules() : Rules.MatchingRules
         }
 
         Manager - Procedure

@@ -21,9 +21,16 @@ use
  * @package exchange_exchange_participants
  * @author  Hvorostenko
  *************************************************************************************************/
-abstract class AbstractParticipants implements Participant
+abstract class AbstractParticipant implements Participant
 {
-    private $fields = null;
+    private $fields = [];
+    /** **********************************************************************
+     * construct
+     ************************************************************************/
+    public function __construct()
+    {
+        $this->fields = $this->constructFieldsCollection();
+    }
     /** **********************************************************************
      * get participant fields params
      *
@@ -31,19 +38,32 @@ abstract class AbstractParticipants implements Participant
      ************************************************************************/
     final public function getFields() : FieldsSet
     {
+        $result             = new FieldsSet;
         $logger             = Logger::getInstance();
         $participantName    = static::class;
 
-        if (!$this->fields)
+        if (count($this->fields) <= 0)
         {
-            $this->fields = $this->constructFields();
-            if ($this->fields->count() <= 0)
-            {
-                $logger->addWarning("Participant \"$participantName\" has no fields");
-            }
+            $logger->addWarning("Participant \"$participantName\" has no fields");
+            return $result;
         }
 
-        return $this->fields;
+        try
+        {
+            foreach ($this->fields as $field)
+            {
+                $result->push($field);
+            }
+        }
+        catch (InvalidArgumentException $exception)
+        {
+            $error = $exception->getMessage();
+            $logger->addWarning("Error on filling participant \"$participantName\" fields set: $error");
+        }
+
+        $logger->addNotice("Participant \"$participantName\" fields set constructed and returned");
+        $result->rewind();
+        return $result;
     }
     /** **********************************************************************
      * get participant provided data
@@ -58,9 +78,10 @@ abstract class AbstractParticipants implements Participant
 
         if ($data->count() <= 0)
         {
-            $logger->addNotice("Geted provided data from \"$participantName\" is empty");
+            $logger->addNotice("Geted provided data from \"$participantName\" participant is empty");
         }
 
+        $logger->addNotice("Participant \"$participantName\" provided data gathered and returned");
         return $data;
     }
     /** **********************************************************************
@@ -76,36 +97,31 @@ abstract class AbstractParticipants implements Participant
 
         if ($data->count() <= 0)
         {
-            $logger->addNotice("\"$participantName\" data for delivery is empty");
+            $logger->addNotice("\"$participantName\" participant data for delivery is empty");
         }
 
+        $logger->addNotice("Participant \"$participantName\" delivering data process run");
         return $this->provideDataForDelivery($data);
     }
     /** **********************************************************************
-     * construct fields
+     * create fields collection
      *
-     * @return  FieldsSet                   fields params collection
+     * @return  array                       fields collection
+     * @example
+     * [
+     *      fieldName   => field,
+     *      fieldName   => field
+     * ]
      ************************************************************************/
-    private function constructFields() : FieldsSet
+    private function constructFieldsCollection() : array
     {
-        $result             = new FieldsSet;
         $logger             = Logger::getInstance();
-        $queryResult        = null;
         $participantName    = static::class;
+        $result             = [];
 
         try
         {
             $queryResult = $this->queryFieldsInfo();
-        }
-        catch (RuntimeException $exception)
-        {
-            $error = $exception->getMessage();
-            $logger->addWarning("Failed to get \"$participantName\" participant fields info: $error");
-            return $result;
-        }
-
-        try
-        {
             while (!$queryResult->isEmpty())
             {
                 $fieldDb        = $queryResult->pop();
@@ -113,29 +129,26 @@ abstract class AbstractParticipants implements Participant
                 $fieldName      = $fieldDb->get('NAME');
                 $fieldRequired  = $fieldDb->get('IS_REQUIRED');
 
-                try
-                {
-                    $fieldParams = new MapData;
-                    $fieldParams->set('type', $fieldType);
-                    $fieldParams->set('name', $fieldName);
-                    $fieldParams->set('required', $fieldRequired == 'Y');
+                $fieldParams = new MapData;
+                $fieldParams->set('type', $fieldType);
+                $fieldParams->set('name', $fieldName);
+                $fieldParams->set('required', $fieldRequired == 'Y');
 
-                    $field = new Field($fieldParams);
-                    $result->push($field);
-                }
-                catch (InvalidArgumentException $exception)
-                {
-                    $error = $exception->getMessage();
-                    $logger->addWarning("Unable to create participant field \"$fieldName\" for \"$participantName\": $error");
-                }
+                $field = new Field($fieldParams);
+                $result[$fieldName] = $field;
             }
         }
         catch (RuntimeException $exception)
         {
-
+            $error = $exception->getMessage();
+            $logger->addWarning("Failed to query fields for participant \"$participantName\": $error");
+        }
+        catch (InvalidArgumentException $exception)
+        {
+            $error = $exception->getMessage();
+            $logger->addWarning("Unable to create participant field for \"$participantName\": $error");
         }
 
-        $result->rewind();
         return $result;
     }
     /** **********************************************************************
@@ -146,25 +159,25 @@ abstract class AbstractParticipants implements Participant
      ************************************************************************/
     private function queryFieldsInfo() : DBQueryResult
     {
-        $classReflection    = new ReflectionClass(static::class);
-        $classShortName     = $classReflection->getShortName();
+        $reflection         = new ReflectionClass(static::class);
+        $participantName    = $reflection->getShortName();
         $sqlQuery           = '
             SELECT
                 participants_fields.NAME,
                 participants_fields.IS_REQUIRED,
-                participants_fields_types.CODE AS TYPE
+                fields_types.CODE AS TYPE
             FROM
                 participants_fields
             INNER JOIN participants
                 ON participants_fields.PARTICIPANT = participants.ID
-            INNER JOIN participants_fields_types
-                ON participants_fields.TYPE = participants_fields_types.ID
+            INNER JOIN fields_types
+                ON participants_fields.TYPE = fields_types.ID
             WHERE
                 participants.NAME = ?';
 
         try
         {
-            return DB::getInstance()->query($sqlQuery, [$classShortName]);
+            return DB::getInstance()->query($sqlQuery, [$participantName]);
         }
         catch (RuntimeException $exception)
         {

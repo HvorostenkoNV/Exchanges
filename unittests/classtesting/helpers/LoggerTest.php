@@ -5,7 +5,7 @@ namespace UnitTests\ClassTesting\Helpers;
 
 use
     SplFileInfo,
-    UnitTests\Core\ExchangeTestCase,
+    UnitTests\AbstractTestCase,
     PHPUnit\Framework\Error\Error as FatalError,
     Main\Helpers\Logger;
 /** ***********************************************************************************************
@@ -14,7 +14,7 @@ use
  * @package exchange_unit_tests
  * @author  Hvorostenko
  *************************************************************************************************/
-final class LoggerTest extends ExchangeTestCase
+final class LoggerTest extends AbstractTestCase
 {
     /** **********************************************************************
      * check Logger is singleton

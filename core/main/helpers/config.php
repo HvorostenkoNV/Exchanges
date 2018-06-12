@@ -70,7 +70,7 @@ class Config
         }
         else
         {
-            Logger::getInstance()->addWarning("Param \"$paramName\" was not found");
+            Logger::getInstance()->addWarning("Trying to get unknown parameter \"$paramName\"");
             return '';
         }
     }

@@ -1,10 +1,11 @@
 <?php
 declare(strict_types=1);
 
-namespace UnitTests\Core;
+namespace UnitTests\ClassTesting\Data;
 
 use
     InvalidArgumentException,
+    UnitTests\AbstractTestCase,
     Main\Data\Map;
 /** ***********************************************************************************************
  * Parent class for testing Main\Data\Map classes
@@ -12,7 +13,7 @@ use
  * @package exchange_unit_tests
  * @author  Hvorostenko
  *************************************************************************************************/
-abstract class MapDataClass extends ExchangeTestCase
+abstract class MapDataAbstractTest extends AbstractTestCase
 {
     /** **********************************************************************
      * get Map class name

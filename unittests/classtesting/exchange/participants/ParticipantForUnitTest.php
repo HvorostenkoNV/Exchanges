@@ -9,23 +9,22 @@ use
     InvalidArgumentException,
     SplFileInfo,
     Main\Helpers\MarkupData\XML,
-    Main\Exchange\Participants\AbstractParticipants,
+    Main\Exchange\Participants\AbstractParticipant,
     Main\Exchange\Participants\Data\ItemData,
     Main\Exchange\Participants\Data\ProvidedData,
     Main\Exchange\Participants\Data\DataForDelivery;
 /** ***********************************************************************************************
  * Application participant Users1C
  *
- * @property    SplFileInfo $tempXmlFromUnitTest
  * @package     exchange_unit_tests
  * @author      Hvorostenko
  *************************************************************************************************/
-class ParticipantForUnitTest extends AbstractParticipants
+class ParticipantForUnitTest extends AbstractParticipant
 {
     /** @var SplFileInfo */
-    public $tempXmlFromUnitTest     = null;
+    public $xmlWithProvidedData = null;
     /** @var SplFileInfo */
-    public $createdTempXmlAnswer    = null;
+    public $xmlForDelivery      = null;
     /** **********************************************************************
      * read participant provided data and get it
      *
@@ -34,50 +33,36 @@ class ParticipantForUnitTest extends AbstractParticipants
     protected function readProvidedData() : ProvidedData
     {
         $result = new ProvidedData;
-        $xml    = new XML($this->tempXmlFromUnitTest);
-        $data   = null;
-        $fields = $this->getFields();
 
         try
         {
-            $data = $xml->read();
-        }
-        catch (RuntimeException $exception)
-        {
-            return $result;
-        }
+            $xml    = new XML($this->xmlWithProvidedData);
+            $data   = $xml->read();
+            $fields = $this->getFields();
 
-        foreach ($data as $item)
-        {
-            if (is_array($item))
+            foreach ($data as $item)
             {
                 $map = new ItemData;
 
-                foreach ($item as $key => $value)
+                if (is_array($item))
                 {
-                    try
+                    foreach ($item as $key => $value)
                     {
                         $field = $fields->findField($key);
                         $map->set($field, $value);
                     }
-                    catch (InvalidArgumentException $exception)
-                    {
-
-                    }
                 }
 
-                if ($map->count() > 0)
-                {
-                    try
-                    {
-                        $result->push($map);
-                    }
-                    catch (InvalidArgumentException $exception)
-                    {
-
-                    }
-                }
+                $result->push($map);
             }
+        }
+        catch (RuntimeException $exception)
+        {
+
+        }
+        catch (InvalidArgumentException $exception)
+        {
+
         }
 
         return $result;
@@ -91,7 +76,7 @@ class ParticipantForUnitTest extends AbstractParticipants
     protected function provideDataForDelivery(DataForDelivery $data) : bool
     {
         $dataArray  = [];
-        $xml        = new XML($this->createdTempXmlAnswer);
+        $xml        = new XML($this->xmlForDelivery);
 
         try
         {
@@ -102,30 +87,24 @@ class ParticipantForUnitTest extends AbstractParticipants
 
                 foreach ($item->getKeys() as $field)
                 {
-                    try
-                    {
-                        $fieldName              = $field->getParam('name');
-                        $value                  = $item->get($field);
-                        $validatedValue         = $field->getFieldType()->convertValueForPrint($value);
-                        $itemArray[$fieldName]  = $validatedValue;
-                    }
-                    catch (DomainException $exception)
-                    {
-
-                    }
-                    catch (InvalidArgumentException $exception)
-                    {
-
-                    }
+                    $fieldName              = $field->getParam('name');
+                    $value                  = $item->get($field);
+                    $validatedValue         = $field->getFieldType()->convertValueForPrint($value);
+                    $itemArray[$fieldName]  = $validatedValue;
                 }
 
-                if (count($itemArray) > 0)
-                {
-                    $dataArray[] = $itemArray;
-                }
+                $dataArray[] = $itemArray;
             }
         }
         catch (RuntimeException $exception)
+        {
+
+        }
+        catch (DomainException $exception)
+        {
+
+        }
+        catch (InvalidArgumentException $exception)
         {
 
         }

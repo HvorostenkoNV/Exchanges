@@ -23,11 +23,11 @@ namespace Main.Exchange.DataProcessors #BBB {
     }
 
     class Matcher {
-        +matchItems(CollectedData $data) : MatcherResult
+        +matchItems(CollectedData $data) : MatchedData
     }
 
     class Combiner {
-        +combineItems(MatcherResult $data) : CombinedData
+        +combineItems(MatchedData $data) : CombinedData
     }
 
     class Provider {
@@ -75,15 +75,14 @@ namespace Main.Exchange.DataProcessors #BBB {
         ]
         endnote
         /' ---------------------------- '/
-        /' ------- MatcherResult ------ '/
+        /' ------- MatchedData ------ '/
         /' ---------------------------- '/
-        class MatcherResult < extends Main.Data.SetData > {
-            +current() : ?Data.ParticipantItemDataSet
-            +delete(Data.ParticipantItemDataSet $object) : void
-            +push(Data.ParticipantItemDataSet $object) :void
+        class MatchedData < extends Main.Data.QueueData > {
+            +pop() : Data.MatchedItem
+            +push(Data.MatchedItem $data) : void
         }
 
-        note bottom of MatcherResult
+        note bottom of MatchedData
         [
             commonItem =>
             [
@@ -116,10 +115,9 @@ namespace Main.Exchange.DataProcessors #BBB {
         /' ---------------------------- '/
         /' ------- CombinedData ------- '/
         /' ---------------------------- '/
-        class CombinedData < extends Main.Data.SetData > {
-            +current() : ?Data.CommonItemDataSet
-            +delete(Data.CommonItemDataSet $object) : void
-            +push(Data.CommonItemDataSet $object) :void
+        class CombinedData < extends Main.Data.QueueData > {
+            +pop() : Data.CombinedItem
+            +push(Data.CombinedItem $data) : void
         }
 
         note bottom of CombinedData
@@ -147,7 +145,7 @@ namespace Main.Exchange.DataProcessors #BBB {
         /' --------- Relations -------- '/
         /' ---------------------------- '/
         Result  <|--    CollectedData
-        Result  <|--    MatcherResult
+        Result  <|--    MatchedData
         Result  <|--    CombinedData
         Result  <|--    ProviderResult
     }
@@ -155,30 +153,15 @@ namespace Main.Exchange.DataProcessors #BBB {
     /' ------------------ Data ------------------- '/
     /' ------------------------------------------- '/
     namespace Data #FFF {
-        class ParticipantItemData < extends Main.Data.MapData > {
+        class MatchedItem < extends Main.Data.MapData > {
             +set(Participants.Participant $key, Participants.Data.ItemData $value) : void
             +get(Participants.Participant $key) : ?Participants.Data.ItemData
         }
 
-        class ParticipantItemDataSet < extends Main.Data.SetData > {
-            +current() : ?ParticipantItemData
-            +delete(ParticipantItemData $object) : void
-            +push(ParticipantItemData $object) :void
-        }
-
-        class CommonItemData < extends Main.Data.MapData > {
+        class CombinedItem < extends Main.Data.MapData > {
             +set(Procedures.Fields.ProcedureField $key, mixed $value) : void
             +get(Procedures.Fields.ProcedureField $key) : mixed
         }
-
-        class CommonItemDataSet < extends Main.Data.SetData > {
-            +current() : ?CommonItemData
-            +delete(CommonItemData $object) : void
-            +push(CommonItemData $object) :void
-        }
-
-        ParticipantItemDataSet  o-- ParticipantItemData
-        CommonItemDataSet       o-- CommonItemData
     }
     /' ------------------------------------------- '/
     /' ---------------- Relations ---------------- '/
@@ -190,8 +173,8 @@ namespace Main.Exchange.DataProcessors #BBB {
     AbstractProcessor   <|--    Combiner
     AbstractProcessor   <|--    Provider
 
-    Main.Exchange.DataProcessors.Results.MatcherResult  o-- Main.Exchange.DataProcessors.Data.ParticipantItemDataSet
-    Main.Exchange.DataProcessors.Results.CombinedData   o-- Main.Exchange.DataProcessors.Data.CommonItemDataSet
+    Main.Exchange.DataProcessors.Results.MatchedData    o-- Main.Exchange.DataProcessors.Data.MatchedItem
+    Main.Exchange.DataProcessors.Results.CombinedData   o-- Main.Exchange.DataProcessors.Data.CombinedItem
 
     Processor o-- Main.Exchange.DataProcessors.Results.Result
 }

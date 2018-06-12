@@ -6,11 +6,8 @@ namespace UnitTests\ClassTesting\Exchange\Participants;
 use
     ReflectionClass,
     SplFileInfo,
-    UnitTests\Core\ExchangeTestCase,
-    UnitTests\Core\TempFilesGenerator,
-    UnitTests\Core\TempDBRecordsGenerator,
-    Main\Helpers\DB,
-    Main\Exchange\Participants\FieldsTypes\Manager as FieldsTypesManager,
+    UnitTests\AbstractTestCase,
+    UnitTests\ProjectTempStructure\MainGenerator as TempStructureGenerator,
     Main\Exchange\Participants\Participant,
     Main\Exchange\Participants\Data\DataForDelivery;
 /** ***********************************************************************************************
@@ -19,78 +16,10 @@ use
  * @package exchange_unit_tests
  * @author  Hvorostenko
  *************************************************************************************************/
-final class ParticipantsTest extends ExchangeTestCase
+final class ParticipantsTest extends AbstractTestCase
 {
-    private static
-        $participantsTable          = 'participants',
-        $participantsFieldsTable    = 'participants_fields',
-        $fieldsTypesTable           = 'participants_fields_types',
-        $tempParticipants           =
-        [
-            [
-                'dbItemName'    => 'TestParticipant1',
-                'className'     => 'TestParticipant1',
-                'fields'        =>
-                [
-                    [
-                        'NAME'      => 'name',
-                        'TYPE'      => 'string',
-                        'REQUIRED'  => true
-                    ],
-                    [
-                        'NAME'      => 'code',
-                        'TYPE'      => 'string',
-                        'REQUIRED'  => true
-                    ],
-                    [
-                        'NAME'      => 'important',
-                        'TYPE'      => 'boolean',
-                        'REQUIRED'  => false
-                    ],
-                    [
-                        'NAME'      => 'someStringsValues',
-                        'TYPE'      => 'array-of-strings',
-                        'REQUIRED'  => true
-                    ],
-                    [
-                        'NAME'      => 'someBooleansValues',
-                        'TYPE'      => 'array-of-booleans',
-                        'REQUIRED'  => true
-                    ]
-                ]
-            ],
-            [
-                'dbItemName'    => 'TestParticipant2',
-                'className'     => 'TestParticipant2',
-                'fields'        =>
-                [
-                    [
-                        'NAME'      => 'name',
-                        'TYPE'      => 'string',
-                        'REQUIRED'  => false
-                    ],
-                    [
-                        'NAME'      => 'code',
-                        'TYPE'      => 'string',
-                        'REQUIRED'  => false
-                    ],
-                    [
-                        'NAME'      => 'someIntegersValues',
-                        'TYPE'      => 'array-of-numbers',
-                        'REQUIRED'  => true
-                    ]
-                ]
-            ],
-            [
-                'dbItemName'    => 'TestParticipant3',
-                'className'     => 'TestParticipant3',
-                'fields'        => []
-            ]
-        ];
-    /** @var TempFilesGenerator */
-    private static $tempFilesGenerator      = null;
-    /** @var TempDBRecordsGenerator */
-    private static $tempDBRecordsGenerator  = null;
+    /** @var TempStructureGenerator */
+    private static $structureGenerator = null;
     /** **********************************************************************
      * construct
      ************************************************************************/
@@ -98,34 +27,9 @@ final class ParticipantsTest extends ExchangeTestCase
     {
         parent::setUpBeforeClass();
 
-        $systemFields           = self::getParticipantsSystemFields();
-        $tempFilesGenerator     = new TempFilesGenerator;
-        $tempDBRecordsGenerator = new TempDBRecordsGenerator;
-        $participantClassName   = ParticipantForUnitTest::class;
-
-        self::$tempFilesGenerator       = $tempFilesGenerator;
-        self::$tempDBRecordsGenerator   = $tempDBRecordsGenerator;
-
-        foreach (self::$tempParticipants as $participant)
-        {
-            $tempFilesGenerator->createTempClass($participantClassName, $participant['className']);
-
-            $tempParticipantId = $tempDBRecordsGenerator->createTempRecord(self::$participantsTable,
-            [
-                'NAME' => $participant['dbItemName']
-            ]);
-
-            foreach ($participant['fields'] as $field)
-            {
-                $tempDBRecordsGenerator->createTempRecord(self::$participantsFieldsTable,
-                [
-                    'NAME'          => $field['NAME'],
-                    'TYPE'          => $systemFields[$field['TYPE']],
-                    'IS_REQUIRED'   => $field['REQUIRED'] ? 'Y' : 'N',
-                    'PARTICIPANT'   => $tempParticipantId
-                ]);
-            }
-        }
+        self::$structureGenerator = new TempStructureGenerator;
+        self::$structureGenerator->setParticipantParentClass(ParticipantForUnitTest::class);
+        self::$structureGenerator->generate();
     }
     /** **********************************************************************
      * destruct
@@ -133,133 +37,118 @@ final class ParticipantsTest extends ExchangeTestCase
     public static function tearDownAfterClass() : void
     {
         parent::tearDownAfterClass();
-        self::$tempFilesGenerator->dropCreatedTempData();
-        self::$tempDBRecordsGenerator->dropTempChanges();
+
+        self::$structureGenerator->clean();
     }
     /** **********************************************************************
-     * get participants system fields
-     *
-     * @return  array                       participants system fields array code => id
-     * @throws
-     ************************************************************************/
-    private static function getParticipantsSystemFields() : array
-    {
-        $result         = [];
-        $table          = self::$fieldsTypesTable;
-        $queryResult    = DB::getInstance()->query("SELECT * FROM $table");
-
-        while (!$queryResult->isEmpty())
-        {
-            $item = $queryResult->pop();
-            $result[$item->get('CODE')] = $item->get('ID');
-        }
-
-        return $result;
-    }
-    /** **********************************************************************
-     * check participant provides fields info
+     * check getting participant fields
      *
      * @test
      * @throws
      ************************************************************************/
-    public function providingFieldsInfo() : void
+    public function gettingFields() : void
     {
-        foreach (self::$tempParticipants as $participant)
+        foreach (self::$structureGenerator->getStructure() as $procedureInfo)
         {
-            $participantObject  = $this->createParticipantObject($participant['className']);
-            $participantFields  = $participantObject->getFields();
-            $tempFields         = [];
-            $currentFields      = [];
-
-            foreach ($participant['fields'] as $field)
+            foreach ($procedureInfo['participants'] as $participantName => $participantInfo)
             {
-                $tempFields[$field['NAME']] = $field;
+                $participant        = $this->createParticipant($participantName);
+                $participantFields  = $participant->getFields();
+                $expectedFieldsSet  = $participantInfo['fields'];
+                $getedFieldsSet     = [];
+
+                while ($participantFields->valid())
+                {
+                    $field = $participantFields->current();
+
+                    $getedFieldsSet[$field->getParam('name')] =
+                    [
+                        'name'      => $field->getParam('name'),
+                        'type'      => $field->getParam('type'),
+                        'required'  => $field->getParam('required')
+                    ];
+
+                    $participantFields->next();
+                }
+
+                self::assertEquals
+                (
+                    $expectedFieldsSet,
+                    $getedFieldsSet,
+                    'Expect get participant fields as temp created'
+                );
             }
-
-            while ($participantFields->valid())
-            {
-                $field = $participantFields->current();
-
-                $currentFields[$field->getParam('name')] =
-                [
-                    'NAME'      => $field->getParam('name'),
-                    'TYPE'      => $field->getParam('type'),
-                    'REQUIRED'  => $field->getParam('required')
-                ];
-
-                $participantFields->next();
-            }
-
-            self::assertEquals
-            (
-                $tempFields,
-                $currentFields,
-                'Expect get participant fields as temp created'
-            );
         }
     }
     /** **********************************************************************
-     * check participant getting provided data process
+     * check participant getting provided data
      *
      * @test
      * @throws
      ************************************************************************/
     public function gettingProvidedData() : void
     {
-        foreach (self::$tempParticipants as $participant)
+        foreach (self::$structureGenerator->getStructure() as $procedureInfo)
         {
-            $participantObject          = $this->createParticipantObject($participant['className']);
-            $participantProvidedData    = [];
-            $tempData                   = $this->createParticipantTempData($participant['fields']);
-            $tempXml                    = self::$tempFilesGenerator->createTempXml($tempData);
-
-            $participantObject->{'tempXmlFromUnitTest'} = $tempXml;
-            $providedData = $participantObject->getProvidedData();
-
-            while (!$providedData->isEmpty())
+            foreach ($procedureInfo['participants'] as $participantName => $participantInfo)
             {
-                $item       = $providedData->pop();
-                $itemData   = [];
+                $participant    = $this->createParticipant($participantInfo['name']);
+                $xml            = self::$structureGenerator->getParticipantXml($participantName);
+                $expectedData   = self::$structureGenerator->getParticipantData($participantName);
+                $getedData      = [];
 
-                foreach ($item->getKeys() as $field)
+                $participant->{'xmlWithProvidedData'} = $xml;
+                $providedData = $participant->getProvidedData();
+
+                while (!$providedData->isEmpty())
                 {
-                    $fieldName              = $field->getParam('name');
-                    $value                  = $item->get($field);
-                    $itemData[$fieldName]   = $value;
+                    $item       = $providedData->pop();
+                    $itemData   = [];
+
+                    foreach ($item->getKeys() as $field)
+                    {
+                        $fieldName              = $field->getParam('name');
+                        $value                  = $item->get($field);
+                        $itemData[$fieldName]   = $value;
+                    }
+
+                    $getedData[] = $itemData;
                 }
 
-                $participantProvidedData[] = $itemData;
+                self::assertEquals
+                (
+                    $expectedData,
+                    $getedData,
+                    'Expect get same data as temp created'
+                );
             }
-
-            self::assertEquals
-            (
-                $tempData,
-                $participantProvidedData,
-                'Expect get same data as temp created'
-            );
         }
     }
     /** **********************************************************************
-     * check incorrect participant providing provided data process
+     * check participant getting incorrect provided data
      *
      * @test
      * @depends gettingProvidedData
      * @throws
      ************************************************************************/
-    public function incorrectGettingProvidedData() : void
+    public function gettingIncorrectProvidedData() : void
     {
-        foreach (self::$tempParticipants as $participant)
+        foreach (self::$structureGenerator->getStructure() as $procedureInfo)
         {
-            $participantObject = $this->createParticipantObject($participant['className']);
-            $participantObject->{'tempXmlFromUnitTest'} = new SplFileInfo('someIncorrectFilePath');
-            $providedData = $participantObject->getProvidedData();
+            foreach ($procedureInfo['participants'] as $participantInfo)
+            {
+                $participant = $this->createParticipant($participantInfo['name']);
 
-            self::assertEquals
-            (
-                0,
-                $providedData->count(),
-                'Expect get empty provided data with reading incorrect xml file'
-            );
+                $participant->{'xmlWithProvidedData'} = new SplFileInfo('someIncorrectFilePath');
+                $providedData = $participant->getProvidedData();
+
+                self::assertEquals
+                (
+                    0,
+                    $providedData->count(),
+                    'Expect get empty provided data with reading incorrect xml file'
+                );
+            }
         }
     }
     /** **********************************************************************
@@ -271,82 +160,52 @@ final class ParticipantsTest extends ExchangeTestCase
      ************************************************************************/
     public function providingData() : void
     {
-        foreach (self::$tempParticipants as $participant)
+        foreach (self::$structureGenerator->getStructure() as $procedureInfo)
         {
-            $participantObject  = $this->createParticipantObject($participant['className']);
-            $tempData           = $this->createParticipantTempData($participant['fields']);
-            $receivedXml        = self::$tempFilesGenerator->createTempXml($tempData);
-            $deliveredXml       = self::$tempFilesGenerator->createTempXml([['test' => 'test']]);
-
-            $participantObject->{'tempXmlFromUnitTest'}     = $receivedXml;
-            $participantObject->{'createdTempXmlAnswer'}    = $deliveredXml;
-
-            $providedData       = $participantObject->getProvidedData();
-            $dataForDelivery    = new DataForDelivery;
-
-            while (!$providedData->isEmpty())
+            foreach ($procedureInfo['participants'] as $participantName => $participantInfo)
             {
-                $dataForDelivery->push($providedData->pop());
+                $participant    = $this->createParticipant($participantInfo['name']);
+                $participantXml = self::$structureGenerator->getParticipantXml($participantName);
+                $xmlForDelivery = new SplFileInfo(__DIR__.DIRECTORY_SEPARATOR.'tempXmlFile.xml');
+
+                $participant->{'xmlWithProvidedData'} = $participantXml;
+                $providedData = $participant->getProvidedData();
+
+                $dataForDelivery = new DataForDelivery;
+                while (!$providedData->isEmpty())
+                {
+                    $dataForDelivery->push($providedData->pop());
+                }
+
+                fopen($xmlForDelivery->getPathname(), 'w');
+                $participant->{'xmlForDelivery'} = $xmlForDelivery;
+                $participant->deliveryData($dataForDelivery);
+
+                $receivedContent    = $participantXml->openFile('r')->fread($participantXml->getSize());
+                $deliveredContent   = $xmlForDelivery->openFile('r')->fread($xmlForDelivery->getSize());
+                unlink($xmlForDelivery->getPathname());
+
+                self::assertEquals
+                (
+                    $receivedContent,
+                    $deliveredContent,
+                    'Delivered xml expect to be same as received'
+                );
             }
-            $participantObject->deliveryData($dataForDelivery);
-
-            $receivedXmlContent     = $receivedXml->openFile('r')->fread($receivedXml->getSize());
-            $deliveredXmlContent    = $deliveredXml->openFile('r')->fread($deliveredXml->getSize());
-
-            self::assertEquals
-            (
-                $receivedXmlContent,
-                $deliveredXmlContent,
-                'Delivered xml expect to be same as received'
-            );
         }
     }
     /** **********************************************************************
-     * create participant object by name
+     * create participant by name
      *
-     * @param   string  $name               participant short name
+     * @param   string  $participantName    participant name
      * @return  Participant                 participant
      ************************************************************************/
-    private function createParticipantObject(string $name) : Participant
+    private function createParticipant(string $participantName) : Participant
     {
-        $systemParticipantReflection    = new ReflectionClass(ParticipantForUnitTest::class);
-        $systemParticipantNamespace     = $systemParticipantReflection->getNamespaceName();
-        $participantClassName           = $systemParticipantNamespace.'\\'.$name;
+        $procedureReflection    = new ReflectionClass(Participant::class);
+        $procedureNamespace     = $procedureReflection->getNamespaceName();
+        $procedureQualifiedName = $procedureNamespace.'\\'.$participantName;
 
-        return new $participantClassName;
-    }
-    /** **********************************************************************
-     * check participant provides provided data
-     *
-     * @param   array   $fields             participant fields info
-     * @return  array                       participant temp data
-     * @throws
-     ************************************************************************/
-    private function createParticipantTempData(array $fields) : array
-    {
-        $result     = [];
-        $itemsCount = rand(2, 10);
-
-        if (count($fields) <= 0)
-        {
-            return $result;
-        }
-
-        for ($index = 1; $index <= $itemsCount; $index++)
-        {
-            $item = [];
-
-            foreach ($fields as $field)
-            {
-                if ($field['REQUIRED'] || rand(0, 1) === 0)
-                {
-                    $item[$field['NAME']] = FieldsTypesManager::getField($field['TYPE'])->getRandomValue();
-                }
-            }
-
-            $result[] = $item;
-        }
-
-        return $result;
+        return new $procedureQualifiedName;
     }
 }

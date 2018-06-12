@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Main\Exchange\Procedures;
 
 use
+    DomainException,
     Throwable,
     RuntimeException,
     InvalidArgumentException,
@@ -40,28 +41,22 @@ class Manager
         try
         {
             $queryResult = self::queryProcedures($filter);
+            while (!$queryResult->isEmpty())
+            {
+                $procedureName  = $queryResult->pop()->get('NAME');
+                $procedure      = self::createProcedure($procedureName);
+                $result->push($procedure);
+            }
         }
         catch (RuntimeException $exception)
         {
             $error = $exception->getMessage();
             $logger->addWarning("Failed to get procedures: $error");
-            return $result;
         }
-
-        while (!$queryResult->isEmpty())
+        catch (DomainException $exception)
         {
-            $procedureName      = $queryResult->pop()->get('NAME');
-            $procedureClassName = self::getProcedureFullClassName($procedureName);
-
-            try
-            {
-                $result->push(new $procedureClassName);
-            }
-            catch (Throwable $exception)
-            {
-                $error = $exception->getMessage();
-                $logger->addWarning("Failed to create procedure \"$procedureClassName\": $error");
-            }
+            $error = $exception->getMessage();
+            $logger->addWarning("Failed to create procedure: $error");
         }
 
         $result->rewind();
@@ -78,15 +73,11 @@ class Manager
         $result     = new MapData;
         $activity   = $filter ? $filter->get('ACTIVITY')    : null;
         $names      = $filter ? $filter->get('NAME')        : null;
-
-        $names = array_filter
-        (
-            is_array($names) ? $names : [$names],
-            function($value)
-            {
-                return is_string($value) && strlen($value) > 0;
-            }
-        );
+        $names      = is_array($names) ? $names : [$names];
+        $names      = array_filter($names, function($value)
+        {
+            return is_string($value) && strlen($value) > 0;
+        });
 
         try
         {
@@ -126,13 +117,10 @@ class Manager
         }
         if ($filter->hasKey('NAME'))
         {
-            $valueTemplates = [];
-            foreach ($filter->get('NAME') as $value)
-            {
-                $sqlQueryParams[]   = $value;
-                $valueTemplates[]   = '?';
-            }
-            $sqlWhereClause[] = 'NAME IN ('.implode(', ', $valueTemplates).')';
+            $names              = $filter->get('NAME');
+            $sqlQueryParams     = array_merge($sqlQueryParams, $names);
+            $placeholder        = rtrim(str_repeat('?, ', count($names)), ', ');
+            $sqlWhereClause[]   = "NAME IN ($placeholder)";
         }
 
         if (count($sqlWhereClause) > 0)
@@ -150,13 +138,23 @@ class Manager
         }
     }
     /** **********************************************************************
-     * get procedure class full name by procedure name
+     * create procedure by name
      *
      * @param   string  $name               procedure name
-     * @return  string                      procedure class name
+     * @return  Procedure                   procedure
+     * @throws  DomainException             creating procedure error
      ************************************************************************/
-    private static function getProcedureFullClassName(string $name) : string
+    private static function createProcedure(string $name) : Procedure
     {
-        return __NAMESPACE__.'\\'.$name;
+        $fullName = __NAMESPACE__.'\\'.$name;
+
+        try
+        {
+            return new $fullName;
+        }
+        catch (Throwable $exception)
+        {
+            throw new DomainException("creating procedure \"$fullName\" error");
+        }
     }
 }

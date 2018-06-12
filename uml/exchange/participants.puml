@@ -7,7 +7,7 @@ namespace Main.Exchange.Participants #BBB {
         +deliveryData(Data.DataForDelivery $data) : bool
     }
 
-    abstract AbstractParticipants {
+    abstract AbstractParticipant {
         +getFields() : Fields.FieldsSet
         +getProvidedData() : Data.ProvidedData
         +deliveryData(Data.DataForDelivery $data) : bool
@@ -73,6 +73,7 @@ namespace Main.Exchange.Participants #BBB {
             +current() : ?Field
             +delete(Field $object) : void
             +push(Field $object) :void
+            +findField(string $fieldName) : Field
         }
 
         FieldsSet o-- Field
@@ -108,10 +109,10 @@ namespace Main.Exchange.Participants #BBB {
     /' ------------------------------------------- '/
     /' ---------------- Relations ---------------- '/
     /' ------------------------------------------- '/
-    Participant             <|--    AbstractParticipants
-    AbstractParticipants    <|--    Users1C
-    AbstractParticipants    <|--    UsersAD
-    AbstractParticipants    <|--    UsersBitrix
+    Participant         <|--    AbstractParticipant
+    AbstractParticipant <|--    Users1C
+    AbstractParticipant <|--    UsersAD
+    AbstractParticipant <|--    UsersBitrix
 
     Participant o-- Main.Exchange.Participants.Data.Data
     Participant o-- Main.Exchange.Participants.Fields.FieldsSet

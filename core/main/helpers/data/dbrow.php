@@ -18,7 +18,7 @@ class DBRow extends MapData
     /** **********************************************************************
      * delete value by key
      *
-     * @param   string  $key                value key
+     * @param   string $key                 value key
      ************************************************************************/
     public function delete($key) : void
     {
@@ -27,7 +27,7 @@ class DBRow extends MapData
     /** **********************************************************************
      * get value by key
      *
-     * @param   string  $key                value key
+     * @param   string $key                 value key
      * @return  mixed                       value
      ************************************************************************/
     public function get($key)
@@ -46,7 +46,7 @@ class DBRow extends MapData
     /** **********************************************************************
      * check map has key
      *
-     * @param   string  $key                key to check
+     * @param   string $key                 key to check
      * @return  bool                        map has key
      ************************************************************************/
     public function hasKey($key) : bool
@@ -56,7 +56,7 @@ class DBRow extends MapData
     /** **********************************************************************
      * check map has value
      *
-     * @param   mixed   $value              value
+     * @param   mixed $value                value
      * @return  bool                        map has value
      ************************************************************************/
     public function hasValue($value) : bool

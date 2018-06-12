@@ -7,7 +7,7 @@ use
     InvalidArgumentException,
     DomainException,
     SplFileInfo,
-    UnitTests\Core\ExchangeTestCase,
+    UnitTests\AbstractTestCase,
     Main\Helpers\Config,
     Main\Helpers\Localization;
 /** ***********************************************************************************************
@@ -16,7 +16,7 @@ use
  * @package exchange_unit_tests
  * @author  Hvorostenko
  *************************************************************************************************/
-final class LocalizationTest extends ExchangeTestCase
+final class LocalizationTest extends AbstractTestCase
 {
     private
         $locTestFolder  = 'unit_test',

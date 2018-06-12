@@ -5,69 +5,19 @@ namespace UnitTests\ClassTesting\Exchange\Procedures;
 
 use
     ReflectionClass,
-    UnitTests\Core\ExchangeTestCase,
-    UnitTests\Core\TempFilesGenerator,
-    UnitTests\Core\TempDBRecordsGenerator,
-    Main\Exchange\Procedures\UsersExchange,
-    Main\Exchange\Participants\Users1C;
+    UnitTests\AbstractTestCase,
+    UnitTests\ProjectTempStructure\MainGenerator as TempStructureGenerator,
+    Main\Exchange\Procedures\Procedure;
 /** ***********************************************************************************************
  * Test Main\Exchange\Procedures\Procedure classes
  *
  * @package exchange_unit_tests
  * @author  Hvorostenko
  *************************************************************************************************/
-final class ProceduresTest extends ExchangeTestCase
+final class ProceduresTest extends AbstractTestCase
 {
-    private static
-        $proceduresTable    = 'procedures',
-        $participantsTable  = 'participants',
-        $linkTable          = 'procedures_participants',
-        $tempProcedures     =
-        [
-            [
-                'dbItemName'    => 'TestProcedure1',
-                'className'     => 'TestProcedure1',
-                'participants'  =>
-                [
-                    [
-                        'dbItemName'    => 'TestProcedureParticipant1',
-                        'className'     => 'TestProcedureParticipant1'
-                    ],
-                    [
-                        'dbItemName'    => 'TestProcedureParticipant2',
-                        'className'     => 'TestProcedureParticipant2'
-                    ],
-                    [
-                        'dbItemName'    => 'TestProcedureParticipant3',
-                        'className'     => 'TestProcedureParticipant3'
-                    ]
-                ]
-            ],
-            [
-                'dbItemName'    => 'TestProcedure2',
-                'className'     => 'TestProcedure2',
-                'participants'  =>
-                [
-                    [
-                        'dbItemName'    => 'TestProcedureParticipant4',
-                        'className'     => 'TestProcedureParticipant4'
-                    ],
-                    [
-                        'dbItemName'    => 'TestProcedureParticipant5',
-                        'className'     => 'TestProcedureParticipant5'
-                    ]
-                ]
-            ],
-            [
-                'dbItemName'    => 'TestProcedure3',
-                'className'     => 'TestProcedure3',
-                'participants'  => []
-            ]
-        ];
-    /** @var TempFilesGenerator */
-    private static $tempFilesGenerator      = null;
-    /** @var TempDBRecordsGenerator */
-    private static $tempDBRecordsGenerator  = null;
+    /** @var TempStructureGenerator */
+    private static $structureGenerator = null;
     /** **********************************************************************
      * construct
      ************************************************************************/
@@ -75,32 +25,8 @@ final class ProceduresTest extends ExchangeTestCase
     {
         parent::setUpBeforeClass();
 
-        self::$tempFilesGenerator       = new TempFilesGenerator;
-        self::$tempDBRecordsGenerator   = new TempDBRecordsGenerator;
-
-        foreach (self::$tempProcedures as $procedure)
-        {
-            self::$tempFilesGenerator->createTempClass(UsersExchange::class, $procedure['className']);
-            $tempProcedureId = self::$tempDBRecordsGenerator->createTempRecord(self::$proceduresTable,
-            [
-                'NAME' => $procedure['dbItemName']
-            ]);
-
-            foreach ($procedure['participants'] as $participant)
-            {
-                self::$tempFilesGenerator->createTempClass(Users1C::class, $participant['className']);
-                $tempParticipantId = self::$tempDBRecordsGenerator->createTempRecord(self::$participantsTable,
-                [
-                    'NAME' => $participant['dbItemName']
-                ]);
-
-                self::$tempDBRecordsGenerator->createTempRecord(self::$linkTable,
-                [
-                    'PROCEDURE'     => $tempProcedureId,
-                    'PARTICIPANT'   => $tempParticipantId
-                ]);
-            }
-        }
+        self::$structureGenerator = new TempStructureGenerator;
+        self::$structureGenerator->generate();
     }
     /** **********************************************************************
      * destruct
@@ -108,47 +34,235 @@ final class ProceduresTest extends ExchangeTestCase
     public static function tearDownAfterClass() : void
     {
         parent::tearDownAfterClass();
-        self::$tempFilesGenerator->dropCreatedTempData();
-        self::$tempDBRecordsGenerator->dropTempChanges();
+
+        self::$structureGenerator->clean();
     }
     /** **********************************************************************
-     * test getting procedures participants
+     * check getting procedures participants
      *
      * @test
      * @throws
      ************************************************************************/
-    public function providingParticipants() : void
+    public function gettingParticipants() : void
     {
-        $systemProcedureReflection  = new ReflectionClass(UsersExchange::class);
-        $systemProcedureNamespace   = $systemProcedureReflection->getNamespaceName();
-
-        foreach (self::$tempProcedures as $procedure)
+        foreach (self::$structureGenerator->getStructure() as $procedureInfo)
         {
-            $procedureClassQualifiedName    = $systemProcedureNamespace.'\\'.$procedure['className'];
-            $participantsSet                = call_user_func([new $procedureClassQualifiedName, 'getParticipants']);
-            $tempParticipants               = [];
-            $currentParticipants            = [];
-
-            foreach ($procedure['participants'] as $participant)
-            {
-                $tempParticipants[] = $participant['className'];
-            }
+            $participantsSet            = $this->createProcedure($procedureInfo['name'])->getParticipants();
+            $expectedParticipantsSet    = array_keys($procedureInfo['participants']);
+            $currentParticipantsSet     = [];
 
             while ($participantsSet->valid())
             {
-                $participant            = $participantsSet->current();
-                $participantReflection  = new ReflectionClass($participant);
-                $currentParticipants[]  = $participantReflection->getShortName();
-
+                $participant                = $participantsSet->current();
+                $currentParticipantsSet[]   = $this->getObjectClassShortName($participant);
                 $participantsSet->next();
             }
 
             self::assertEquals
             (
-                $tempParticipants,
-                $currentParticipants,
-                'Expect get temp procedure participants as temp created'
+                $expectedParticipantsSet,
+                $currentParticipantsSet,
+                'Expect get temp procedure participants same as temp created'
             );
         }
+    }
+    /** **********************************************************************
+     * check getting procedure fields
+     *
+     * @test
+     * @throws
+     ************************************************************************/
+    public function gettingFields() : void
+    {
+        foreach (self::$structureGenerator->getStructure() as $procedureInfo)
+        {
+            $procedureFieldsSet = $this->createProcedure($procedureInfo['name'])->getFields();
+            $expectedFieldsSet  = array_values($procedureInfo['fields']);
+            $getedFieldsSet     = [];
+
+            while ($procedureFieldsSet->valid())
+            {
+                $procedureField         = $procedureFieldsSet->current();
+                $procedureFieldArray    = [];
+
+                while ($procedureField->valid())
+                {
+                    $participantField   = $procedureField->current();
+                    $participant        = $participantField->getParticipant();
+                    $participantName    = $this->getObjectClassShortName($participant);
+                    $field              = $participantField->getField();
+
+                    $procedureFieldArray[$participantName] = $field->getParam('name');
+                    $procedureField->next();
+                }
+
+                $getedFieldsSet[] = $procedureFieldArray;
+                $procedureFieldsSet->next();
+            }
+
+            self::assertEquals
+            (
+                $this->sortComplexArray($expectedFieldsSet),
+                $this->sortComplexArray($getedFieldsSet),
+                'Geted procedure fields not equals expected'
+            );
+        }
+    }
+    /** **********************************************************************
+     * check getting procedures data matching rules
+     *
+     * @test
+     * @throws
+     ************************************************************************/
+    public function gettingDataMatchingRules() : void
+    {
+        foreach (self::$structureGenerator->getStructure() as $procedureInfo)
+        {
+            $dataMatchingRules  = $this->createProcedure($procedureInfo['name'])->getDataMatchingRules();
+            $expectedRulesSet   = array_values($procedureInfo['dataMatchingRules']);
+            $getedRulesSet      = [];
+
+            foreach ($expectedRulesSet as $ruleIndex => $ruleInfo)
+            {
+                foreach ($ruleInfo['fields'] as $index => $fieldName)
+                {
+                    $expectedRulesSet[$ruleIndex]['fields'][$index] = $procedureInfo['fields'][$fieldName];
+                }
+            }
+
+            foreach ($dataMatchingRules->getKeys() as $participantSet)
+            {
+                $fieldSet   = $dataMatchingRules->get($participantSet);
+                $rule       =
+                [
+                    'participants'  => [],
+                    'fields'        => []
+                ];
+
+                while ($participantSet->valid())
+                {
+                    $participant = $participantSet->current();
+                    $rule['participants'][] = $this->getObjectClassShortName($participant);
+                    $participantSet->next();
+                }
+
+                while ($fieldSet->valid())
+                {
+                    $procedureField         = $fieldSet->current();
+                    $procedureFieldArray    = [];
+
+                    $procedureField->rewind();
+                    while ($procedureField->valid())
+                    {
+                        $participantField   = $procedureField->current();
+                        $participant        = $participantField->getParticipant();
+                        $participantName    = $this->getObjectClassShortName($participant);
+                        $field              = $participantField->getField();
+
+                        $procedureFieldArray[$participantName] = $field->getParam('name');
+                        $procedureField->next();
+                    }
+
+                    $rule['fields'][] = $procedureFieldArray;
+                    $fieldSet->next();
+                }
+
+                $getedRulesSet[] = $rule;
+            }
+
+            self::assertEquals
+            (
+                $this->sortComplexArray($expectedRulesSet),
+                $this->sortComplexArray($getedRulesSet),
+                'Geted procedure data matching rules not equals expected'
+            );
+        }
+    }
+    /** **********************************************************************
+     * check getting procedures data combining rules
+     *
+     * @test
+     * @throws
+     ************************************************************************/
+    public function gettingDataCombiningRules() : void
+    {
+        foreach (self::$structureGenerator->getStructure() as $procedureInfo)
+        {
+            $dataCombiningRules = $this->createProcedure($procedureInfo['name'])->getDataCombiningRules();
+            $expectedRulesSet   = $procedureInfo['dataCombiningRules'];
+            $getedRulesSet      = [];
+
+            foreach ($dataCombiningRules->getKeys() as $participantField)
+            {
+                $participant        = $participantField->getParticipant();
+                $participantName    = $this->getObjectClassShortName($participant);
+                $field              = $participantField->getField();
+                $fieldName          = $field->getParam('name');
+                $weight             = $dataCombiningRules->get($participantField);
+
+                if (!array_key_exists($participantName, $getedRulesSet))
+                {
+                    $getedRulesSet[$participantName] = [];
+                }
+
+                $getedRulesSet[$participantName][$fieldName] = $weight;
+            }
+
+            self::assertEquals
+            (
+                $this->sortComplexArray($expectedRulesSet),
+                $this->sortComplexArray($getedRulesSet),
+                'Geted procedure data combining rules not equals expected'
+            );
+        }
+    }
+    /** **********************************************************************
+     * create procedure by name
+     *
+     * @param   string  $procedureName                  procedure name
+     * @return  Procedure                               procedure
+     ************************************************************************/
+    private function createProcedure(string $procedureName) : Procedure
+    {
+        $procedureReflection    = new ReflectionClass(Procedure::class);
+        $procedureNamespace     = $procedureReflection->getNamespaceName();
+        $procedureQualifiedName = $procedureNamespace.'\\'.$procedureName;
+
+        return new $procedureQualifiedName;
+    }
+    /** **********************************************************************
+     * get object class short name
+     *
+     * @param   object  $object                         object
+     * @return  string                                  object class short name
+     ************************************************************************/
+    private function getObjectClassShortName($object) : string
+    {
+        $objectReflection = new ReflectionClass($object);
+
+        return $objectReflection->getShortName();
+    }
+    /** **********************************************************************
+     * sort complex array
+     *
+     * @param   array   $array                          array
+     * @return  array                                   sorted array
+     ************************************************************************/
+    private function sortComplexArray(array $array) : array
+    {
+        foreach ($array as $index => $value)
+        {
+            if (is_array($value))
+            {
+                $value = $this->sortComplexArray($value);
+            }
+
+            $array[json_encode($value)] = $value;
+            unset($array[$index]);
+        }
+
+        asort($array);
+
+        return array_values($array);
     }
 }

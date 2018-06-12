@@ -1,18 +1,19 @@
 <?php
 declare(strict_types=1);
 
-namespace UnitTests\ClassTesting\Helpers\Data;
+namespace UnitTests\ClassTesting\Exchange\Procedures\Data;
 
 use
-    UnitTests\Core\SetDataClass,
+    UnitTests\ClassTesting\Data\SetDataAbstractTest,
     Main\Exchange\Procedures\UsersExchange,
     Main\Exchange\Procedures\Data\ProceduresSet;
 /** ***********************************************************************************************
  * Test Main\Exchange\Procedures\Data\ProceduresSet class
+ *
  * @package exchange_unit_tests
  * @author  Hvorostenko
  *************************************************************************************************/
-final class ProceduresSetTest extends SetDataClass
+final class ProceduresSetTest extends SetDataAbstractTest
 {
     /** **********************************************************************
      * get Queue class name

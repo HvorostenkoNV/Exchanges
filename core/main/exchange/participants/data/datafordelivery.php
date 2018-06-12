@@ -8,7 +8,7 @@ use
     InvalidArgumentException,
     Main\Data\QueueData;
 /** ***********************************************************************************************
- * Participants delivered data. Data ready for delivery.
+ * Participants data ready for delivery.
  * Queue data, collection type of "First In, First Out"
  * Collection of ItemData objects
  *
@@ -30,15 +30,15 @@ class DataForDelivery extends QueueData implements Data
     /** **********************************************************************
      * push data to the end
      *
-     * @param   ItemData    $data           data
+     * @param   ItemData $data              data
      * @throws  InvalidArgumentException    incorrect pushed data
      ************************************************************************/
     public function push($data) : void
     {
-        if (!$data instanceof ItemData || $data->count() <= 0)
+        if (!$data instanceof ItemData)
         {
-            $needClassName = ItemData::class;
-            throw new InvalidArgumentException("pushed data required to be not empty $needClassName object");
+            $needClass = ItemData::class;
+            throw new InvalidArgumentException("pushed data must be instance of \"$needClass\"");
         }
 
         parent::push($data);

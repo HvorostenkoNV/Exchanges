@@ -11,384 +11,477 @@
     <schema id="5" parent="1" name="performance_schema"/>
     <schema id="6" parent="1" name="sys"/>
     <table id="7" parent="2" name="fields_types"/>
-    <table id="8" parent="2" name="participants"/>
-    <table id="9" parent="2" name="participants_fields"/>
-    <table id="10" parent="2" name="procedures"/>
-    <table id="11" parent="2" name="procedures_data_combining_rules"/>
-    <table id="12" parent="2" name="procedures_data_matching_rules"/>
-    <table id="13" parent="2" name="procedures_data_matching_rules_fields"/>
-    <table id="14" parent="2" name="procedures_data_matching_rules_participants"/>
-    <table id="15" parent="2" name="procedures_fields"/>
-    <table id="16" parent="2" name="procedures_participants"/>
-    <table id="17" parent="2" name="procedures_participants_fields"/>
-    <column id="18" parent="7" name="ID">
+    <table id="8" parent="2" name="matched_items"/>
+    <table id="9" parent="2" name="matched_items_participants"/>
+    <table id="10" parent="2" name="participants"/>
+    <table id="11" parent="2" name="participants_fields"/>
+    <table id="12" parent="2" name="procedures"/>
+    <table id="13" parent="2" name="procedures_data_combining_rules"/>
+    <table id="14" parent="2" name="procedures_data_matching_rules"/>
+    <table id="15" parent="2" name="procedures_data_matching_rules_fields"/>
+    <table id="16" parent="2" name="procedures_data_matching_rules_participants"/>
+    <table id="17" parent="2" name="procedures_fields"/>
+    <table id="18" parent="2" name="procedures_participants"/>
+    <table id="19" parent="2" name="procedures_participants_fields"/>
+    <column id="20" parent="7" name="ID">
       <Position>1</Position>
       <DataType>int(11)|0</DataType>
       <NotNull>1</NotNull>
       <SequenceIdentity>1</SequenceIdentity>
     </column>
-    <column id="19" parent="7" name="NAME">
+    <column id="21" parent="7" name="NAME">
       <Position>2</Position>
       <DataType>varchar(100)|0</DataType>
       <NotNull>1</NotNull>
     </column>
-    <column id="20" parent="7" name="CODE">
+    <column id="22" parent="7" name="CODE">
       <Position>3</Position>
       <DataType>varchar(50)|0</DataType>
       <NotNull>1</NotNull>
     </column>
-    <index id="21" parent="7" name="PARTICIPANTS_FIELDS_TYPES_CODE_UINDEX">
+    <index id="23" parent="7" name="PARTICIPANTS_FIELDS_TYPES_CODE_UINDEX">
       <ColNames>CODE</ColNames>
       <Unique>1</Unique>
     </index>
-    <key id="22" parent="7" name="PRIMARY">
+    <key id="24" parent="7" name="PRIMARY">
       <ColNames>ID</ColNames>
       <Primary>1</Primary>
     </key>
-    <key id="23" parent="7" name="PARTICIPANTS_FIELDS_TYPES_CODE_UINDEX">
+    <key id="25" parent="7" name="PARTICIPANTS_FIELDS_TYPES_CODE_UINDEX">
       <ColNames>CODE</ColNames>
       <UnderlyingIndexName>PARTICIPANTS_FIELDS_TYPES_CODE_UINDEX</UnderlyingIndexName>
     </key>
-    <column id="24" parent="8" name="ID">
+    <column id="26" parent="8" name="ID">
       <Position>1</Position>
       <DataType>int(11)|0</DataType>
       <NotNull>1</NotNull>
       <SequenceIdentity>1</SequenceIdentity>
     </column>
-    <column id="25" parent="8" name="NAME">
+    <column id="27" parent="8" name="PROCEDURE">
       <Position>2</Position>
-      <DataType>varchar(100)|0</DataType>
+      <DataType>int(11)|0</DataType>
       <NotNull>1</NotNull>
     </column>
-    <index id="26" parent="8" name="PARTICIPANTS_NAME_UINDEX">
-      <ColNames>NAME</ColNames>
-      <Unique>1</Unique>
+    <index id="28" parent="8" name="MATCHED_ITEMS_PROCEDURES_ID_FK">
+      <ColNames>PROCEDURE</ColNames>
     </index>
-    <key id="27" parent="8" name="PRIMARY">
+    <key id="29" parent="8" name="PRIMARY">
       <ColNames>ID</ColNames>
       <Primary>1</Primary>
     </key>
-    <key id="28" parent="8" name="PARTICIPANTS_NAME_UINDEX">
-      <ColNames>NAME</ColNames>
-      <UnderlyingIndexName>PARTICIPANTS_NAME_UINDEX</UnderlyingIndexName>
-    </key>
-    <column id="29" parent="9" name="ID">
+    <foreign-key id="30" parent="8" name="MATCHED_ITEMS_PROCEDURES_ID_FK">
+      <ColNames>PROCEDURE</ColNames>
+      <RefSchemaName>exchange</RefSchemaName>
+      <RefTableName>procedures</RefTableName>
+      <RefColNames>ID</RefColNames>
+      <OnDelete>delete</OnDelete>
+    </foreign-key>
+    <column id="31" parent="9" name="ID">
       <Position>1</Position>
       <DataType>int(11)|0</DataType>
       <NotNull>1</NotNull>
       <SequenceIdentity>1</SequenceIdentity>
     </column>
-    <column id="30" parent="9" name="NAME">
-      <Position>2</Position>
-      <DataType>varchar(50)|0</DataType>
-      <NotNull>1</NotNull>
-    </column>
-    <column id="31" parent="9" name="TYPE">
+    <column id="32" parent="9" name="PARTICIPANT">
       <Position>3</Position>
       <DataType>int(11)|0</DataType>
       <NotNull>1</NotNull>
     </column>
-    <column id="32" parent="9" name="IS_REQUIRED">
+    <column id="33" parent="9" name="PROCEDURE_ITEM">
+      <Position>2</Position>
+      <DataType>int(11)|0</DataType>
+      <NotNull>1</NotNull>
+    </column>
+    <column id="34" parent="9" name="PARTICIPANT_ITEM_ID">
+      <Position>4</Position>
+      <DataType>int(11)|0</DataType>
+      <NotNull>1</NotNull>
+    </column>
+    <index id="35" parent="9" name="MATCHED_ITEMS_PARTICIPANTS_PARTICIPANTS_ID_FK">
+      <ColNames>PARTICIPANT</ColNames>
+    </index>
+    <index id="36" parent="9" name="MATCHED_ITEMS_PARTICIPANTS_MATCHED_ITEMS_ID_FK">
+      <ColNames>PROCEDURE_ITEM</ColNames>
+    </index>
+    <key id="37" parent="9" name="PRIMARY">
+      <ColNames>ID</ColNames>
+      <Primary>1</Primary>
+    </key>
+    <foreign-key id="38" parent="9" name="MATCHED_ITEMS_PARTICIPANTS_MATCHED_ITEMS_ID_FK">
+      <ColNames>PROCEDURE_ITEM</ColNames>
+      <RefSchemaName>exchange</RefSchemaName>
+      <RefTableName>matched_items</RefTableName>
+      <RefColNames>ID</RefColNames>
+      <OnDelete>delete</OnDelete>
+    </foreign-key>
+    <foreign-key id="39" parent="9" name="MATCHED_ITEMS_PARTICIPANTS_PARTICIPANTS_ID_FK">
+      <ColNames>PARTICIPANT</ColNames>
+      <RefSchemaName>exchange</RefSchemaName>
+      <RefTableName>participants</RefTableName>
+      <RefColNames>ID</RefColNames>
+      <OnDelete>delete</OnDelete>
+    </foreign-key>
+    <column id="40" parent="10" name="ID">
+      <Position>1</Position>
+      <DataType>int(11)|0</DataType>
+      <NotNull>1</NotNull>
+      <SequenceIdentity>1</SequenceIdentity>
+    </column>
+    <column id="41" parent="10" name="NAME">
+      <Position>2</Position>
+      <DataType>varchar(255)|0</DataType>
+      <NotNull>1</NotNull>
+    </column>
+    <column id="42" parent="10" name="CODE">
+      <Position>3</Position>
+      <DataType>varchar(255)|0</DataType>
+      <NotNull>1</NotNull>
+    </column>
+    <index id="43" parent="10" name="PARTICIPANTS_CODE_UINDEX">
+      <ColNames>CODE</ColNames>
+      <Unique>1</Unique>
+    </index>
+    <key id="44" parent="10" name="PRIMARY">
+      <ColNames>ID</ColNames>
+      <Primary>1</Primary>
+    </key>
+    <key id="45" parent="10" name="PARTICIPANTS_CODE_UINDEX">
+      <ColNames>CODE</ColNames>
+      <UnderlyingIndexName>PARTICIPANTS_CODE_UINDEX</UnderlyingIndexName>
+    </key>
+    <column id="46" parent="11" name="ID">
+      <Position>1</Position>
+      <DataType>int(11)|0</DataType>
+      <NotNull>1</NotNull>
+      <SequenceIdentity>1</SequenceIdentity>
+    </column>
+    <column id="47" parent="11" name="NAME">
+      <Position>2</Position>
+      <DataType>varchar(50)|0</DataType>
+      <NotNull>1</NotNull>
+    </column>
+    <column id="48" parent="11" name="TYPE">
+      <Position>3</Position>
+      <DataType>int(11)|0</DataType>
+      <NotNull>1</NotNull>
+    </column>
+    <column id="49" parent="11" name="IS_REQUIRED">
       <Position>4</Position>
       <DataType>char(1)|0</DataType>
       <NotNull>1</NotNull>
     </column>
-    <column id="33" parent="9" name="PARTICIPANT">
+    <column id="50" parent="11" name="PARTICIPANT">
       <Position>5</Position>
       <DataType>int(11)|0</DataType>
       <NotNull>1</NotNull>
     </column>
-    <index id="34" parent="9" name="PARTICIPANTS_FIELDS_PARTICIPANTS_FIELDS_TYPES_ID_FK">
+    <index id="51" parent="11" name="PARTICIPANTS_FIELDS_PARTICIPANTS_FIELDS_TYPES_ID_FK">
       <ColNames>TYPE</ColNames>
     </index>
-    <index id="35" parent="9" name="PARTICIPANTS_FIELDS_PARTICIPANTS_ID_FK">
+    <index id="52" parent="11" name="PARTICIPANTS_FIELDS_PARTICIPANTS_ID_FK">
       <ColNames>PARTICIPANT</ColNames>
     </index>
-    <key id="36" parent="9" name="PRIMARY">
+    <key id="53" parent="11" name="PRIMARY">
       <ColNames>ID</ColNames>
       <Primary>1</Primary>
     </key>
-    <foreign-key id="37" parent="9" name="PARTICIPANTS_FIELDS_PARTICIPANTS_FIELDS_TYPES_ID_FK">
+    <foreign-key id="54" parent="11" name="PARTICIPANTS_FIELDS_PARTICIPANTS_FIELDS_TYPES_ID_FK">
       <ColNames>TYPE</ColNames>
       <RefSchemaName>exchange</RefSchemaName>
       <RefTableName>fields_types</RefTableName>
       <RefColNames>ID</RefColNames>
       <OnDelete>delete</OnDelete>
     </foreign-key>
-    <foreign-key id="38" parent="9" name="PARTICIPANTS_FIELDS_PARTICIPANTS_ID_FK">
+    <foreign-key id="55" parent="11" name="PARTICIPANTS_FIELDS_PARTICIPANTS_ID_FK">
       <ColNames>PARTICIPANT</ColNames>
       <RefSchemaName>exchange</RefSchemaName>
       <RefTableName>participants</RefTableName>
       <RefColNames>ID</RefColNames>
       <OnDelete>delete</OnDelete>
     </foreign-key>
-    <column id="39" parent="10" name="ID">
+    <column id="56" parent="12" name="ID">
       <Position>1</Position>
       <DataType>int(11)|0</DataType>
       <NotNull>1</NotNull>
       <SequenceIdentity>1</SequenceIdentity>
     </column>
-    <column id="40" parent="10" name="NAME">
+    <column id="57" parent="12" name="NAME">
       <Position>2</Position>
-      <DataType>varchar(100)|0</DataType>
+      <DataType>varchar(255)|0</DataType>
       <NotNull>1</NotNull>
     </column>
-    <column id="41" parent="10" name="ACTIVITY">
-      <Position>3</Position>
+    <column id="58" parent="12" name="ACTIVITY">
+      <Position>4</Position>
       <DataType>char(1)|0</DataType>
       <NotNull>1</NotNull>
       <DefaultExpression>&apos;N&apos;</DefaultExpression>
     </column>
-    <index id="42" parent="10" name="PROCEDURES_NAME_UINDEX">
-      <ColNames>NAME</ColNames>
+    <column id="59" parent="12" name="CODE">
+      <Position>3</Position>
+      <DataType>varchar(255)|0</DataType>
+      <NotNull>1</NotNull>
+    </column>
+    <index id="60" parent="12" name="PROCEDURES_CODE_UINDEX">
+      <ColNames>CODE</ColNames>
       <Unique>1</Unique>
     </index>
-    <key id="43" parent="10" name="PRIMARY">
+    <key id="61" parent="12" name="PRIMARY">
       <ColNames>ID</ColNames>
       <Primary>1</Primary>
     </key>
-    <key id="44" parent="10" name="PROCEDURES_NAME_UINDEX">
-      <ColNames>NAME</ColNames>
-      <UnderlyingIndexName>PROCEDURES_NAME_UINDEX</UnderlyingIndexName>
+    <key id="62" parent="12" name="PROCEDURES_CODE_UINDEX">
+      <ColNames>CODE</ColNames>
+      <UnderlyingIndexName>PROCEDURES_CODE_UINDEX</UnderlyingIndexName>
     </key>
-    <column id="45" parent="11" name="ID">
+    <column id="63" parent="13" name="ID">
       <Position>1</Position>
       <DataType>int(11)|0</DataType>
       <NotNull>1</NotNull>
       <SequenceIdentity>1</SequenceIdentity>
     </column>
-    <column id="46" parent="11" name="PARTICIPANT_FIELD">
+    <column id="64" parent="13" name="PARTICIPANT_FIELD">
       <Position>3</Position>
       <DataType>int(11)|0</DataType>
+      <NotNull>1</NotNull>
     </column>
-    <column id="47" parent="11" name="WEIGHT">
+    <column id="65" parent="13" name="WEIGHT">
       <Position>4</Position>
       <DataType>int(11)|0</DataType>
+      <NotNull>1</NotNull>
     </column>
-    <column id="48" parent="11" name="PROCEDURE">
+    <column id="66" parent="13" name="PROCEDURE">
       <Position>2</Position>
       <DataType>int(11)|0</DataType>
+      <NotNull>1</NotNull>
     </column>
-    <index id="49" parent="11" name="DATA_COMBINING_RULES_FIELDS_PARTICIPANTS_FIELDS_ID_FK">
+    <index id="67" parent="13" name="DATA_COMBINING_RULES_FIELDS_PARTICIPANTS_FIELDS_ID_FK">
       <ColNames>PARTICIPANT_FIELD</ColNames>
     </index>
-    <index id="50" parent="11" name="PROCEDURES_DATA_COMBINING_RULES_PROCEDURES_ID_FK">
+    <index id="68" parent="13" name="PROCEDURES_DATA_COMBINING_RULES_PROCEDURES_ID_FK">
       <ColNames>PROCEDURE</ColNames>
     </index>
-    <key id="51" parent="11" name="PRIMARY">
+    <key id="69" parent="13" name="PRIMARY">
       <ColNames>ID</ColNames>
       <Primary>1</Primary>
     </key>
-    <foreign-key id="52" parent="11" name="PROCEDURES_DATA_COMBINING_RULES_PROCEDURES_ID_FK">
+    <foreign-key id="70" parent="13" name="PROCEDURES_DATA_COMBINING_RULES_PROCEDURES_ID_FK">
       <ColNames>PROCEDURE</ColNames>
       <RefSchemaName>exchange</RefSchemaName>
       <RefTableName>procedures</RefTableName>
       <RefColNames>ID</RefColNames>
       <OnDelete>delete</OnDelete>
     </foreign-key>
-    <foreign-key id="53" parent="11" name="DATA_COMBINING_RULES_FIELDS_PARTICIPANTS_FIELDS_ID_FK">
+    <foreign-key id="71" parent="13" name="DATA_COMBINING_RULES_FIELDS_PARTICIPANTS_FIELDS_ID_FK">
       <ColNames>PARTICIPANT_FIELD</ColNames>
       <RefSchemaName>exchange</RefSchemaName>
       <RefTableName>participants_fields</RefTableName>
       <RefColNames>ID</RefColNames>
       <OnDelete>delete</OnDelete>
     </foreign-key>
-    <column id="54" parent="12" name="ID">
+    <column id="72" parent="14" name="ID">
       <Position>1</Position>
       <DataType>int(11)|0</DataType>
       <NotNull>1</NotNull>
       <SequenceIdentity>1</SequenceIdentity>
     </column>
-    <column id="55" parent="12" name="PROCEDURE">
+    <column id="73" parent="14" name="PROCEDURE">
       <Position>2</Position>
       <DataType>int(11)|0</DataType>
+      <NotNull>1</NotNull>
     </column>
-    <index id="56" parent="12" name="PROCEDURES_DATA_MATCHING_RULES_PROCEDURES_ID_FK">
+    <index id="74" parent="14" name="PROCEDURES_DATA_MATCHING_RULES_PROCEDURES_ID_FK">
       <ColNames>PROCEDURE</ColNames>
     </index>
-    <key id="57" parent="12" name="PRIMARY">
+    <key id="75" parent="14" name="PRIMARY">
       <ColNames>ID</ColNames>
       <Primary>1</Primary>
     </key>
-    <foreign-key id="58" parent="12" name="PROCEDURES_DATA_MATCHING_RULES_PROCEDURES_ID_FK">
+    <foreign-key id="76" parent="14" name="PROCEDURES_DATA_MATCHING_RULES_PROCEDURES_ID_FK">
       <ColNames>PROCEDURE</ColNames>
       <RefSchemaName>exchange</RefSchemaName>
       <RefTableName>procedures</RefTableName>
       <RefColNames>ID</RefColNames>
       <OnDelete>delete</OnDelete>
     </foreign-key>
-    <column id="59" parent="13" name="ID">
+    <column id="77" parent="15" name="ID">
       <Position>1</Position>
       <DataType>int(11)|0</DataType>
       <NotNull>1</NotNull>
       <SequenceIdentity>1</SequenceIdentity>
     </column>
-    <column id="60" parent="13" name="PROCEDURE_FIELD">
+    <column id="78" parent="15" name="PROCEDURE_FIELD">
       <Position>3</Position>
       <DataType>int(11)|0</DataType>
+      <NotNull>1</NotNull>
     </column>
-    <column id="61" parent="13" name="RULE">
+    <column id="79" parent="15" name="RULE">
       <Position>2</Position>
       <DataType>int(11)|0</DataType>
+      <NotNull>1</NotNull>
     </column>
-    <index id="62" parent="13" name="PROCEDURES_DATA_MATCHING_RULES_FIELDS_PROCEDURES_FIELDS_ID_FK">
+    <index id="80" parent="15" name="PROCEDURES_DATA_MATCHING_RULES_FIELDS_PROCEDURES_FIELDS_ID_FK">
       <ColNames>PROCEDURE_FIELD</ColNames>
     </index>
-    <index id="63" parent="13" name="DATA_MATCHING_RULES_FIELDS_DATA_MATCHING_RULES_ID_FK">
+    <index id="81" parent="15" name="DATA_MATCHING_RULES_FIELDS_DATA_MATCHING_RULES_ID_FK">
       <ColNames>RULE</ColNames>
     </index>
-    <key id="64" parent="13" name="PRIMARY">
+    <key id="82" parent="15" name="PRIMARY">
       <ColNames>ID</ColNames>
       <Primary>1</Primary>
     </key>
-    <foreign-key id="65" parent="13" name="DATA_MATCHING_RULES_FIELDS_DATA_MATCHING_RULES_ID_FK">
+    <foreign-key id="83" parent="15" name="DATA_MATCHING_RULES_FIELDS_DATA_MATCHING_RULES_ID_FK">
       <ColNames>RULE</ColNames>
       <RefSchemaName>exchange</RefSchemaName>
       <RefTableName>procedures_data_matching_rules</RefTableName>
       <RefColNames>ID</RefColNames>
       <OnDelete>delete</OnDelete>
     </foreign-key>
-    <foreign-key id="66" parent="13" name="PROCEDURES_DATA_MATCHING_RULES_FIELDS_PROCEDURES_FIELDS_ID_FK">
+    <foreign-key id="84" parent="15" name="PROCEDURES_DATA_MATCHING_RULES_FIELDS_PROCEDURES_FIELDS_ID_FK">
       <ColNames>PROCEDURE_FIELD</ColNames>
       <RefSchemaName>exchange</RefSchemaName>
       <RefTableName>procedures_fields</RefTableName>
       <RefColNames>ID</RefColNames>
       <OnDelete>delete</OnDelete>
     </foreign-key>
-    <column id="67" parent="14" name="ID">
+    <column id="85" parent="16" name="ID">
       <Position>1</Position>
       <DataType>int(11)|0</DataType>
       <NotNull>1</NotNull>
       <SequenceIdentity>1</SequenceIdentity>
     </column>
-    <column id="68" parent="14" name="PARTICIPANT">
+    <column id="86" parent="16" name="PARTICIPANT">
       <Position>3</Position>
       <DataType>int(11)|0</DataType>
+      <NotNull>1</NotNull>
     </column>
-    <column id="69" parent="14" name="RULE">
+    <column id="87" parent="16" name="RULE">
       <Position>2</Position>
       <DataType>int(11)|0</DataType>
+      <NotNull>1</NotNull>
     </column>
-    <index id="70" parent="14" name="PROCEDURES_DATA_MATCHING_RULES_PARTICIPANTS_PARTICIPANTS_ID_FK">
+    <index id="88" parent="16" name="PROCEDURES_DATA_MATCHING_RULES_PARTICIPANTS_PARTICIPANTS_ID_FK">
       <ColNames>PARTICIPANT</ColNames>
     </index>
-    <index id="71" parent="14" name="DATA_MATCHING_RULES_PARTICIPANTS_DATA_MATCHING_RULES_ID_FK">
+    <index id="89" parent="16" name="DATA_MATCHING_RULES_PARTICIPANTS_DATA_MATCHING_RULES_ID_FK">
       <ColNames>RULE</ColNames>
     </index>
-    <key id="72" parent="14" name="PRIMARY">
+    <key id="90" parent="16" name="PRIMARY">
       <ColNames>ID</ColNames>
       <Primary>1</Primary>
     </key>
-    <foreign-key id="73" parent="14" name="DATA_MATCHING_RULES_PARTICIPANTS_DATA_MATCHING_RULES_ID_FK">
+    <foreign-key id="91" parent="16" name="DATA_MATCHING_RULES_PARTICIPANTS_DATA_MATCHING_RULES_ID_FK">
       <ColNames>RULE</ColNames>
       <RefSchemaName>exchange</RefSchemaName>
       <RefTableName>procedures_data_matching_rules</RefTableName>
       <RefColNames>ID</RefColNames>
       <OnDelete>delete</OnDelete>
     </foreign-key>
-    <foreign-key id="74" parent="14" name="PROCEDURES_DATA_MATCHING_RULES_PARTICIPANTS_PARTICIPANTS_ID_FK">
+    <foreign-key id="92" parent="16" name="PROCEDURES_DATA_MATCHING_RULES_PARTICIPANTS_PARTICIPANTS_ID_FK">
       <ColNames>PARTICIPANT</ColNames>
       <RefSchemaName>exchange</RefSchemaName>
       <RefTableName>participants</RefTableName>
       <RefColNames>ID</RefColNames>
       <OnDelete>delete</OnDelete>
     </foreign-key>
-    <column id="75" parent="15" name="ID">
+    <column id="93" parent="17" name="ID">
       <Position>1</Position>
       <DataType>int(11)|0</DataType>
       <NotNull>1</NotNull>
       <SequenceIdentity>1</SequenceIdentity>
     </column>
-    <column id="76" parent="15" name="PROCEDURE">
+    <column id="94" parent="17" name="PROCEDURE">
       <Position>2</Position>
       <DataType>int(11)|0</DataType>
+      <NotNull>1</NotNull>
     </column>
-    <index id="77" parent="15" name="PROCEDURES_FIELDS_PROCEDURES_ID_FK">
+    <index id="95" parent="17" name="PROCEDURES_FIELDS_PROCEDURES_ID_FK">
       <ColNames>PROCEDURE</ColNames>
     </index>
-    <key id="78" parent="15" name="PRIMARY">
+    <key id="96" parent="17" name="PRIMARY">
       <ColNames>ID</ColNames>
       <Primary>1</Primary>
     </key>
-    <foreign-key id="79" parent="15" name="PROCEDURES_FIELDS_PROCEDURES_ID_FK">
+    <foreign-key id="97" parent="17" name="PROCEDURES_FIELDS_PROCEDURES_ID_FK">
       <ColNames>PROCEDURE</ColNames>
       <RefSchemaName>exchange</RefSchemaName>
       <RefTableName>procedures</RefTableName>
       <RefColNames>ID</RefColNames>
       <OnDelete>delete</OnDelete>
     </foreign-key>
-    <column id="80" parent="16" name="ID">
+    <column id="98" parent="18" name="ID">
       <Position>1</Position>
       <DataType>int(11)|0</DataType>
       <NotNull>1</NotNull>
       <SequenceIdentity>1</SequenceIdentity>
     </column>
-    <column id="81" parent="16" name="PROCEDURE">
+    <column id="99" parent="18" name="PROCEDURE">
       <Position>2</Position>
       <DataType>int(11)|0</DataType>
       <NotNull>1</NotNull>
     </column>
-    <column id="82" parent="16" name="PARTICIPANT">
+    <column id="100" parent="18" name="PARTICIPANT">
       <Position>3</Position>
       <DataType>int(11)|0</DataType>
       <NotNull>1</NotNull>
     </column>
-    <index id="83" parent="16" name="PROCEDURES_PARTICIPANTS_PROCEDURES_ID_FK">
+    <index id="101" parent="18" name="PROCEDURES_PARTICIPANTS_PROCEDURES_ID_FK">
       <ColNames>PROCEDURE</ColNames>
     </index>
-    <index id="84" parent="16" name="PROCEDURES_PARTICIPANTS_PARTICIPANTS_ID_FK">
+    <index id="102" parent="18" name="PROCEDURES_PARTICIPANTS_PARTICIPANTS_ID_FK">
       <ColNames>PARTICIPANT</ColNames>
     </index>
-    <key id="85" parent="16" name="PRIMARY">
+    <key id="103" parent="18" name="PRIMARY">
       <ColNames>ID</ColNames>
       <Primary>1</Primary>
     </key>
-    <foreign-key id="86" parent="16" name="PROCEDURES_PARTICIPANTS_PROCEDURES_ID_FK">
+    <foreign-key id="104" parent="18" name="PROCEDURES_PARTICIPANTS_PROCEDURES_ID_FK">
       <ColNames>PROCEDURE</ColNames>
       <RefSchemaName>exchange</RefSchemaName>
       <RefTableName>procedures</RefTableName>
       <RefColNames>ID</RefColNames>
       <OnDelete>delete</OnDelete>
     </foreign-key>
-    <foreign-key id="87" parent="16" name="PROCEDURES_PARTICIPANTS_PARTICIPANTS_ID_FK">
+    <foreign-key id="105" parent="18" name="PROCEDURES_PARTICIPANTS_PARTICIPANTS_ID_FK">
       <ColNames>PARTICIPANT</ColNames>
       <RefSchemaName>exchange</RefSchemaName>
       <RefTableName>participants</RefTableName>
       <RefColNames>ID</RefColNames>
       <OnDelete>delete</OnDelete>
     </foreign-key>
-    <column id="88" parent="17" name="ID">
+    <column id="106" parent="19" name="ID">
       <Position>1</Position>
       <DataType>int(11)|0</DataType>
       <NotNull>1</NotNull>
       <SequenceIdentity>1</SequenceIdentity>
     </column>
-    <column id="89" parent="17" name="PROCEDURE_FIELD">
+    <column id="107" parent="19" name="PROCEDURE_FIELD">
       <Position>2</Position>
       <DataType>int(11)|0</DataType>
+      <NotNull>1</NotNull>
     </column>
-    <column id="90" parent="17" name="PARTICIPANT_FIELD">
+    <column id="108" parent="19" name="PARTICIPANT_FIELD">
       <Position>3</Position>
       <DataType>int(11)|0</DataType>
+      <NotNull>1</NotNull>
     </column>
-    <index id="91" parent="17" name="PROCEDURES_PARTICIPANTS_FIELDS_PARTICIPANTS_FIELDS_ID_FK">
+    <index id="109" parent="19" name="PROCEDURES_PARTICIPANTS_FIELDS_PARTICIPANTS_FIELDS_ID_FK">
       <ColNames>PARTICIPANT_FIELD</ColNames>
     </index>
-    <index id="92" parent="17" name="PROCEDURES_PARTICIPANTS_FIELDS_PROCEDURES_FIELDS_ID_FK">
+    <index id="110" parent="19" name="PROCEDURES_PARTICIPANTS_FIELDS_PROCEDURES_FIELDS_ID_FK">
       <ColNames>PROCEDURE_FIELD</ColNames>
     </index>
-    <key id="93" parent="17" name="PRIMARY">
+    <key id="111" parent="19" name="PRIMARY">
       <ColNames>ID</ColNames>
       <Primary>1</Primary>
     </key>
-    <foreign-key id="94" parent="17" name="PROCEDURES_PARTICIPANTS_FIELDS_PROCEDURES_FIELDS_ID_FK">
+    <foreign-key id="112" parent="19" name="PROCEDURES_PARTICIPANTS_FIELDS_PROCEDURES_FIELDS_ID_FK">
       <ColNames>PROCEDURE_FIELD</ColNames>
       <RefSchemaName>exchange</RefSchemaName>
       <RefTableName>procedures_fields</RefTableName>
       <RefColNames>ID</RefColNames>
       <OnDelete>delete</OnDelete>
     </foreign-key>
-    <foreign-key id="95" parent="17" name="PROCEDURES_PARTICIPANTS_FIELDS_PARTICIPANTS_FIELDS_ID_FK">
+    <foreign-key id="113" parent="19" name="PROCEDURES_PARTICIPANTS_FIELDS_PARTICIPANTS_FIELDS_ID_FK">
       <ColNames>PARTICIPANT_FIELD</ColNames>
       <RefSchemaName>exchange</RefSchemaName>
       <RefTableName>participants_fields</RefTableName>

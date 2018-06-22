@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace UnitTests\ClassTesting\Exchange\DataProcessors\Data;
 
 use
-    UnitTests\ProjectTempStructure\MainGenerator as TempStructureGenerator,
     UnitTests\ClassTesting\Data\MapDataAbstractTest,
     Main\Exchange\Procedures\Fields\ProcedureField,
     Main\Exchange\DataProcessors\Data\CombinedItem;
@@ -60,7 +59,6 @@ final class CombinedItemTest extends MapDataAbstractTest
             [1, 2, 3],
             ['string', '', 2.5, 0, true, false],
             [],
-            new TempStructureGenerator,
             new CombinedItem,
             null
         ];
@@ -93,7 +91,6 @@ final class CombinedItemTest extends MapDataAbstractTest
             [1, 2, 3],
             ['string', '', 2.5, 0, true, false],
             [],
-            new TempStructureGenerator,
             new CombinedItem,
             null
         ];

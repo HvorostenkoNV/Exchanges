@@ -7,7 +7,7 @@ use
     InvalidArgumentException,
     Main\Data\MapData,
     Main\Exchange\Procedures\Data\ParticipantsSet,
-    Main\Exchange\Procedures\Fields\FieldsSet;
+    Main\Exchange\Procedures\Fields\FieldsSet as ProcedureFieldsSet;
 /** ***********************************************************************************************
  * Data matching rules
  * Display dependency between some participants and some procedure fields
@@ -32,7 +32,7 @@ class DataMatchingRules extends MapData
      * get value by key
      *
      * @param   ParticipantsSet $key        value key
-     * @return  FieldsSet                   value
+     * @return  ProcedureFieldsSet          value
      ************************************************************************/
     public function get($key)
     {
@@ -60,7 +60,7 @@ class DataMatchingRules extends MapData
     /** **********************************************************************
      * check map has value
      *
-     * @param   FieldsSet $value            value
+     * @param   ProcedureFieldsSet $value   value
      * @return  bool                        map has value
      ************************************************************************/
     public function hasValue($value) : bool
@@ -70,8 +70,8 @@ class DataMatchingRules extends MapData
     /** **********************************************************************
      * attach value to key
      *
-     * @param   ParticipantsSet $key        value key
-     * @param   FieldsSet       $value      value
+     * @param   ParticipantsSet     $key    value key
+     * @param   ProcedureFieldsSet  $value  value
      * @throws  InvalidArgumentException    incorrect key or value
      ************************************************************************/
     public function set($key, $value) : void
@@ -81,9 +81,9 @@ class DataMatchingRules extends MapData
             $needClass = ParticipantsSet::class;
             throw new InvalidArgumentException("key must be instance of \"$needClass\"");
         }
-        if (!$value instanceof FieldsSet)
+        if (!$value instanceof ProcedureFieldsSet)
         {
-            $needClass = FieldsSet::class;
+            $needClass = ProcedureFieldsSet::class;
             throw new InvalidArgumentException("value must be instance of \"$needClass\"");
         }
 

@@ -151,7 +151,7 @@ final class FieldTest extends AbstractTestCase
             [
                 'type'      => $type,
                 'name'      => 'someField'.$type,
-                'required'  => rand(0, 1) === 0
+                'required'  => rand(1, 2) == 2
             ];
         }
 
@@ -202,7 +202,7 @@ final class FieldTest extends AbstractTestCase
             [
                 'type'      => $fieldsTypes[array_rand($fieldsTypes)],
                 'name'      => $incorrectName,
-                'required'  => rand(0, 1) === 0
+                'required'  => rand(1, 2) == 2
             ];
         }
         foreach ($incorrectRequiredValues as $incorrectRequiredValue)
@@ -218,7 +218,7 @@ final class FieldTest extends AbstractTestCase
         [
             'type'      => $incorrectFieldType,
             'name'      => 'someName',
-            'required'  => rand(0, 1) === 0
+            'required'  => rand(1, 2) == 2
         ];
 
         return $result;

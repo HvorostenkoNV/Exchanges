@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace UnitTests\ClassTesting\Exchange\DataProcessors;
 
 use
-    ReflectionClass,
     UnitTests\AbstractTestCase,
     UnitTests\ProjectTempStructure\MainGenerator    as TempStructureGenerator,
     Main\Exchange\DataProcessors\Collector          as SystemProcessor,
@@ -46,9 +45,12 @@ final class ProcessorTest extends AbstractTestCase
      ************************************************************************/
     public function constructing() : void
     {
-        foreach (self::$structureGenerator->getStructure() as $procedureName => $procedureInfo)
+        $tempStructure          = self::$structureGenerator->getStructure();
+        $tempClassesStructure   = self::$structureGenerator->getClassesStructure();
+
+        foreach ($tempStructure as $procedureCode => $procedureInfo)
         {
-            $procedure  = $this->createProcedure($procedureName);
+            $procedure  = $this->constructProcedure($tempClassesStructure[$procedureCode]);
             $processor  = new SystemProcessor($procedure);
 
             self::assertEquals
@@ -60,17 +62,15 @@ final class ProcessorTest extends AbstractTestCase
         }
     }
     /** **********************************************************************
-     * create procedure by name
+     * construct procedure
      *
-     * @param   string  $procedureName                  procedure name
-     * @return  Procedure                               procedure
+     * @param   array $procedureClassesInfo         procedure classes structure
+     * @return  Procedure|null                      procedure
      ************************************************************************/
-    private function createProcedure(string $procedureName) : Procedure
+    private function constructProcedure(array $procedureClassesInfo) : ?Procedure
     {
-        $procedureReflection    = new ReflectionClass(Procedure::class);
-        $procedureNamespace     = $procedureReflection->getNamespaceName();
-        $procedureQualifiedName = $procedureNamespace.'\\'.$procedureName;
+        $className = $procedureClassesInfo['class'];
 
-        return new $procedureQualifiedName;
+        return new $className;
     }
 }

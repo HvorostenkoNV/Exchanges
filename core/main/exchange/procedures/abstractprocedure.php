@@ -50,13 +50,13 @@ abstract class AbstractProcedure implements Procedure
      ************************************************************************/
     final public function getParticipants() : ParticipantsSet
     {
-        $result         = new ParticipantsSet;
-        $logger         = Logger::getInstance();
-        $procedureName  = static::class;
+        $result     = new ParticipantsSet;
+        $logger     = Logger::getInstance();
+        $procedure  = static::class;
 
         if (count($this->participants) <= 0)
         {
-            $logger->addWarning("Procedure \"$procedureName\" has no participants");
+            $logger->addWarning("Procedure \"$procedure\" has no participants");
             return $result;
         }
 
@@ -70,10 +70,10 @@ abstract class AbstractProcedure implements Procedure
         catch (InvalidArgumentException $exception)
         {
             $error = $exception->getMessage();
-            $logger->addWarning("Error on filling procedure \"$procedureName\" participants set: $error");
+            $logger->addWarning("Error on filling procedure \"$procedure\" participants set: $error");
         }
 
-        $logger->addNotice("Procedure \"$procedureName\" participants set constructed and returned");
+        $logger->addNotice("Procedure \"$procedure\" participants set constructed and returned");
         $result->rewind();
         return $result;
     }
@@ -84,13 +84,13 @@ abstract class AbstractProcedure implements Procedure
      ************************************************************************/
     final public function getFields() : FieldsSet
     {
-        $result         = new FieldsSet;
-        $logger         = Logger::getInstance();
-        $procedureName  = static::class;
+        $result     = new FieldsSet;
+        $logger     = Logger::getInstance();
+        $procedure  = static::class;
 
         if (count($this->procedureFields) <= 0)
         {
-            $logger->addWarning("Procedure \"$procedureName\" has no fields");
+            $logger->addWarning("Procedure \"$procedure\" has no fields");
             return $result;
         }
 
@@ -105,10 +105,10 @@ abstract class AbstractProcedure implements Procedure
         catch (InvalidArgumentException $exception)
         {
             $error = $exception->getMessage();
-            $logger->addWarning("Error on filling procedure \"$procedureName\" fields set: $error");
+            $logger->addWarning("Error on filling procedure \"$procedure\" fields set: $error");
         }
 
-        $logger->addNotice("Procedure \"$procedureName\" fields set constructed and returned");
+        $logger->addNotice("Procedure \"$procedure\" fields set constructed and returned");
         $result->rewind();
         return $result;
     }
@@ -119,13 +119,13 @@ abstract class AbstractProcedure implements Procedure
      ************************************************************************/
     final public function getDataMatchingRules() : DataMatchingRules
     {
-        $result         = new DataMatchingRules;
-        $logger         = Logger::getInstance();
-        $procedureName  = static::class;
+        $result     = new DataMatchingRules;
+        $logger     = Logger::getInstance();
+        $procedure  = static::class;
 
         if (count($this->dataMatchingRules) <= 0)
         {
-            $logger->addWarning("Procedure \"$procedureName\" has no data matching rules");
+            $logger->addWarning("Procedure \"$procedure\" has no data matching rules");
             return $result;
         }
 
@@ -136,9 +136,9 @@ abstract class AbstractProcedure implements Procedure
                 $participantsSet    = new ParticipantsSet;
                 $fieldsSet          = new FieldsSet;
 
-                foreach ($rule['participants'] as $participantName)
+                foreach ($rule['participants'] as $participantCode)
                 {
-                    $participantsSet->push($this->participants[$participantName]);
+                    $participantsSet->push($this->participants[$participantCode]);
                 }
                 foreach ($rule['fields'] as $procedureFieldId)
                 {
@@ -155,10 +155,10 @@ abstract class AbstractProcedure implements Procedure
         catch (InvalidArgumentException $exception)
         {
             $error = $exception->getMessage();
-            $logger->addWarning("Error on filling procedure \"$procedureName\" data matching rules set: $error");
+            $logger->addWarning("Error on filling procedure \"$procedure\" data matching rules set: $error");
         }
 
-        $logger->addNotice("Procedure \"$procedureName\" data matching rules set constructed and returned");
+        $logger->addNotice("Procedure \"$procedure\" data matching rules set constructed and returned");
         return $result;
     }
     /** **********************************************************************
@@ -168,33 +168,33 @@ abstract class AbstractProcedure implements Procedure
      ************************************************************************/
     final public function getDataCombiningRules() : DataCombiningRules
     {
-        $result         = new DataCombiningRules;
-        $logger         = Logger::getInstance();
-        $procedureName  = static::class;
+        $result     = new DataCombiningRules;
+        $logger     = Logger::getInstance();
+        $procedure  = static::class;
 
         if (count($this->dataCombiningRules) <= 0)
         {
-            $logger->addWarning("Procedure \"$procedureName\" has no data combining rules");
+            $logger->addWarning("Procedure \"$procedure\" has no data combining rules");
             return $result;
         }
 
         try
         {
-            foreach ($this->dataCombiningRules as $participantName => $participantFields)
+            foreach ($this->dataCombiningRules as $participantCode => $participantFields)
             {
                 foreach ($participantFields as $fieldName => $weight)
                 {
-                    $result->set($this->participantsFields[$participantName][$fieldName], $weight);
+                    $result->set($this->participantsFields[$participantCode][$fieldName], $weight);
                 }
             }
         }
         catch (InvalidArgumentException $exception)
         {
             $error = $exception->getMessage();
-            $logger->addWarning("Error on filling procedure \"$procedureName\" data combining rules set: $error");
+            $logger->addWarning("Error on filling procedure \"$procedure\" data combining rules set: $error");
         }
 
-        $logger->addNotice("Procedure \"$procedureName\" data combining rules set constructed and returned");
+        $logger->addNotice("Procedure \"$procedure\" data combining rules set constructed and returned");
         return $result;
     }
     /** **********************************************************************
@@ -203,33 +203,33 @@ abstract class AbstractProcedure implements Procedure
      * @return  array                                       procedure participants collection
      * @example
      * [
-     *      participantName => participant,
-     *      participantName => participant
+     *      participantCode => participant,
+     *      participantCode => participant
      * ]
      ************************************************************************/
     private function createParticipantsCollection() : array
     {
-        $logger         = Logger::getInstance();
-        $procedureName  = static::class;
-        $result         = [];
+        $logger     = Logger::getInstance();
+        $procedure  = static::class;
+        $result     = [];
 
         try
         {
             $queryResult = $this->queryProcedureParticipants();
             foreach ($queryResult as $item)
             {
-                $result[$item['NAME']] = $this->createParticipant($item['NAME']);
+                $result[$item['CODE']] = $this->createParticipant($item['CODE']);
             }
         }
         catch (RuntimeException $exception)
         {
             $error = $exception->getMessage();
-            $logger->addWarning("Failed to query participants for procedure \"$procedureName\": $error");
+            $logger->addWarning("Failed to query participants for procedure \"$procedure\": $error");
         }
         catch (DomainException $exception)
         {
             $error = $exception->getMessage();
-            $logger->addWarning("Failed to create participant for procedure \"$procedureName\": $error");
+            $logger->addWarning("Failed to create participant for procedure \"$procedure\": $error");
         }
 
         return $result;
@@ -241,12 +241,12 @@ abstract class AbstractProcedure implements Procedure
      * @return  array                                       procedure participants fields collection
      * @example
      * [
-     *      participantName =>
+     *      participantCode =>
      *      [
      *          fieldName   => procedureParticipantField,
      *          fieldName   => procedureParticipantField
      *      ],
-     *      participantName =>
+     *      participantCode =>
      *      [
      *          fieldName   => procedureParticipantField,
      *          fieldName   => procedureParticipantField
@@ -255,16 +255,16 @@ abstract class AbstractProcedure implements Procedure
      ************************************************************************/
     private function createParticipantsFieldsCollection(array $participantsCollection) : array
     {
-        $logger         = Logger::getInstance();
-        $procedureName  = static::class;
-        $result         = [];
+        $logger     = Logger::getInstance();
+        $procedure  = static::class;
+        $result     = [];
 
         try
         {
-            foreach ($participantsCollection as $participantName => $participant)
+            foreach ($participantsCollection as $participantCode => $participant)
             {
                 $participantFields          = $participant->getFields();
-                $result[$participantName]   = [];
+                $result[$participantCode]   = [];
 
                 while ($participantFields->valid())
                 {
@@ -273,14 +273,14 @@ abstract class AbstractProcedure implements Procedure
                     $participantField   = new ParticipantField($participant, $field);
 
                     $participantFields->next();
-                    $result[$participantName][$fieldName] = $participantField;
+                    $result[$participantCode][$fieldName] = $participantField;
                 }
             }
         }
         catch (InvalidArgumentException $exception)
         {
             $error = $exception->getMessage();
-            $logger->addWarning("Failed to create procedure \"$procedureName\" participant field: $error");
+            $logger->addWarning("Failed to create procedure \"$procedure\" participant field: $error");
         }
 
         return $result;
@@ -298,9 +298,9 @@ abstract class AbstractProcedure implements Procedure
      ************************************************************************/
     private function createProcedureFieldsCollection(array $participantsFieldsCollection) : array
     {
-        $logger         = Logger::getInstance();
-        $procedureName  = static::class;
-        $result         = [];
+        $logger     = Logger::getInstance();
+        $procedure  = static::class;
+        $result     = [];
 
         try
         {
@@ -310,9 +310,9 @@ abstract class AbstractProcedure implements Procedure
                 $procedureField     = new ProcedureField;
                 $procedureFieldId   = $item['ID'];
 
-                foreach ($item['PARTICIPANTS_FIELDS'] as $participantName => $fieldName)
+                foreach ($item['PARTICIPANTS_FIELDS'] as $participantCode => $fieldName)
                 {
-                    $participantField = $participantsFieldsCollection[$participantName][$fieldName];
+                    $participantField = $participantsFieldsCollection[$participantCode][$fieldName];
                     $procedureField->push($participantField);
                 }
 
@@ -328,12 +328,12 @@ abstract class AbstractProcedure implements Procedure
         catch (RuntimeException $exception)
         {
             $error = $exception->getMessage();
-            $logger->addWarning("Failed to query fields for procedure \"$procedureName\": $error");
+            $logger->addWarning("Failed to query fields for procedure \"$procedure\": $error");
         }
         catch (InvalidArgumentException $exception)
         {
             $error = $exception->getMessage();
-            $logger->addWarning("Failed to create procedure \"$procedureName\" field: $error");
+            $logger->addWarning("Failed to create procedure \"$procedure\" field: $error");
         }
 
         return $result;
@@ -348,16 +348,16 @@ abstract class AbstractProcedure implements Procedure
      * [
      *      ruleId  =>
      *      [
-     *          'participants'  => [participantName, participantName, participantName],
+     *          'participants'  => [participantCode, participantCode, participantCode],
      *          'fields'        => [procedureFieldId, procedureFieldId, procedureFieldId]
      *      ]
      * ]
      ************************************************************************/
     private function createDataMatchingRulesCollection(array $participantsCollection, array $procedureFieldsCollection) : array
     {
-        $logger         = Logger::getInstance();
-        $procedureName  = static::class;
-        $result         = [];
+        $logger     = Logger::getInstance();
+        $procedure  = static::class;
+        $result     = [];
 
         try
         {
@@ -384,7 +384,7 @@ abstract class AbstractProcedure implements Procedure
         catch (RuntimeException $exception)
         {
             $error = $exception->getMessage();
-            $logger->addWarning("Failed to query data matching rules for procedure \"$procedureName\": $error");
+            $logger->addWarning("Failed to query data matching rules for procedure \"$procedure\": $error");
         }
 
         return $result;
@@ -396,12 +396,12 @@ abstract class AbstractProcedure implements Procedure
      * @return  array                                       procedure data combining rules collection
      * @example
      * [
-     *      participantName =>
+     *      participantCode =>
      *      [
      *          fieldName   => weight,
      *          fieldName   => weight
      *      ],
-     *      participantName =>
+     *      participantCode =>
      *      [
      *          fieldName   => weight,
      *          fieldName   => weight
@@ -410,31 +410,31 @@ abstract class AbstractProcedure implements Procedure
      ************************************************************************/
     private function createDataCombiningRulesCollection(array $participantsCollection) : array
     {
-        $logger         = Logger::getInstance();
-        $procedureName  = static::class;
-        $result         = [];
+        $logger     = Logger::getInstance();
+        $procedure  = static::class;
+        $result     = [];
 
         try
         {
             $rulesQuery = $this->queryProcedureDataCombiningRules(array_keys($participantsCollection));
             foreach ($rulesQuery as $index => $rule)
             {
-                $participantName    = $rule['PARTICIPANT_NAME'];
+                $participantCode    = $rule['PARTICIPANT_CODE'];
                 $fieldName          = $rule['FIELD_NAME'];
                 $weight             = (int) $rule['WEIGHT'];
 
-                if (!array_key_exists($participantName, $result))
+                if (!array_key_exists($participantCode, $result))
                 {
-                    $result[$participantName] = [];
+                    $result[$participantCode] = [];
                 }
 
-                $result[$participantName][$fieldName] = $weight;
+                $result[$participantCode][$fieldName] = $weight;
             }
         }
         catch (RuntimeException $exception)
         {
             $error = $exception->getMessage();
-            $logger->addWarning("Failed to query data combining rules for procedure \"$procedureName\": $error");
+            $logger->addWarning("Failed to query data combining rules for procedure \"$procedure\": $error");
         }
 
         return $result;
@@ -450,10 +450,10 @@ abstract class AbstractProcedure implements Procedure
         try
         {
             $reflection     = new ReflectionClass(static::class);
-            $procedureName  = $reflection->getShortName();
+            $procedureCode  = $reflection->getShortName();
             $sqlQuery       = '
             SELECT
-                participants.`NAME`
+                participants.`CODE`
             FROM
                 procedures_participants
             INNER JOIN participants
@@ -461,9 +461,9 @@ abstract class AbstractProcedure implements Procedure
             INNER JOIN procedures
                 ON procedures_participants.`PROCEDURE` = procedures.`ID`
             WHERE
-                procedures.`NAME` = ?';
+                procedures.`CODE` = ?';
 
-            return $this->getQueryResult($sqlQuery, [$procedureName]);
+            return $this->getQueryResult($sqlQuery, [$procedureCode]);
         }
         catch (RuntimeException $exception)
         {
@@ -494,7 +494,7 @@ abstract class AbstractProcedure implements Procedure
             foreach ($procedureParticipantsFieldsQuery as $item)
             {
                 $procedureFieldId       = $item['PROCEDURE_FIELD_ID'];
-                $participantName        = $item['PARTICIPANT_NAME'];
+                $participantCode        = $item['PARTICIPANT_CODE'];
                 $participantFieldName   = $item['PARTICIPANT_FIELD_NAME'];
 
                 if (!array_key_exists($procedureFieldId, $result))
@@ -506,7 +506,7 @@ abstract class AbstractProcedure implements Procedure
                     ];
                 }
 
-                $result[$procedureFieldId]['PARTICIPANTS_FIELDS'][$participantName] = $participantFieldName;
+                $result[$procedureFieldId]['PARTICIPANTS_FIELDS'][$participantCode] = $participantFieldName;
             }
 
             return array_values($result);
@@ -527,7 +527,7 @@ abstract class AbstractProcedure implements Procedure
         try
         {
             $reflection     = new ReflectionClass(static::class);
-            $procedureName  = $reflection->getShortName();
+            $procedureCode  = $reflection->getShortName();
             $sqlQuery       = '
             SELECT
                 procedures_fields.`ID`
@@ -536,9 +536,9 @@ abstract class AbstractProcedure implements Procedure
             INNER JOIN procedures
                 ON procedures_fields.`PROCEDURE` = procedures.`ID`
             WHERE
-                procedures.`NAME` = ?';
+                procedures.`CODE` = ?';
 
-            return $this->getQueryResult($sqlQuery, [$procedureName]);
+            return $this->getQueryResult($sqlQuery, [$procedureCode]);
         }
         catch (RuntimeException $exception)
         {
@@ -567,7 +567,7 @@ abstract class AbstractProcedure implements Procedure
             $participantsPlaceholder    = rtrim(str_repeat('?, ', count($participants)), ', ');
             $sqlQuery                   = "
             SELECT
-                participants.`NAME`                               AS PARTICIPANT_NAME,
+                participants.`CODE`                               AS PARTICIPANT_CODE,
                 procedures_participants_fields.`PROCEDURE_FIELD`  AS PROCEDURE_FIELD_ID,
                 participants_fields.`NAME`                        AS PARTICIPANT_FIELD_NAME
             FROM
@@ -578,7 +578,7 @@ abstract class AbstractProcedure implements Procedure
                 ON participants_fields.`PARTICIPANT` = participants.`ID`
             WHERE
                 procedures_participants_fields.`PROCEDURE_FIELD`  IN  ($fieldsPlaceholder) AND
-                participants.`NAME`                               IN  ($participantsPlaceholder)";
+                participants.`CODE`                               IN  ($participantsPlaceholder)";
 
             return $this->getQueryResult($sqlQuery, $queryParams);
         }
@@ -618,7 +618,7 @@ abstract class AbstractProcedure implements Procedure
             $rulesParticipantsQuery = $this->queryProcedureDataMatchingRulesParticipants($rulesId, $participants);
             foreach ($rulesParticipantsQuery as $item)
             {
-                $result[$item['RULE']]['PARTICIPANTS'][] = $item['PARTICIPANT_NAME'];
+                $result[$item['RULE']]['PARTICIPANTS'][] = $item['PARTICIPANT_CODE'];
             }
 
             $rulesFieldsQuery = $this->queryProcedureDataMatchingRulesProcedureFields($rulesId, $procedureFields);
@@ -645,7 +645,7 @@ abstract class AbstractProcedure implements Procedure
         try
         {
             $reflection     = new ReflectionClass(static::class);
-            $procedureName  = $reflection->getShortName();
+            $procedureCode  = $reflection->getShortName();
             $sqlQuery       = '
             SELECT
                 procedures_data_matching_rules.`ID`
@@ -654,9 +654,9 @@ abstract class AbstractProcedure implements Procedure
             INNER JOIN procedures
                 ON procedures_data_matching_rules.`PROCEDURE` = procedures.`ID`
             WHERE
-                procedures.`NAME` = ?';
+                procedures.`CODE` = ?';
 
-            return $this->getQueryResult($sqlQuery, [$procedureName]);
+            return $this->getQueryResult($sqlQuery, [$procedureCode]);
         }
         catch (RuntimeException $exception)
         {
@@ -686,14 +686,14 @@ abstract class AbstractProcedure implements Procedure
             $sqlQuery                   = "
             SELECT
                 procedures_data_matching_rules_participants.`RULE`,
-                participants.`NAME` AS PARTICIPANT_NAME
+                participants.`CODE` AS PARTICIPANT_CODE
             FROM
                 procedures_data_matching_rules_participants
             INNER JOIN participants
                 ON procedures_data_matching_rules_participants.`PARTICIPANT` = participants.`ID`
             WHERE
                 procedures_data_matching_rules_participants.`RULE`  IN  ($rulesPlaceholder) AND
-                participants.`NAME`                                 IN  ($participantsPlaceholder)";
+                participants.`CODE`                                 IN  ($participantsPlaceholder)";
 
             return $this->getQueryResult($sqlQuery, $queryParams);
         }
@@ -756,13 +756,13 @@ abstract class AbstractProcedure implements Procedure
         try
         {
             $reflection                 = new ReflectionClass(static::class);
-            $procedureName              = $reflection->getShortName();
-            $queryParams                = array_merge([$procedureName], $participants);
+            $procedureCode              = $reflection->getShortName();
+            $queryParams                = array_merge([$procedureCode], $participants);
             $participantsPlaceholder    = rtrim(str_repeat('?, ', count($participants)), ', ');
             $sqlQuery                   = "
             SELECT
                 procedures_data_combining_rules.`WEIGHT`,
-                participants.`NAME`         AS PARTICIPANT_NAME,
+                participants.`CODE`         AS PARTICIPANT_CODE,
                 participants_fields.`NAME`  AS FIELD_NAME
             FROM
                 procedures_data_combining_rules
@@ -773,8 +773,8 @@ abstract class AbstractProcedure implements Procedure
             INNER JOIN participants
                 ON participants_fields.`PARTICIPANT` = participants.`ID`
             WHERE
-                procedures.`NAME`   =   ? AND
-                participants.`NAME` IN  ($participantsPlaceholder)";
+                procedures.`CODE`   =   ? AND
+                participants.`CODE` IN  ($participantsPlaceholder)";
 
             return $this->getQueryResult($sqlQuery, $queryParams);
         }
@@ -819,25 +819,25 @@ abstract class AbstractProcedure implements Procedure
         }
     }
     /** **********************************************************************
-     * create participant by name
+     * create participant by code
      *
-     * @param   string  $name                               participant name
+     * @param   string  $code                               participant code
      * @return  Participant                                 participant
      * @throws  DomainException                             creating participant error
      ************************************************************************/
-    private function createParticipant(string $name) : Participant
+    private function createParticipant(string $code) : Participant
     {
-        $classReflection    = new ReflectionClass(Participant::class);
-        $classNamespace     = $classReflection->getNamespaceName();
-        $classFullName      = $classNamespace.'\\'.$name;
+        $reflection = new ReflectionClass(Participant::class);
+        $namespace  = $reflection->getNamespaceName();
+        $className  = $namespace.'\\'.$code;
 
         try
         {
-            return new $classFullName;
+            return new $className;
         }
         catch (Throwable $exception)
         {
-            throw new DomainException("creating participant \"$classFullName\" error");
+            throw new DomainException("creating participant \"$className\" error");
         }
     }
 }

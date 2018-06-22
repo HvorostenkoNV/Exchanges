@@ -73,6 +73,6 @@ class BooleanField extends AbstractField
      ************************************************************************/
     public function getRandomValue()
     {
-        return rand(0, 1) === 0;
+        return rand(1, 2) == 2;
     }
 }

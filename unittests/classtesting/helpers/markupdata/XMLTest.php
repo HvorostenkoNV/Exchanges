@@ -130,7 +130,7 @@ final class XMLTest extends AbstractTestCase
         $currentArray = &$result;
         while ($dataSize > 0)
         {
-            $addSubArray = rand(0, 3) === 0 && $dataSize !== 1;
+            $addSubArray = rand(1, 4) == 4 && $dataSize !== 1;
 
             if ($addSubArray)
             {

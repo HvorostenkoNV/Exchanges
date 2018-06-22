@@ -4,10 +4,8 @@ declare(strict_types=1);
 namespace UnitTests\ClassTesting\Exchange\DataProcessors\Data;
 
 use
-    ReflectionClass,
     UnitTests\ProjectTempStructure\MainGenerator as TempStructureGenerator,
     UnitTests\ClassTesting\Data\MapDataAbstractTest,
-    Main\Exchange\Participants\Participant,
     Main\Exchange\Participants\Data\ItemData,
     Main\Exchange\DataProcessors\Data\MatchedItem;
 /** ***********************************************************************************************
@@ -55,15 +53,16 @@ final class MatchedItemTest extends MapDataAbstractTest
      ************************************************************************/
     public static function getCorrectData() : array
     {
-        $result = [];
+        $result                 = [];
+        $tempStructure          = self::$structureGenerator->getStructure();
+        $tempClassesStructure   = self::$structureGenerator->getClassesStructure();
 
-        foreach (self::$structureGenerator->getStructure() as $procedureInfo)
+        foreach ($tempStructure as $procedureCode => $procedureInfo)
         {
-            foreach ($procedureInfo['participants'] as $participantInfo)
+            foreach ($procedureInfo['participants'] as $participantCode => $participantInfo)
             {
-                $participant    = self::createParticipant($participantInfo['name']);
-                $itemData       = new ItemData;
-                $result[]       = [$participant, $itemData];
+                $participantClassName = $tempClassesStructure[$procedureCode]['participants'][$participantCode]['class'];
+                $result[] = [new $participantClassName, new ItemData];
             }
         }
 
@@ -89,7 +88,6 @@ final class MatchedItemTest extends MapDataAbstractTest
             ['string', '', 2.5, 0, true, false],
             [],
             new ItemData,
-            new TempStructureGenerator,
             new MatchedItem,
             new MatchedItemTest,
             null
@@ -114,24 +112,9 @@ final class MatchedItemTest extends MapDataAbstractTest
             [1, 2, 3],
             ['string', '', 2.5, 0, true, false],
             [],
-            new TempStructureGenerator,
             new MatchedItem,
             new MatchedItemTest,
             null
         ];
-    }
-    /** **********************************************************************
-     * create participant by name
-     *
-     * @param   string  $participantName    participant name
-     * @return  Participant                 participant
-     ************************************************************************/
-    private static function createParticipant(string $participantName) : Participant
-    {
-        $reflection     = new ReflectionClass(Participant::class);
-        $namespace      = $reflection->getNamespaceName();
-        $qualifiedName  = $namespace.'\\'.$participantName;
-
-        return new $qualifiedName;
     }
 }

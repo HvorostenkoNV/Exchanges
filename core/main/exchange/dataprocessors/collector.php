@@ -5,7 +5,6 @@ namespace Main\Exchange\DataProcessors;
 
 use
     InvalidArgumentException,
-    ReflectionClass,
     Main\Helpers\Logger,
     Main\Exchange\DataProcessors\Results\CollectedData;
 /** ***********************************************************************************************
@@ -24,41 +23,29 @@ class Collector extends AbstractProcessor
      ************************************************************************/
     public function collectData() : CollectedData
     {
-        $result         = new CollectedData;
-        $logger         = Logger::getInstance();
-        $procedure      = $this->getProcedure();
-        $procedureName  = $this->getObjectClassShortName($procedure);
-        $participants   = $procedure->getParticipants();
+        $result             = new CollectedData;
+        $logger             = Logger::getInstance();
+        $procedure          = $this->getProcedure();
+        $procedureClassName = get_class($procedure);
+        $participants       = $procedure->getParticipants();
 
+        $logger->addNotice("Collector working: start procedure \"$procedureClassName\" collecting data");
         while ($participants->valid())
         {
-            $participant        = $participants->current();
-            $participantData    = $participant->getProvidedData();
-
             try
             {
+                $participant        = $participants->current();
+                $participantData    = $participant->getProvidedData();
                 $result->set($participant, $participantData);
             }
             catch (InvalidArgumentException $exception)
             {
-                $logger->addWarning("Unexpected error on constructing collected data from procedure \"$procedureName\"");
+                $logger->addWarning("Collector working: unexpected error on constructing collected data item for procedure \"$procedureClassName\"");
             }
 
             $participants->next();
         }
 
         return $result;
-    }
-    /** **********************************************************************
-     * get object class short name
-     *
-     * @param   object  $object                         object
-     * @return  string                                  object class short name
-     ************************************************************************/
-    private function getObjectClassShortName($object) : string
-    {
-        $objectReflection = new ReflectionClass($object);
-
-        return $objectReflection->getShortName();
     }
 }

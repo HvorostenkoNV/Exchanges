@@ -72,10 +72,7 @@ class XML extends AbstractData
     {
         if ($xml->count() > 0)
         {
-            if (!is_array($data))
-            {
-                $data = [];
-            }
+            $data = is_array($data) ? $data : [];
 
             foreach ($xml->children() as $child)
             {

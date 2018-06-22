@@ -3,7 +3,9 @@ declare(strict_types=1);
 
 namespace Main\Exchange\DataProcessors;
 
-use Main\Exchange\Procedures\Procedure;
+use
+    Main\Helpers\Logger,
+    Main\Exchange\Procedures\Procedure;
 /** ***********************************************************************************************
  * Application abstract data-processor
  *
@@ -20,7 +22,11 @@ abstract class AbstractProcessor implements Processor
      ************************************************************************/
     final public function __construct(Procedure $procedure)
     {
+        $processorName  = static::class;
+        $procedureName  = get_class($procedure);
+
         $this->procedure = $procedure;
+        Logger::getInstance()->addNotice("Processor \"$processorName\" for procedure \"$procedureName\" created");
     }
     /** **********************************************************************
      * get data-processor procedure

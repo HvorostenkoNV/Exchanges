@@ -148,4 +148,31 @@ abstract class AbstractTestCase extends TestCase
 
         return $result;
     }
+    /** **********************************************************************
+     * sort complex array
+     *
+     * @param   array   $array                      array
+     * @return  array                               sorted array
+     ************************************************************************/
+    protected function sortComplexArray(array $array) : array
+    {
+        foreach ($array as $index => $value)
+        {
+            if (is_array($value))
+            {
+                $value = $this->sortComplexArray($value);
+            }
+            elseif(is_string($value) && strlen($value) <= 0)
+            {
+                $value = null;
+            }
+
+            $array[json_encode($value)] = $value;
+            unset($array[$index]);
+        }
+
+        asort($array);
+
+        return array_values($array);
+    }
 }

@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace UnitTests\ClassTesting\Exchange\Participants;
 
 use
-    ReflectionClass,
     SplFileInfo,
     UnitTests\AbstractTestCase,
     UnitTests\ProjectTempStructure\MainGenerator as TempStructureGenerator,
@@ -48,22 +47,27 @@ final class ParticipantsTest extends AbstractTestCase
      ************************************************************************/
     public function gettingFields() : void
     {
-        foreach (self::$structureGenerator->getStructure() as $procedureInfo)
+        $tempStructure          = self::$structureGenerator->getStructure();
+        $tempClassesStructure   = self::$structureGenerator->getClassesStructure();
+
+        foreach ($tempStructure as $procedureCode => $procedureInfo)
         {
-            foreach ($procedureInfo['participants'] as $participantName => $participantInfo)
+            foreach ($procedureInfo['participants'] as $participantCode => $participantInfo)
             {
-                $participant        = $this->createParticipant($participantName);
-                $participantFields  = $participant->getFields();
-                $expectedFieldsSet  = $participantInfo['fields'];
-                $getedFieldsSet     = [];
+                $participantClassName   = $tempClassesStructure[$procedureCode]['participants'][$participantCode]['class'];
+                $participant            = $this->constructParticipant($participantClassName);
+                $participantFields      = $participant->getFields();
+                $expectedFieldsSet      = $participantInfo['fields'];
+                $getedFieldsSet         = [];
 
                 while ($participantFields->valid())
                 {
-                    $field = $participantFields->current();
+                    $field      = $participantFields->current();
+                    $fieldName  = $field->getParam('name');
 
-                    $getedFieldsSet[$field->getParam('name')] =
+                    $getedFieldsSet[$fieldName] =
                     [
-                        'name'      => $field->getParam('name'),
+                        'name'      => $fieldName,
                         'type'      => $field->getParam('type'),
                         'required'  => $field->getParam('required')
                     ];
@@ -73,8 +77,8 @@ final class ParticipantsTest extends AbstractTestCase
 
                 self::assertEquals
                 (
-                    $expectedFieldsSet,
-                    $getedFieldsSet,
+                    $this->sortComplexArray($expectedFieldsSet),
+                    $this->sortComplexArray($getedFieldsSet),
                     'Expect get participant fields as temp created'
                 );
             }
@@ -88,14 +92,20 @@ final class ParticipantsTest extends AbstractTestCase
      ************************************************************************/
     public function gettingProvidedData() : void
     {
-        foreach (self::$structureGenerator->getStructure() as $procedureInfo)
+        $tempStructure          = self::$structureGenerator->getStructure();
+        $tempClassesStructure   = self::$structureGenerator->getClassesStructure();
+        $tempProvidedData       = self::$structureGenerator->getProvidedData();
+        $tempXmlData            = self::$structureGenerator->getProvidedXmlData();
+
+        foreach ($tempStructure as $procedureCode => $procedureInfo)
         {
-            foreach ($procedureInfo['participants'] as $participantName => $participantInfo)
+            foreach ($procedureInfo['participants'] as $participantCode => $participantInfo)
             {
-                $participant    = $this->createParticipant($participantInfo['name']);
-                $xml            = self::$structureGenerator->getParticipantXml($participantName);
-                $expectedData   = self::$structureGenerator->getParticipantData($participantName);
-                $getedData      = [];
+                $participantClassName   = $tempClassesStructure[$procedureCode]['participants'][$participantCode]['class'];
+                $participant            = $this->constructParticipant($participantClassName);
+                $xml                    = $this->constructParticipantXmlData($tempXmlData[$procedureCode], $participantCode);
+                $expectedData           = $tempProvidedData[$procedureCode][$participantCode];
+                $getedData              = [];
 
                 $participant->{'xmlWithProvidedData'} = $xml;
                 $providedData = $participant->getProvidedData();
@@ -117,8 +127,8 @@ final class ParticipantsTest extends AbstractTestCase
 
                 self::assertEquals
                 (
-                    $expectedData,
-                    $getedData,
+                    $this->sortComplexArray($expectedData),
+                    $this->sortComplexArray($getedData),
                     'Expect get same data as temp created'
                 );
             }
@@ -133,11 +143,15 @@ final class ParticipantsTest extends AbstractTestCase
      ************************************************************************/
     public function gettingIncorrectProvidedData() : void
     {
-        foreach (self::$structureGenerator->getStructure() as $procedureInfo)
+        $tempStructure          = self::$structureGenerator->getStructure();
+        $tempClassesStructure   = self::$structureGenerator->getClassesStructure();
+
+        foreach ($tempStructure as $procedureCode => $procedureInfo)
         {
-            foreach ($procedureInfo['participants'] as $participantInfo)
+            foreach ($procedureInfo['participants'] as $participantCode => $participantInfo)
             {
-                $participant = $this->createParticipant($participantInfo['name']);
+                $participantClassName   = $tempClassesStructure[$procedureCode]['participants'][$participantCode]['class'];
+                $participant            = $this->constructParticipant($participantClassName);
 
                 $participant->{'xmlWithProvidedData'} = new SplFileInfo('someIncorrectFilePath');
                 $providedData = $participant->getProvidedData();
@@ -160,13 +174,18 @@ final class ParticipantsTest extends AbstractTestCase
      ************************************************************************/
     public function providingData() : void
     {
-        foreach (self::$structureGenerator->getStructure() as $procedureInfo)
+        $tempStructure          = self::$structureGenerator->getStructure();
+        $tempClassesStructure   = self::$structureGenerator->getClassesStructure();
+        $tempXmlData            = self::$structureGenerator->getProvidedXmlData();
+
+        foreach ($tempStructure as $procedureCode => $procedureInfo)
         {
-            foreach ($procedureInfo['participants'] as $participantName => $participantInfo)
+            foreach ($procedureInfo['participants'] as $participantCode => $participantInfo)
             {
-                $participant    = $this->createParticipant($participantInfo['name']);
-                $participantXml = self::$structureGenerator->getParticipantXml($participantName);
-                $xmlForDelivery = new SplFileInfo(__DIR__.DIRECTORY_SEPARATOR.'tempXmlFile.xml');
+                $participantClassName   = $tempClassesStructure[$procedureCode]['participants'][$participantCode]['class'];
+                $participant            = $this->constructParticipant($participantClassName);
+                $participantXml         = $this->constructParticipantXmlData($tempXmlData[$procedureCode], $participantCode);
+                $xmlForDelivery         = new SplFileInfo(__DIR__.DIRECTORY_SEPARATOR.'tempXmlFile.xml');
 
                 $participant->{'xmlWithProvidedData'} = $participantXml;
                 $providedData = $participant->getProvidedData();
@@ -195,17 +214,24 @@ final class ParticipantsTest extends AbstractTestCase
         }
     }
     /** **********************************************************************
-     * create participant by name
+     * construct participant by class name
      *
-     * @param   string  $participantName    participant name
+     * @param   string $className           participant class name
      * @return  Participant                 participant
      ************************************************************************/
-    private function createParticipant(string $participantName) : Participant
+    private function constructParticipant(string $className) : Participant
     {
-        $procedureReflection    = new ReflectionClass(Participant::class);
-        $procedureNamespace     = $procedureReflection->getNamespaceName();
-        $procedureQualifiedName = $procedureNamespace.'\\'.$participantName;
-
-        return new $procedureQualifiedName;
+        return new $className;
+    }
+    /** **********************************************************************
+     * get participant XML data file
+     *
+     * @param   array   $procedureXmlInfo   temp XML data files structure
+     * @param   string  $participantCode    participant code
+     * @return  SplFileInfo                 participant XML data file
+     ************************************************************************/
+    private function constructParticipantXmlData(array $procedureXmlInfo, string $participantCode) : ?SplFileInfo
+    {
+        return $procedureXmlInfo[$participantCode];
     }
 }

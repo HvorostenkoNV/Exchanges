@@ -4,12 +4,10 @@ declare(strict_types=1);
 namespace UnitTests\ClassTesting\Exchange\Procedures\Fields;
 
 use
-    ReflectionClass,
     UnitTests\AbstractTestCase,
     UnitTests\ProjectTempStructure\MainGenerator as TempStructureGenerator,
     Main\Data\MapData,
     Main\Exchange\Procedures\Fields\ParticipantField,
-    Main\Exchange\Participants\Participant,
     Main\Exchange\Participants\Fields\Field,
     Main\Exchange\Participants\FieldsTypes\Manager as FieldsTypesManager;
 /** ***********************************************************************************************
@@ -48,39 +46,25 @@ final class ParticipantFieldTest extends AbstractTestCase
      ************************************************************************/
     public static function getParamsForFieldConstruct() : array
     {
-        $result         = [];
-        $fieldsTypes    = FieldsTypesManager::getAvailableFieldsTypes();
+        $result                 = [];
+        $fieldsTypes            = FieldsTypesManager::getAvailableFieldsTypes();
+        $tempStructure          = self::$structureGenerator->getStructure();
+        $tempClassesStructure   = self::$structureGenerator->getClassesStructure();
 
-        foreach (self::$structureGenerator->getStructure() as $procedureInfo)
+        foreach ($tempStructure as $procedureCode => $procedureInfo)
         {
-            foreach ($procedureInfo['participants'] as $participantInfo)
+            foreach ($procedureInfo['participants'] as $participantCode => $participantInfo)
             {
                 $fieldParams = new MapData;
-                $fieldParams->set('name', $participantInfo['name'].'Field');
+                $fieldParams->set('name', $participantCode.'Field');
                 $fieldParams->set('type', $fieldsTypes[array_rand($fieldsTypes)]);
 
-                $participant    = static::createParticipant($participantInfo['name']);
-                $field          = new Field($fieldParams);
-
-                $result[] = [$participant, $field];
+                $participantClassName = $tempClassesStructure[$procedureCode]['participants'][$participantCode]['class'];
+                $result[] = [new $participantClassName, new Field($fieldParams)];
             }
         }
 
         return $result;
-    }
-    /** **********************************************************************
-     * create participant by name
-     *
-     * @param   string  $participantName    participant name
-     * @return  Participant                 participant
-     ************************************************************************/
-    private static function createParticipant(string $participantName) : Participant
-    {
-        $participantReflection      = new ReflectionClass(Participant::class);
-        $participantNamespace       = $participantReflection->getNamespaceName();
-        $participantQualifiedName   = $participantNamespace.'\\'.$participantName;
-
-        return new $participantQualifiedName;
     }
     /** **********************************************************************
      * check getting field components

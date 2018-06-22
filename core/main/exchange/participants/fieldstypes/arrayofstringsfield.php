@@ -23,35 +23,31 @@ class ArrayOfStringsField extends AbstractField
      ************************************************************************/
     public function validateValue($value)
     {
-        $result         = [];
-        $valuesArray    = is_array($value) ? $value : [$value];
-        $stringField    = null;
+        $result = [];
 
         try
         {
-            $stringField = Manager::getField('string');
+            $field = Manager::getField('string');
+            foreach ((array) $value as $item)
+            {
+                try
+                {
+                    $result[] = $field->validateValue($item);
+                }
+                catch (DomainException $exception)
+                {
+
+                }
+            }
+            $result = array_filter($result, function($item)
+            {
+                return !is_null($item);
+            });
         }
         catch (InvalidArgumentException $exception)
         {
-            return $result;
+
         }
-
-        foreach ($valuesArray as $item)
-        {
-            try
-            {
-                $result[] = $stringField->validateValue($item);
-            }
-            catch (DomainException $exception)
-            {
-
-            }
-        }
-
-        $result = array_filter($result, function($item)
-        {
-            return $item !== null;
-        });
 
         return array_values($result);
     }
@@ -64,35 +60,31 @@ class ArrayOfStringsField extends AbstractField
      ************************************************************************/
     public function convertValueForPrint($value)
     {
-        $result         = [];
-        $valuesArray    = is_array($value) ? $value : [$value];
-        $stringField    = null;
+        $result = [];
 
         try
         {
-            $stringField = Manager::getField('string');
+            $field = Manager::getField('string');
+            foreach ((array) $value as $item)
+            {
+                try
+                {
+                    $result[] = $field->convertValueForPrint($item);
+                }
+                catch (DomainException $exception)
+                {
+
+                }
+            }
+            $result = array_filter($result, function($item)
+            {
+                return is_string($item) && strlen($item) > 0;
+            });
         }
         catch (InvalidArgumentException $exception)
         {
-            return $result;
+
         }
-
-        foreach ($valuesArray as $item)
-        {
-            try
-            {
-                $result[] = $stringField->convertValueForPrint($item);
-            }
-            catch (DomainException $exception)
-            {
-
-            }
-        }
-
-        $result = array_filter($result, function($item)
-        {
-            return is_string($item) && strlen($item) > 0;
-        });
 
         return array_values($result);
     }
@@ -103,7 +95,7 @@ class ArrayOfStringsField extends AbstractField
      ************************************************************************/
     public function getRandomValue()
     {
-        if (rand(0, 3) === 0)
+        if (rand(1, 4) == 4)
         {
             return [];
         }
@@ -117,7 +109,7 @@ class ArrayOfStringsField extends AbstractField
             while ($randomSize > 0)
             {
                 $value = $field->getRandomValue();
-                if ($value !== null)
+                if (!is_null($value))
                 {
                     $result[] = $value;
                     $randomSize--;

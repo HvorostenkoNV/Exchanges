@@ -4,13 +4,7 @@ declare(strict_types=1);
 namespace UnitTests\ClassTesting\Helpers;
 
 use
-    Throwable,
-    RuntimeException,
-    PDO,
-    SplFileInfo,
     UnitTests\AbstractTestCase,
-    UnitTests\ProjectTempStructure\DBGenerator,
-    Main\Helpers\Config,
     Main\Helpers\DB;
 /** ***********************************************************************************************
  * Test Main\Helpers\DB class
@@ -20,374 +14,164 @@ use
  *************************************************************************************************/
 final class DBTest extends AbstractTestCase
 {
-    private static $tempDBTable =
-    [
-        'name'      => 'phpunit_test_table',
-        'columns'   =>
+    private static
+        $tempDBTableName    = 'phpunit_test_table',
+        $tempDBTableColumns =
         [
             'item_id'   => 'ID',
             'item_name' => 'NAME',
             'item_code' => 'CODE'
-        ],
-        'items'     => []
-    ];
-    /** @var DBGenerator */
-    private static $tempDBGenerator = null;
-    /** **********************************************************************
-     * construct
-     ************************************************************************/
-    public static function setUpBeforeClass() : void
-    {
-        parent::setUpBeforeClass();
-
-        $table      = self::$tempDBTable['name'];
-        $idColumn   = self::$tempDBTable['columns']['item_id'];
-        $nameColumn = self::$tempDBTable['columns']['item_name'];
-        $codeColumn = self::$tempDBTable['columns']['item_code'];
-
-        self::$tempDBGenerator = new DBGenerator;
-
-        self::$tempDBGenerator->createTempTable($table,
-        [
-            'ID INT AUTO_INCREMENT',
-            'NAME VARCHAR(255)',
-            'CODE VARCHAR(255)',
-            'PRIMARY KEY (ID)'
-        ]);
-        for ($index = 1; $index <= 10; $index++)
-        {
-            $item =
-            [
-                $idColumn   => $index,
-                $nameColumn => "Item name $index",
-                $codeColumn => "item_code_$index"
-            ];
-            self::$tempDBGenerator->createTempRecord($table, $item);
-            self::$tempDBTable['items'][] = $item;
-        }
-    }
-    /** **********************************************************************
-     * destruct
-     ************************************************************************/
-    public static function tearDownAfterClass() : void
-    {
-        parent::tearDownAfterClass();
-        self::$tempDBGenerator->dropTempChanges();
-    }
+        ];
     /** **********************************************************************
      * check DB class is singleton
      *
      * @test
+     * @return  DB                          DB object
+     * @throws
      ************************************************************************/
-    public function isSingleton() : void
+    public function isSingleton() : DB
     {
         self::assertTrue
         (
             self::singletonImplemented(DB::class),
             self::getMessage('SINGLETON_IMPLEMENTATION_FAILED', ['CLASS_NAME' => DB::class])
         );
+
+        return DB::getInstance();
     }
     /** **********************************************************************
-     * check database params file exist
+     * check creating table process
      *
      * @test
-     * @return  SplFileInfo                     params file
-     * @throws
-     ************************************************************************/
-    public function paramsFileExist() : SplFileInfo
-    {
-        $paramsFilePath = PARAMS_FOLDER.DS.'db.php';
-        $paramsFile     = new SplFileInfo($paramsFilePath);
-
-        self::assertFileIsReadable
-        (
-            $paramsFile->getPathname(),
-            self::getMessage('NOT_READABLE', ['PATH' => $paramsFilePath])
-        );
-
-        return $paramsFile;
-    }
-    /** **********************************************************************
-     * check database connection params exist
-     *
-     * @test
-     * @depends paramsFileExist
-     * @return  array                           connection params array
-     * @throws
-     ************************************************************************/
-    public function dbConnectionParamsExist() : array
-    {
-        $config     = Config::getInstance();
-        $dbName     = $config->getParam('db.name');
-        $dbLogin    = $config->getParam('db.login');
-        $dbPassword = $config->getParam('db.password');
-        $dbHost     = $config->getParam('db.host');
-
-        self::assertNotEmpty($dbName,       'DB name param no exist');
-        self::assertNotEmpty($dbLogin,      'DB login param no exist');
-        self::assertNotEmpty($dbPassword,   'DB password param no exist');
-        self::assertNotEmpty($dbHost,       'DB host param no exist');
-
-        return
-        [
-            'name'      => $dbName,
-            'login'     => $dbLogin,
-            'password'  => $dbPassword,
-            'host'      => $dbHost
-        ];
-    }
-    /** **********************************************************************
-     * check PDO extension available
-     *
-     * @test
-     * @throws
-     ************************************************************************/
-    public function pdoAvailable() : void
-    {
-        self::assertTrue
-        (
-            extension_loaded('PDO'),
-            'PDO extension is unavailable'
-        );
-    }
-    /** **********************************************************************
-     * check database connection with PDO available
-     *
-     * @test
-     * @depends dbConnectionParamsExist
-     * @depends pdoAvailable
-     * @param   array   $connectionParams       connection params
-     * @return  PDO|null                        PDO
-     * @throws
-     ************************************************************************/
-    public function connectionWithPDOAvailable(array $connectionParams) : ?PDO
-    {
-        $dbHost     = $connectionParams['host'];
-        $dbName     = $connectionParams['name'];
-        $dbLogin    = $connectionParams['login'];
-        $dbPassword = $connectionParams['password'];
-
-        try
-        {
-            $pdo = new PDO
-            (
-                "mysql:dbname=$dbName;host=$dbHost",
-                $dbLogin,
-                $dbPassword,
-                [
-                    PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES UTF8'
-                ]
-            );
-
-            self::assertTrue(true);
-            return $pdo;
-        }
-        catch (Throwable $exception)
-        {
-            $error = $exception->getMessage();
-            self::fail("Failed to create database connection with PDO: $error");
-            return null;
-        }
-    }
-    /** **********************************************************************
-     * check exception with incomplete connection params
-     *
-     * @test
-     * @depends paramsFileExist
-     * @depends dbConnectionParamsExist
      * @depends isSingleton
-     * @param   SplFileInfo $paramsFile         params file path
-     * @param   array       $connectionParams   connection params
+     * @param   DB $db                      DB object
      * @throws
      ************************************************************************/
-    public function exceptionOnIncompleteConnParams(SplFileInfo $paramsFile, array $connectionParams) : void
+    public function creatingTable(DB $db) : void
     {
-        if ($paramsFile->isWritable())
+        $table                  = self::$tempDBTableName;
+        $idColumn               = self::$tempDBTableColumns['item_id'];
+        $nameColumn             = self::$tempDBTableColumns['item_name'];
+        $codeColumn             = self::$tempDBTableColumns['item_code'];
+        $createTableSqlQuery    = "
+            CREATE TABLE $table
+            (
+                $idColumn INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
+                $nameColumn VARCHAR(255),
+                $codeColumn VARCHAR(255)
+            )";
+
+        $db->query($createTableSqlQuery);
+        $tableQuery = $db->query('SHOW TABLES');
+        while ($tableQuery->count() > 0)
         {
-            $fileContentOrigin  = $paramsFile->openFile('r')->fread($paramsFile->getSize());
-            $randParamValue     = $connectionParams[array_rand($connectionParams)];
-            $fileContentChanged = str_replace($randParamValue, 'phpunit_testing', $fileContentOrigin);
+            $row    = $tableQuery->pop();
+            $value  = $row->get($row->getKeys()[0]);
 
-            $paramsFile
-                ->openFile('w')
-                ->fwrite($fileContentChanged);
-
-            try
-            {
-                self::resetSingletonInstance(DB::class);
-                DB::getInstance();
-                self::fail('Expect exception with incomplete DB connection params');
-            }
-            catch (RuntimeException $error)
+            if ($value == $table)
             {
                 self::assertTrue(true);
+                return;
             }
+        }
 
-            $paramsFile
-                ->openFile('w')
-                ->fwrite($fileContentOrigin);
-        }
-        else
-        {
-            self::markTestSkipped('Unable to rewrite db params file for testing');
-        }
+        self::fail('Temp DB table was not created');
     }
     /** **********************************************************************
-     * check providing correct database query result
+     * check read/write records process
      *
      * @test
-     * @depends connectionWithPDOAvailable
      * @depends isSingleton
-     * @param   PDO $unitTestPdo                unit test PDO connection object
+     * @depends creatingTable
+     * @param   DB $db                      DB object
      * @throws
      ************************************************************************/
-    public function providingCorrectQuery(PDO $unitTestPdo) : void
+    public function readWriteRecords(DB $db) : void
     {
-        $db                 = DB::getInstance();
-        $table              = self::$tempDBTable['name'];
-        $idColumn           = self::$tempDBTable['columns']['item_id'];
-        $nameColumn         = self::$tempDBTable['columns']['item_name'];
-        $codeColumn         = self::$tempDBTable['columns']['item_code'];
-        $tempData           = self::$tempDBTable['items'];
-        $tempDataRandomItem = $tempData[array_rand($tempData)];
-        $sqlQueries         =
-        [
-            "SELECT *                      FROM $table",
-            "SELECT $idColumn, $nameColumn FROM $table",
-            "SELECT *                      FROM $table  WHERE     $idColumn = ? AND $codeColumn = ?",
-            "SELECT $idColumn, $nameColumn FROM $table  WHERE     $idColumn IN (?, ?)",
-            "SELECT *                      FROM $table  ORDER BY  $nameColumn   ASC",
-            "SELECT *                      FROM $table  ORDER BY  $codeColumn   DESC"
-        ];
-        $sqlQueriesValues   =
-        [
-            2   => [$tempDataRandomItem[$idColumn], $tempDataRandomItem[$codeColumn]],
-            3   => [2, rand(3, count($tempData))]
-        ];
+        $table          = self::$tempDBTableName;
+        $nameColumn     = self::$tempDBTableColumns['item_name'];
+        $codeColumn     = self::$tempDBTableColumns['item_code'];
+        $tempItems      = [];
+        $createdItems   = [];
 
-        foreach ($sqlQueries as $index => $sqlString)
+        for ($index = 1; $index <= 5; $index++)
         {
-            $queryValues        = array_key_exists($index, $sqlQueriesValues) ? $sqlQueriesValues[$index] : [];
-            $queryByUnitTestPdo = [];
-            $queryByDBClass     = [];
+            $itemName   = "Item-$index";
+            $itemCode   = "item_$index";
 
-            $statement = $unitTestPdo->prepare($sqlString);
-            $statement->execute($queryValues);
-            foreach ($statement->fetchAll(PDO::FETCH_ASSOC) as $item)
-            {
-                $queryByUnitTestPdo[] = $item;
-            }
+            $tempItems[] =
+            [
+                $nameColumn => $itemName,
+                $codeColumn => $itemCode
+            ];
 
-            $dbClassQuery = $db->query($sqlString, $queryValues);
-            while (!$dbClassQuery->isEmpty())
-            {
-                $data       = $dbClassQuery->pop();
-                $dataArray  = [];
-
-                foreach ($data->getKeys() as $key)
-                {
-                    $dataArray[$key] = $data->get($key);
-                }
-
-                $queryByDBClass[] = $dataArray;
-            }
-
-            self::assertEquals
-            (
-                $queryByUnitTestPdo,
-                $queryByDBClass,
-                "Different query results on \"$sqlString\""
-            );
+            $db->query("INSERT INTO $table ($nameColumn, $codeColumn) VALUES (?, ?)", [$itemName, $itemCode]);
         }
-    }
-    /** **********************************************************************
-     * check providing correct database saving operation
-     *
-     * @test
-     * @depends connectionWithPDOAvailable
-     * @depends providingCorrectQuery
-     * @depends isSingleton
-     * @param   PDO $unitTestPdo                unit test PDO connection object
-     * @return  int                             created test item id
-     * @throws
-     ************************************************************************/
-    public function providingCorrectSaving(PDO $unitTestPdo) : int
-    {
-        $db                 = DB::getInstance();
-        $table              = self::$tempDBTable['name'];
-        $idColumn           = self::$tempDBTable['columns']['item_id'];
-        $nameColumn         = self::$tempDBTable['columns']['item_name'];
-        $codeColumn         = self::$tempDBTable['columns']['item_code'];
-        $sqlGetLastItem     = "SELECT $idColumn FROM $table ORDER BY $idColumn DESC LIMIT 1";
-        $sqlCreateNewItem   = "INSERT INTO $table ($nameColumn, $codeColumn) VALUES (?, ?)";
-        $lastTestItemId     = 0;
-        $newTestItemId      = 0;
 
-        $queryResult = $unitTestPdo->query($sqlGetLastItem)->fetchAll(PDO::FETCH_ASSOC);
-        if (count($queryResult) > 0)
+        $queryResult = $db->query("SELECT $nameColumn, $codeColumn FROM $table");
+        while ($queryResult->count() > 0)
         {
-            $lastTestItemId = (int) $queryResult[0][$idColumn];
-            $db->query($sqlCreateNewItem, ['Test name', 'Test code']);
-            $newTestItemId = $db->getLastInsertId();
+            $item = $queryResult->pop();
+            $createdItems[] =
+            [
+                $nameColumn => $item->get($nameColumn),
+                $codeColumn => $item->get($codeColumn)
+            ];
         }
 
         self::assertEquals
         (
-            $lastTestItemId + 1,
-            $newTestItemId,
-            'DB saving process incorrect: expect get projected new record ID'
+            $tempItems,
+            $createdItems,
+            'Expect get same DB records as temp created'
         );
-
-        return $newTestItemId;
     }
     /** **********************************************************************
-     * check providing correct database deleting operation
+     * check providing last inserted item ID
      *
      * @test
-     * @depends connectionWithPDOAvailable
-     * @depends providingCorrectSaving
      * @depends isSingleton
-     * @param   PDO $unitTestPdo                unit test PDO connection object
-     * @param   int $itemId                     created test item
+     * @depends readWriteRecords
+     * @param   DB $db                      DB object
      * @throws
      ************************************************************************/
-    public function providingCorrectDeleting(PDO $unitTestPdo, int $itemId) : void
+    public function gettingLastInsertedId(DB $db) : void
     {
-        $db                 = DB::getInstance();
-        $table              = self::$tempDBTable['name'];
-        $idColumn           = self::$tempDBTable['columns']['item_id'];
-        $sqlDropNewItem     = "DELETE FROM $table WHERE $idColumn = ?";
-        $sqlGetDeletedItem  = "SELECT $idColumn FROM $table WHERE $idColumn = ?";
+        $table      = self::$tempDBTableName;
+        $nameColumn = self::$tempDBTableColumns['item_name'];
+        $codeColumn = self::$tempDBTableColumns['item_code'];
 
-        $db->query($sqlDropNewItem, [$itemId]);
-        $error = $db->getLastError();
-        self::assertFalse
+        $db->query("INSERT INTO $table ($nameColumn, $codeColumn) VALUES (?, ?)", ['someName', 'someCode']);
+        $firstInsertedId = $db->getLastInsertId();
+        $db->query("INSERT INTO $table ($nameColumn, $codeColumn) VALUES (?, ?)", ['someName', 'someCode']);
+        $secondInsertedId = $db->getLastInsertId();
+
+        self::assertEquals
         (
-            $db->hasLastError(),
-            "Delete process failed: $error"
+            $secondInsertedId,
+            $firstInsertedId + 1,
+            'Last inserted ID is not as expected'
         );
 
-        $statement = $unitTestPdo->prepare($sqlGetDeletedItem);
-        $statement->execute([$itemId]);
-        foreach ($statement->fetchAll(PDO::FETCH_ASSOC) as $item)
-        {
-            self::assertNotEquals
-            (
-                $itemId, $item[$idColumn],
-                'Item was not deleted'
-            );
-        }
+        $db->query("SELECT * FORM $table");
+        self::assertEquals
+        (
+            $db->getLastInsertId(),
+            0,
+            'Expect get zero on calling "getting last inserted ID" after running not inserting operation'
+        );
     }
     /** **********************************************************************
      * check providing database query last error
      *
      * @test
-     * @depends providingCorrectQuery
      * @depends isSingleton
+     * @depends readWriteRecords
+     * @param   DB $db                      DB object
+     * @throws
      ************************************************************************/
-    public function providingQueryLastError() : void
+    public function gettingQueryLastError(DB $db) : void
     {
-        $db = DB::getInstance();
         $db->query('Some incorrect sql query string');
 
         self::assertTrue
@@ -397,31 +181,23 @@ final class DBTest extends AbstractTestCase
         );
     }
     /** **********************************************************************
-     * check PDO refresh last error after any queries
+     * check refreshing last error process after any operation
      *
      * @test
-     * @depends providingCorrectQuery
      * @depends isSingleton
+     * @depends readWriteRecords
+     * @param   DB $db                      DB object
      * @throws
      ************************************************************************/
-    public function checkLastErrorRefreshing() : void
+    public function lastErrorRefreshing(DB $db) : void
     {
-        $db             = DB::getInstance();
-        $table          = self::$tempDBTable['name'];
-        $sqlRead        = "SELECT * FROM $table";
-        $firstError     = '';
-        $secondError    = '';
+        $table = self::$tempDBTableName;
 
         $db->query('Some incorrect query');
-        if ($db->hasLastError())
-        {
-            $firstError = $db->getLastError();
-        }
-        $db->query($sqlRead);
-        if ($db->hasLastError())
-        {
-            $secondError = $db->getLastError();
-        }
+        $firstError = $db->getLastError();
+
+        $db->query("SELECT * FROM $table");
+        $secondError = $db->getLastError();
 
         self::assertNotEquals
         (
@@ -429,5 +205,69 @@ final class DBTest extends AbstractTestCase
             $secondError,
             'Last error not refreshed after previous operation'
         );
+    }
+    /** **********************************************************************
+     * check delete records process
+     *
+     * @test
+     * @depends isSingleton
+     * @depends readWriteRecords
+     * @param   DB $db                      DB object
+     * @throws
+     ************************************************************************/
+    public function deleteRecords(DB $db) : void
+    {
+        $table      = self::$tempDBTableName;
+        $idColumn   = self::$tempDBTableColumns['item_id'];
+        $tableItems = [];
+
+        $queryResult = $db->query("SELECT $idColumn FROM $table");
+        while ($queryResult->count() > 0)
+        {
+            $tableItems[] = $queryResult->pop()->get($idColumn);
+        }
+
+        while (count($tableItems) > 0)
+        {
+            $itemId = array_pop($tableItems);
+            $db->query("DELETE FROM $table WHERE $idColumn = ?", [$itemId]);
+            $dbActualItemsCount = $db->query("SELECT $idColumn FROM $table")->count();
+
+            self::assertEquals
+            (
+                count($tableItems),
+                $dbActualItemsCount,
+                'Expect get items count less by one after drop operation'
+            );
+        }
+    }
+    /** **********************************************************************
+     * check delete table process
+     *
+     * @test
+     * @depends isSingleton
+     * @depends deleteRecords
+     * @param   DB $db                      DB object
+     * @throws
+     ************************************************************************/
+    public function deleteTable(DB $db) : void
+    {
+        $table = self::$tempDBTableName;
+
+        $db->query("DROP TABLE $table");
+        $tableQuery = $db->query('SHOW TABLES');
+        while ($tableQuery->count() > 0)
+        {
+            $row    = $tableQuery->pop();
+            $value  = $row->get($row->getKeys()[0]);
+
+            if ($value == $table)
+            {
+                self::fail('Temp DB table was not deleted');
+                return;
+            }
+        }
+
+        self::assertTrue(true);
     }
 }

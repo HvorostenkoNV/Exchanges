@@ -74,11 +74,8 @@ class NumberField extends AbstractField
      ************************************************************************/
     public function getRandomValue()
     {
-        if (rand(0, 3) === 0)
-        {
-            return 0;
-        }
-
-        return rand(1, getrandmax());
+        return rand(1, 4) == 4
+            ? 0
+            : rand(1, getrandmax());
     }
 }

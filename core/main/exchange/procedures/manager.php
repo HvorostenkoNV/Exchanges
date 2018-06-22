@@ -43,8 +43,8 @@ class Manager
             $queryResult = self::queryProcedures($filter);
             while (!$queryResult->isEmpty())
             {
-                $procedureName  = $queryResult->pop()->get('NAME');
-                $procedure      = self::createProcedure($procedureName);
+                $procedureCode  = $queryResult->pop()->get('CODE');
+                $procedure      = self::createProcedure($procedureCode);
                 $result->push($procedure);
             }
         }
@@ -72,9 +72,8 @@ class Manager
     {
         $result     = new MapData;
         $activity   = $filter ? $filter->get('ACTIVITY')    : null;
-        $names      = $filter ? $filter->get('NAME')        : null;
-        $names      = is_array($names) ? $names : [$names];
-        $names      = array_filter($names, function($value)
+        $codes      = $filter ? $filter->get('CODE')        : null;
+        $codes      = array_filter((array) $codes, function($value)
         {
             return is_string($value) && strlen($value) > 0;
         });
@@ -85,9 +84,9 @@ class Manager
             {
                 $result->set('ACTIVITY', $activity);
             }
-            if (count($names) > 0)
+            if (count($codes) > 0)
             {
-                $result->set('NAME', $names);
+                $result->set('CODE', $codes);
             }
         }
         catch (InvalidArgumentException $exception)
@@ -106,7 +105,7 @@ class Manager
      ************************************************************************/
     private static function queryProcedures(Map $filter) : DBQueryResult
     {
-        $sqlQuery       = 'SELECT NAME FROM procedures';
+        $sqlQuery       = 'SELECT CODE FROM procedures';
         $sqlQueryParams = [];
         $sqlWhereClause = [];
 
@@ -115,12 +114,12 @@ class Manager
             $sqlQueryParams[]   = $filter->get('ACTIVITY') ? 'Y' : 'N';
             $sqlWhereClause[]   = 'ACTIVITY = ?';
         }
-        if ($filter->hasKey('NAME'))
+        if ($filter->hasKey('CODE'))
         {
-            $names              = $filter->get('NAME');
-            $sqlQueryParams     = array_merge($sqlQueryParams, $names);
-            $placeholder        = rtrim(str_repeat('?, ', count($names)), ', ');
-            $sqlWhereClause[]   = "NAME IN ($placeholder)";
+            $codes              = $filter->get('CODE');
+            $sqlQueryParams     = array_merge($sqlQueryParams, $codes);
+            $placeholder        = rtrim(str_repeat('?, ', count($codes)), ', ');
+            $sqlWhereClause[]   = "CODE IN ($placeholder)";
         }
 
         if (count($sqlWhereClause) > 0)
@@ -138,23 +137,23 @@ class Manager
         }
     }
     /** **********************************************************************
-     * create procedure by name
+     * create procedure by code
      *
-     * @param   string  $name               procedure name
+     * @param   string  $code               procedure code
      * @return  Procedure                   procedure
      * @throws  DomainException             creating procedure error
      ************************************************************************/
-    private static function createProcedure(string $name) : Procedure
+    private static function createProcedure(string $code) : Procedure
     {
-        $fullName = __NAMESPACE__.'\\'.$name;
+        $className = __NAMESPACE__.'\\'.$code;
 
         try
         {
-            return new $fullName;
+            return new $className;
         }
         catch (Throwable $exception)
         {
-            throw new DomainException("creating procedure \"$fullName\" error");
+            throw new DomainException("creating procedure \"$className\" error");
         }
     }
 }

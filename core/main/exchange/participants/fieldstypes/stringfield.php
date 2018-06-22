@@ -68,7 +68,7 @@ class StringField extends AbstractField
      ************************************************************************/
     public function getRandomValue()
     {
-        if (rand(0, 3) === 0)
+        if (rand(1, 4) == 4)
         {
             return null;
         }

@@ -4,11 +4,11 @@ declare(strict_types=1);
 namespace UnitTests\ClassTesting\Exchange\Procedures;
 
 use
-    ReflectionClass,
     UnitTests\AbstractTestCase,
     UnitTests\ProjectTempStructure\MainGenerator as TempStructureGenerator,
     Main\Data\MapData,
-    Main\Exchange\Procedures\Manager;
+    Main\Exchange\Procedures\Manager,
+    Main\Exchange\Procedures\Procedure;
 /** ***********************************************************************************************
  * Test Main\Exchange\Procedures\Manager class
  *
@@ -39,42 +39,40 @@ final class ManagerTest extends AbstractTestCase
         self::$structureGenerator->clean();
     }
     /** **********************************************************************
-     * check getting procedures by name
+     * check getting procedures by code
      *
      * @test
      * @throws
      ************************************************************************/
-    public function gettingProceduresByName() : void
+    public function gettingProceduresByCode() : void
     {
-        $expectedProcedures = [];
-        $getedProcedures    = [];
+        $expectedProcedures     = [];
+        $getedProcedures        = [];
+        $tempStructure          = self::$structureGenerator->getStructure();
+        $tempClassesStructure   = self::$structureGenerator->getClassesStructure();
 
-        foreach (self::$structureGenerator->getStructure() as $procedureInfo)
+        foreach ($tempStructure as $procedureInfo)
         {
-            $expectedProcedures[] = $procedureInfo['name'];
+            $expectedProcedures[] = $procedureInfo['code'];
         }
 
         $filter = new MapData;
-        $filter->set('NAME', $expectedProcedures);
+        $filter->set('CODE', $expectedProcedures);
         $set = Manager::getProcedures($filter);
 
         while ($set->valid())
         {
-            $procedure          = $set->current();
-            $procedureName      = $this->getObjectClassShortName($procedure);
-            $getedProcedures[]  = $procedureName;
+            $procedure      = $set->current();
+            $procedureCode  = $this->findProcedureCode($procedure, $tempClassesStructure);
+
+            $getedProcedures[] = $procedureCode;
             $set->next();
         }
 
-        asort($expectedProcedures);
-        asort($getedProcedures);
-        $expectedProcedures = array_values($expectedProcedures);
-        $getedProcedures    = array_values($getedProcedures);
-
         self::assertEquals
         (
-            $expectedProcedures,
-            $getedProcedures,
+            $this->sortComplexArray($expectedProcedures),
+            $this->sortComplexArray($getedProcedures),
             'Geted procedures not equal temp expected'
         );
     }
@@ -86,85 +84,94 @@ final class ManagerTest extends AbstractTestCase
      ************************************************************************/
     public function gettingProceduresByActivity() : void
     {
-        $expectedProcedures = [];
-        $getedProcedures    = [];
+        $expectedProcedures     = [];
+        $getedProcedures        = [];
+        $tempStructure          = self::$structureGenerator->getStructure();
+        $tempClassesStructure   = self::$structureGenerator->getClassesStructure();
 
-        foreach (self::$structureGenerator->getStructure() as $procedureInfo)
+        foreach ($tempStructure as $procedureInfo)
         {
             if ($procedureInfo['activity'])
             {
-                $expectedProcedures[] = $procedureInfo['name'];
+                $expectedProcedures[] = $procedureInfo['code'];
             }
         }
 
         $filter = new MapData;
-        $filter->set('NAME',        $expectedProcedures);
+        $filter->set('CODE',        $expectedProcedures);
         $filter->set('ACTIVITY',    true);
         $set = Manager::getProcedures($filter);
 
         while ($set->valid())
         {
             $procedure          = $set->current();
-            $procedureName      = $this->getObjectClassShortName($procedure);
-            $getedProcedures[]  = $procedureName;
+            $procedureCode      = $this->findProcedureCode($procedure, $tempClassesStructure);
+            $getedProcedures[]  = $procedureCode;
             $set->next();
         }
 
-        asort($expectedProcedures);
-        asort($getedProcedures);
-        $expectedProcedures = array_values($expectedProcedures);
-        $getedProcedures    = array_values($getedProcedures);
-
         self::assertEquals
         (
-            $expectedProcedures,
-            $getedProcedures,
+            $this->sortComplexArray($expectedProcedures),
+            $this->sortComplexArray($getedProcedures),
             'Geted procedures not equal temp expected'
         );
     }
     /** **********************************************************************
-     * check getting one procedure by name
+     * check getting one procedure by code
      *
      * @test
      * @throws
      ************************************************************************/
-    public function gettingOneProcedureByName() : void
+    public function gettingOneProcedureByCode() : void
     {
-        $randomStructure            = self::$structureGenerator->getStructure();
-        $randomTempProcedureInfo    = $randomStructure[array_rand($randomStructure)];
-        $filter                     = new MapData;
+        $tempStructure          = self::$structureGenerator->getStructure();
+        $tempClassesStructure   = self::$structureGenerator->getClassesStructure();
 
-        $filter->set('NAME',        $randomTempProcedureInfo['name']);
-        $filter->set('ACTIVITY',    $randomTempProcedureInfo['activity']);
-        $set = Manager::getProcedures($filter);
+        foreach ($tempStructure as $procedureInfo)
+        {
+            $filter = new MapData;
+            $filter->set('CODE',        $procedureInfo['code']);
+            $filter->set('ACTIVITY',    $procedureInfo['activity']);
+            $set = Manager::getProcedures($filter);
 
-        self::assertEquals
-        (
-            1,
-            $set->count(),
-            'Expect get one query row with filter by name'
-        );
+            self::assertEquals
+            (
+                1,
+                $set->count(),
+                'Expect get one query row with filter by code'
+            );
 
-        $procedure      = $set->current();
-        $procedureName  = $this->getObjectClassShortName($procedure);
+            $procedure      = $set->current();
+            $procedureCode  = $this->findProcedureCode($procedure, $tempClassesStructure);
 
-        self::assertEquals
-        (
-            $randomTempProcedureInfo['name'],
-            $procedureName,
-            'Geted procedure not equals expected'
-        );
+            self::assertEquals
+            (
+                $procedureInfo['code'],
+                $procedureCode,
+                'Geted procedure not equals expected'
+            );
+        }
     }
     /** **********************************************************************
-     * get object class short name
+     * get procedure code form object
      *
-     * @param   object  $object                         object
-     * @return  string                                  object class short name
+     * @param   Procedure   $procedure          procedure
+     * @param   array       $tempClassesInfo    temp classes structure
+     * @return  string                          procedure code
      ************************************************************************/
-    private function getObjectClassShortName($object) : string
+    private function findProcedureCode(Procedure $procedure, array $tempClassesInfo) : string
     {
-        $objectReflection = new ReflectionClass($object);
+        $procedureClassName = get_class($procedure);
 
-        return $objectReflection->getShortName();
+        foreach ($tempClassesInfo as $procedureCode => $procedureInfo)
+        {
+            if ($procedureInfo['class'] == $procedureClassName)
+            {
+                return $procedureCode;
+            }
+        }
+
+        return '';
     }
 }

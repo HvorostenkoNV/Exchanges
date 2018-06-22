@@ -103,6 +103,19 @@ class ItemIdField extends AbstractField
      ************************************************************************/
     public function getRandomValue()
     {
+        if (rand(1, 2) == 1)
+        {
+            $stringField = new StringField;
+            while (true)
+            {
+                $randomString = $stringField->getRandomValue();
+                if (is_string($randomString) && strlen($randomString) > 0)
+                {
+                    return $randomString;
+                }
+            }
+        }
+
         return rand(1, getrandmax());
     }
 }

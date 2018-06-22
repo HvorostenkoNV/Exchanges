@@ -38,13 +38,13 @@ abstract class AbstractParticipant implements Participant
      ************************************************************************/
     final public function getFields() : FieldsSet
     {
-        $result             = new FieldsSet;
-        $logger             = Logger::getInstance();
-        $participantName    = static::class;
+        $result         = new FieldsSet;
+        $logger         = Logger::getInstance();
+        $participant    = static::class;
 
         if (count($this->fields) <= 0)
         {
-            $logger->addWarning("Participant \"$participantName\" has no fields");
+            $logger->addWarning("Participant \"$participant\" has no fields");
             return $result;
         }
 
@@ -58,10 +58,10 @@ abstract class AbstractParticipant implements Participant
         catch (InvalidArgumentException $exception)
         {
             $error = $exception->getMessage();
-            $logger->addWarning("Error on filling participant \"$participantName\" fields set: $error");
+            $logger->addWarning("Error on filling participant \"$participant\" fields set: $error");
         }
 
-        $logger->addNotice("Participant \"$participantName\" fields set constructed and returned");
+        $logger->addNotice("Participant \"$participant\" fields set constructed and returned");
         $result->rewind();
         return $result;
     }
@@ -72,16 +72,16 @@ abstract class AbstractParticipant implements Participant
      ************************************************************************/
     final public function getProvidedData() : ProvidedData
     {
-        $data               = $this->readProvidedData();
-        $logger             = Logger::getInstance();
-        $participantName    = static::class;
+        $data           = $this->readProvidedData();
+        $logger         = Logger::getInstance();
+        $participant    = static::class;
 
         if ($data->count() <= 0)
         {
-            $logger->addNotice("Geted provided data from \"$participantName\" participant is empty");
+            $logger->addNotice("Geted provided data from \"$participant\" participant is empty");
         }
 
-        $logger->addNotice("Participant \"$participantName\" provided data gathered and returned");
+        $logger->addNotice("Participant \"$participant\" provided data gathered and returned");
         return $data;
     }
     /** **********************************************************************
@@ -92,15 +92,15 @@ abstract class AbstractParticipant implements Participant
      ************************************************************************/
     final public function deliveryData(DataForDelivery $data) : bool
     {
-        $logger             = Logger::getInstance();
-        $participantName    = static::class;
+        $logger         = Logger::getInstance();
+        $participant    = static::class;
 
         if ($data->count() <= 0)
         {
-            $logger->addNotice("\"$participantName\" participant data for delivery is empty");
+            $logger->addNotice("\"$participant\" participant data for delivery is empty");
         }
 
-        $logger->addNotice("Participant \"$participantName\" delivering data process run");
+        $logger->addNotice("Participant \"$participant\" delivering data process run");
         return $this->provideDataForDelivery($data);
     }
     /** **********************************************************************
@@ -115,9 +115,9 @@ abstract class AbstractParticipant implements Participant
      ************************************************************************/
     private function constructFieldsCollection() : array
     {
-        $logger             = Logger::getInstance();
-        $participantName    = static::class;
-        $result             = [];
+        $logger         = Logger::getInstance();
+        $participant    = static::class;
+        $result         = [];
 
         try
         {
@@ -141,12 +141,12 @@ abstract class AbstractParticipant implements Participant
         catch (RuntimeException $exception)
         {
             $error = $exception->getMessage();
-            $logger->addWarning("Failed to query fields for participant \"$participantName\": $error");
+            $logger->addWarning("Failed to query fields for participant \"$participant\": $error");
         }
         catch (InvalidArgumentException $exception)
         {
             $error = $exception->getMessage();
-            $logger->addWarning("Unable to create participant field for \"$participantName\": $error");
+            $logger->addWarning("Unable to create participant field for \"$participant\": $error");
         }
 
         return $result;
@@ -160,24 +160,24 @@ abstract class AbstractParticipant implements Participant
     private function queryFieldsInfo() : DBQueryResult
     {
         $reflection         = new ReflectionClass(static::class);
-        $participantName    = $reflection->getShortName();
+        $participantCode    = $reflection->getShortName();
         $sqlQuery           = '
             SELECT
-                participants_fields.NAME,
-                participants_fields.IS_REQUIRED,
-                fields_types.CODE AS TYPE
+                participants_fields.`NAME`,
+                participants_fields.`IS_REQUIRED`,
+                fields_types.`CODE` AS TYPE
             FROM
                 participants_fields
             INNER JOIN participants
-                ON participants_fields.PARTICIPANT = participants.ID
+                ON participants_fields.`PARTICIPANT` = participants.ID
             INNER JOIN fields_types
-                ON participants_fields.TYPE = fields_types.ID
+                ON participants_fields.`TYPE` = fields_types.ID
             WHERE
-                participants.NAME = ?';
+                participants.`CODE` = ?';
 
         try
         {
-            return DB::getInstance()->query($sqlQuery, [$participantName]);
+            return DB::getInstance()->query($sqlQuery, [$participantCode]);
         }
         catch (RuntimeException $exception)
         {

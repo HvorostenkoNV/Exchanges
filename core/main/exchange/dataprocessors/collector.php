@@ -23,13 +23,10 @@ class Collector extends AbstractProcessor
      ************************************************************************/
     public function collectData() : CollectedData
     {
-        $result             = new CollectedData;
-        $logger             = Logger::getInstance();
-        $procedure          = $this->getProcedure();
-        $procedureClassName = get_class($procedure);
-        $participants       = $procedure->getParticipants();
+        $result         = new CollectedData;
+        $participants   = $this->getProcedure()->getParticipants();
 
-        $logger->addNotice("Collector working: start procedure \"$procedureClassName\" collecting data");
+        $this->addLogMessage('collecting data start', 'notice');
         while ($participants->valid())
         {
             try
@@ -40,12 +37,35 @@ class Collector extends AbstractProcessor
             }
             catch (InvalidArgumentException $exception)
             {
-                $logger->addWarning("Collector working: unexpected error on constructing collected data item for procedure \"$procedureClassName\"");
+                $this->addLogMessage('unexpected error on constructing collected data item', 'warning');
             }
 
             $participants->next();
         }
 
         return $result;
+    }
+    /** **********************************************************************
+     * add message to log
+     *
+     * @param   string  $message            message
+     * @param   string  $type               message type
+     ************************************************************************/
+    private function addLogMessage(string $message, string $type) : void
+    {
+        $logger         = Logger::getInstance();
+        $procedureCode  = $this->getProcedure()->getCode();
+        $fullMessage    = "Collector for procedure \"$procedureCode\": $message";
+
+        switch ($type)
+        {
+            case 'warning':
+                $logger->addWarning($fullMessage);
+                break;
+            case 'notice':
+            default:
+                $logger->addNotice($fullMessage);
+                break;
+        }
     }
 }

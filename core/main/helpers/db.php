@@ -32,7 +32,7 @@ class DB
     /** **********************************************************************
      * constructor
      *
-     * @throws  RuntimeException                    db connection error
+     * @throws  RuntimeException                db connection error
      ************************************************************************/
     private function __construct()
     {
@@ -48,21 +48,23 @@ class DB
                 $config->getParam('db.login'),
                 $config->getParam('db.password')
             );
-            $logger->addNotice('DB object created, connection success');
+
+            $logger->addNotice('DB object: connection success');
+            $logger->addNotice('DB object: successfully created');
         }
         catch (PDOException $exception)
         {
             $error = $exception->getMessage();
-            $logger->addWarning("DB object creating failed with error: $error");
+            $logger->addWarning("DB object: creating failed, \"$error\"");
             throw new RuntimeException($error);
         }
     }
     /** **********************************************************************
      * run DB query and get result
      *
-     * @param   string  $sqlQuery                   sql query string
-     * @param   array   $params                     query params for preparing
-     * @return  DBQueryResult                       query result in rows
+     * @param   string  $sqlQuery               sql query string
+     * @param   array   $params                 query params for preparing
+     * @return  DBQueryResult                   query result in rows
      ************************************************************************/
     public function query(string $sqlQuery, array $params = []) : DBQueryResult
     {
@@ -82,12 +84,10 @@ class DB
             foreach ($queryResult as $row)
             {
                 $fieldValues = new DBRow;
-
                 foreach ($row as $key => $value)
                 {
                     $fieldValues->set($key, $value);
                 }
-
                 $result->push($fieldValues);
             }
 
@@ -100,13 +100,13 @@ class DB
         {
             $error = $exception->getMessage();
             $this->lastError = $error;
-            $logger->addWarning("Caught DB query error \"$error\" on preparing query \"$sqlQuery\"");
+            $logger->addWarning("DB object: query error \"$error\" on preparing query \"$sqlQuery\"");
         }
         catch (RuntimeException $exception)
         {
             $error = $exception->getMessage();
             $this->lastError = $error;
-            $logger->addWarning("Caught DB query error \"$error\" on execute query \"$sqlQuery\"");
+            $logger->addWarning("DB object: query error \"$error\" on execute query \"$sqlQuery\"");
         }
         catch (InvalidArgumentException $exception)
         {
@@ -118,7 +118,7 @@ class DB
     /** **********************************************************************
      * check if there was any error during last query
      *
-     * @return  bool                                last query error exist
+     * @return  bool                            last query error exist
      ************************************************************************/
     public function hasLastError() : bool
     {
@@ -127,7 +127,7 @@ class DB
     /** **********************************************************************
      * get last query error message
      *
-     * @return  string                              last query error exist message
+     * @return  string                          last query error exist message
      ************************************************************************/
     public function getLastError() : string
     {
@@ -136,7 +136,7 @@ class DB
     /** **********************************************************************
      * get last inserted item id
      *
-     * @return  int                                 last inserted item id
+     * @return  int                             last inserted item id
      ************************************************************************/
     public function getLastInsertId() : int
     {
@@ -145,12 +145,12 @@ class DB
     /** **********************************************************************
      * get new PDO
      *
-     * @param   string  $dbHost                     database host
-     * @param   string  $dbName                     database name
-     * @param   string  $dbLogin                    database login
-     * @param   string  $dbPassword                 database password
-     * @return  PDO                                 new PDO object
-     * @throws  PDOException                        new PDO object creating failed
+     * @param   string  $dbHost                 database host
+     * @param   string  $dbName                 database name
+     * @param   string  $dbLogin                database login
+     * @param   string  $dbPassword             database password
+     * @return  PDO                             new PDO object
+     * @throws  PDOException                    new PDO object creating failed
      ************************************************************************/
     private function getNewPDO(string $dbHost, string $dbName, string $dbLogin, string $dbPassword) : PDO
     {
@@ -177,9 +177,9 @@ class DB
     /** **********************************************************************
      * get prepared query statement
      *
-     * @param   string  $sqlQuery                   sql query
-     * @return  PDOStatement                        prepared query statement
-     * @throws  PDOException                        preparing error
+     * @param   string  $sqlQuery               sql query
+     * @return  PDOStatement                    prepared query statement
+     * @throws  PDOException                    preparing error
      ************************************************************************/
     private function getPreparedQueryStatement(string $sqlQuery) : PDOStatement
     {
@@ -200,10 +200,10 @@ class DB
     /** **********************************************************************
      * execute prepared query statement
      *
-     * @param   PDOStatement    $preparedQuery      prepared query statement
-     * @param   array   $params                     query params for preparing
-     * @return  array                               query result in rows
-     * @throws  RuntimeException                    executing error
+     * @param   PDOStatement    $preparedQuery  prepared query statement
+     * @param   array           $params         query params for preparing
+     * @return  array                           query result in rows
+     * @throws  RuntimeException                executing error
      ************************************************************************/
     private function executeQueryStatement(PDOStatement $preparedQuery, array $params) : array
     {

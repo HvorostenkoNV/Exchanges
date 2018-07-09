@@ -7,8 +7,7 @@ use
     UnitTests\AbstractTestCase,
     UnitTests\ProjectTempStructure\MainGenerator as TempStructureGenerator,
     Main\Data\MapData,
-    Main\Exchange\Procedures\Manager,
-    Main\Exchange\Procedures\Procedure;
+    Main\Exchange\Procedures\Manager;
 /** ***********************************************************************************************
  * Test Main\Exchange\Procedures\Manager class
  *
@@ -46,10 +45,9 @@ final class ManagerTest extends AbstractTestCase
      ************************************************************************/
     public function gettingProceduresByCode() : void
     {
-        $expectedProcedures     = [];
-        $getedProcedures        = [];
-        $tempStructure          = self::$structureGenerator->getStructure();
-        $tempClassesStructure   = self::$structureGenerator->getClassesStructure();
+        $expectedProcedures = [];
+        $getedProcedures    = [];
+        $tempStructure      = self::$structureGenerator->getStructure();
 
         foreach ($tempStructure as $procedureInfo)
         {
@@ -62,10 +60,8 @@ final class ManagerTest extends AbstractTestCase
 
         while ($set->valid())
         {
-            $procedure      = $set->current();
-            $procedureCode  = $this->findProcedureCode($procedure, $tempClassesStructure);
-
-            $getedProcedures[] = $procedureCode;
+            $procedure = $set->current();
+            $getedProcedures[] = $procedure->getCode();
             $set->next();
         }
 
@@ -84,10 +80,9 @@ final class ManagerTest extends AbstractTestCase
      ************************************************************************/
     public function gettingProceduresByActivity() : void
     {
-        $expectedProcedures     = [];
-        $getedProcedures        = [];
-        $tempStructure          = self::$structureGenerator->getStructure();
-        $tempClassesStructure   = self::$structureGenerator->getClassesStructure();
+        $expectedProcedures = [];
+        $getedProcedures    = [];
+        $tempStructure      = self::$structureGenerator->getStructure();
 
         foreach ($tempStructure as $procedureInfo)
         {
@@ -104,9 +99,8 @@ final class ManagerTest extends AbstractTestCase
 
         while ($set->valid())
         {
-            $procedure          = $set->current();
-            $procedureCode      = $this->findProcedureCode($procedure, $tempClassesStructure);
-            $getedProcedures[]  = $procedureCode;
+            $procedure = $set->current();
+            $getedProcedures[] = $procedure->getCode();
             $set->next();
         }
 
@@ -125,15 +119,16 @@ final class ManagerTest extends AbstractTestCase
      ************************************************************************/
     public function gettingOneProcedureByCode() : void
     {
-        $tempStructure          = self::$structureGenerator->getStructure();
-        $tempClassesStructure   = self::$structureGenerator->getClassesStructure();
+        $tempStructure = self::$structureGenerator->getStructure();
 
         foreach ($tempStructure as $procedureInfo)
         {
             $filter = new MapData;
             $filter->set('CODE',        $procedureInfo['code']);
             $filter->set('ACTIVITY',    $procedureInfo['activity']);
-            $set = Manager::getProcedures($filter);
+
+            $set            = Manager::getProcedures($filter);
+            $procedureCode  = $set->current()->getCode();
 
             self::assertEquals
             (
@@ -141,10 +136,6 @@ final class ManagerTest extends AbstractTestCase
                 $set->count(),
                 'Expect get one query row with filter by code'
             );
-
-            $procedure      = $set->current();
-            $procedureCode  = $this->findProcedureCode($procedure, $tempClassesStructure);
-
             self::assertEquals
             (
                 $procedureInfo['code'],
@@ -152,26 +143,5 @@ final class ManagerTest extends AbstractTestCase
                 'Geted procedure not equals expected'
             );
         }
-    }
-    /** **********************************************************************
-     * get procedure code form object
-     *
-     * @param   Procedure   $procedure          procedure
-     * @param   array       $tempClassesInfo    temp classes structure
-     * @return  string                          procedure code
-     ************************************************************************/
-    private function findProcedureCode(Procedure $procedure, array $tempClassesInfo) : string
-    {
-        $procedureClassName = get_class($procedure);
-
-        foreach ($tempClassesInfo as $procedureCode => $procedureInfo)
-        {
-            if ($procedureInfo['class'] == $procedureClassName)
-            {
-                return $procedureCode;
-            }
-        }
-
-        return '';
     }
 }

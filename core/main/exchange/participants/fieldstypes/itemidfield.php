@@ -111,7 +111,7 @@ class ItemIdField extends AbstractField
                 $randomString = $stringField->getRandomValue();
                 if (is_string($randomString) && strlen($randomString) > 0)
                 {
-                    return $randomString;
+                    return "random-item-id-$randomString";
                 }
             }
         }

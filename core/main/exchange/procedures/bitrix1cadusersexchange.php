@@ -8,7 +8,7 @@ namespace Main\Exchange\Procedures;
  * @package exchange_exchange_procedures
  * @author  Hvorostenko
  *************************************************************************************************/
-class UsersExchange extends AbstractProcedure
+class Bitrix1CADUsersExchange extends AbstractProcedure
 {
 
 }

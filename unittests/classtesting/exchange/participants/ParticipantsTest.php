@@ -40,6 +40,33 @@ final class ParticipantsTest extends AbstractTestCase
         self::$structureGenerator->clean();
     }
     /** **********************************************************************
+     * check getting participant code
+     *
+     * @test
+     * @throws
+     ************************************************************************/
+    public function gettingCode() : void
+    {
+        $tempStructure          = self::$structureGenerator->getStructure();
+        $tempClassesStructure   = self::$structureGenerator->getClassesStructure();
+
+        foreach ($tempStructure as $procedureCode => $procedureInfo)
+        {
+            foreach ($procedureInfo['participants'] as $participantCode => $participantInfo)
+            {
+                $participantClassName   = $tempClassesStructure[$procedureCode]['participants'][$participantCode]['class'];
+                $participant            = $this->constructParticipant($participantClassName);
+                $participantCode        = $participant->getCode();
+
+                self::assertNotEmpty
+                (
+                    $participantCode,
+                    'Expect participant provides not empty code'
+                );
+            }
+        }
+    }
+    /** **********************************************************************
      * check getting participant fields
      *
      * @test

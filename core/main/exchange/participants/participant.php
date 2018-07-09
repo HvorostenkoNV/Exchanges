@@ -16,6 +16,12 @@ use
 interface Participant
 {
     /** **********************************************************************
+     * get participant code
+     *
+     * @return  string                      participant code
+     ************************************************************************/
+    public function getCode() : string;
+    /** **********************************************************************
      * get participant fields params
      *
      * @return  FieldsSet                   fields params

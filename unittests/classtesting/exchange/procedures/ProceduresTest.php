@@ -6,7 +6,6 @@ namespace UnitTests\ClassTesting\Exchange\Procedures;
 use
     UnitTests\AbstractTestCase,
     UnitTests\ProjectTempStructure\MainGenerator as TempStructureGenerator,
-    Main\Exchange\Participants\Participant,
     Main\Exchange\Procedures\Procedure;
 /** ***********************************************************************************************
  * Test Main\Exchange\Procedures\Procedure classes
@@ -38,6 +37,30 @@ final class ProceduresTest extends AbstractTestCase
         self::$structureGenerator->clean();
     }
     /** **********************************************************************
+     * check getting procedure code
+     *
+     * @test
+     * @throws
+     ************************************************************************/
+    public function gettingCode() : void
+    {
+        $tempStructure          = self::$structureGenerator->getStructure();
+        $tempClassesStructure   = self::$structureGenerator->getClassesStructure();
+
+        foreach ($tempStructure as $procedureCode => $procedureInfo)
+        {
+            $procedureClassesInfo       = $tempClassesStructure[$procedureCode];
+            $procedure                  = $this->constructProcedure($procedureClassesInfo['class']);
+            $procedureCode              = $procedure->getCode();
+
+            self::assertNotEmpty
+            (
+                $procedureCode,
+                'Expect procedure provides not empty code'
+            );
+        }
+    }
+    /** **********************************************************************
      * check getting procedures participants
      *
      * @test
@@ -58,10 +81,8 @@ final class ProceduresTest extends AbstractTestCase
 
             while ($participantsSet->valid())
             {
-                $participant        = $participantsSet->current();
-                $participantCode    = $this->findProcedureCode($participant, $procedureClassesInfo);
-
-                $currentParticipantsSet[] = $participantCode;
+                $participant = $participantsSet->current();
+                $currentParticipantsSet[] = $participant->getCode();
                 $participantsSet->next();
             }
 
@@ -99,12 +120,12 @@ final class ProceduresTest extends AbstractTestCase
 
                 while ($procedureField->valid())
                 {
-                    $participantField   = $procedureField->current();
-                    $participant        = $participantField->getParticipant();
-                    $participantCode    = $this->findProcedureCode($participant, $procedureClassesInfo);
-                    $field              = $participantField->getField();
+                    $participantField       = $procedureField->current();
+                    $participant            = $participantField->getParticipant();
+                    $participantCode        = $participant->getCode();
+                    $participantFieldName   = $participantField->getField()->getParam('name');
 
-                    $procedureFieldArray[$participantCode] = $field->getParam('name');
+                    $procedureFieldArray[$participantCode] = $participantFieldName;
                     $procedureField->next();
                 }
 
@@ -158,10 +179,8 @@ final class ProceduresTest extends AbstractTestCase
 
                 while ($participantSet->valid())
                 {
-                    $participant        = $participantSet->current();
-                    $participantCode    = $this->findProcedureCode($participant, $procedureClassesInfo);
-
-                    $rule['participants'][] = $participantCode;
+                    $participant = $participantSet->current();
+                    $rule['participants'][] = $participant->getCode();
                     $participantSet->next();
                 }
 
@@ -173,12 +192,12 @@ final class ProceduresTest extends AbstractTestCase
                     $procedureField->rewind();
                     while ($procedureField->valid())
                     {
-                        $participantField   = $procedureField->current();
-                        $participant        = $participantField->getParticipant();
-                        $participantCode    = $this->findProcedureCode($participant, $procedureClassesInfo);
-                        $field              = $participantField->getField();
+                        $participantField       = $procedureField->current();
+                        $participant            = $participantField->getParticipant();
+                        $participantCode        = $participant->getCode();
+                        $participantFieldName   = $participantField->getField()->getParam('name');
 
-                        $procedureFieldArray[$participantCode] = $field->getParam('name');
+                        $procedureFieldArray[$participantCode] = $participantFieldName;
                         $procedureField->next();
                     }
 
@@ -218,18 +237,17 @@ final class ProceduresTest extends AbstractTestCase
 
             foreach ($dataCombiningRules->getKeys() as $participantField)
             {
-                $participant        = $participantField->getParticipant();
-                $participantCode    = $this->findProcedureCode($participant, $procedureClassesInfo);
-                $field              = $participantField->getField();
-                $fieldName          = $field->getParam('name');
-                $weight             = $dataCombiningRules->get($participantField);
+                $participant            = $participantField->getParticipant();
+                $participantCode        = $participant->getCode();
+                $participantFieldName   = $participantField->getField()->getParam('name');
+                $weight                 = $dataCombiningRules->get($participantField);
 
                 if (!array_key_exists($participantCode, $getedRulesSet))
                 {
                     $getedRulesSet[$participantCode] = [];
                 }
 
-                $getedRulesSet[$participantCode][$fieldName] = $weight;
+                $getedRulesSet[$participantCode][$participantFieldName] = $weight;
             }
 
             self::assertEquals
@@ -249,26 +267,5 @@ final class ProceduresTest extends AbstractTestCase
     private function constructProcedure(string $className) : Procedure
     {
         return new $className;
-    }
-    /** **********************************************************************
-     * get participant code form object
-     *
-     * @param   Participant $participant            participant
-     * @param   array       $procedureClassesInfo   procedure classes structure
-     * @return  string                              participant code
-     ************************************************************************/
-    private function findProcedureCode(Participant $participant, array $procedureClassesInfo) : string
-    {
-        $participantClassName = get_class($participant);
-
-        foreach ($procedureClassesInfo['participants'] as $participantCode => $participantInfo)
-        {
-            if ($participantInfo['class'] == $participantClassName)
-            {
-                return $participantCode;
-            }
-        }
-
-        return '';
     }
 }

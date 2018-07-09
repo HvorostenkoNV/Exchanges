@@ -20,12 +20,14 @@ class MainGenerator
         $classesStructureGenerator  = null,
         $providedDataGenerator      = null,
         $providedXmlDataGenerator   = null,
+        $combinedDataGenerator      = null,
         $structure                  = [],
         $dbStructure                = [],
         $classesStructure           = [],
         $providedData               = [],
         $providedMatchedData        = [],
-        $providedXmlData            = [];
+        $providedXmlData            = [],
+        $combinedData               = [];
     /** **********************************************************************
      * constructor
      ************************************************************************/
@@ -36,6 +38,7 @@ class MainGenerator
         $this->classesStructureGenerator    = new ClassesStructureGenerator;
         $this->providedDataGenerator        = new ProvidedDataGenerator;
         $this->providedXmlDataGenerator     = new ProvidedXmlDataGenerator;
+        $this->combinedDataGenerator        = new CombinedDataGenerator;
     }
     /** **********************************************************************
      * generate project temp structure
@@ -56,6 +59,7 @@ class MainGenerator
             $this->providedData         = $this->providedDataGenerator->getData();
             $this->providedMatchedData  = $this->providedDataGenerator->getMatchedData();
             $this->providedXmlData      = $this->providedXmlDataGenerator->generate($this->providedData);
+            $this->combinedData         = $this->combinedDataGenerator->generate($this->structure, $this->providedMatchedData);
         }
         catch (RuntimeException $exception)
         {
@@ -126,13 +130,22 @@ class MainGenerator
         return $this->providedMatchedData;
     }
     /** **********************************************************************
-     * get participant temp provided xml data
+     * get participants temp provided xml data
      *
      * @return  array                       generated participants temp provided xml data
      ************************************************************************/
     public function getProvidedXmlData() : array
     {
         return $this->providedXmlData;
+    }
+    /** **********************************************************************
+     * get participants temp combined data
+     *
+     * @return  array                       generated participants temp combined data
+     ************************************************************************/
+    public function getCombinedData() : array
+    {
+        return $this->combinedData;
     }
     /** **********************************************************************
      * clean temp data
@@ -145,6 +158,7 @@ class MainGenerator
         $this->providedData         = [];
         $this->providedMatchedData  = [];
         $this->providedXmlData      = [];
+        $this->combinedData         = [];
 
         $this->dbStructureGenerator->clean();
         $this->classesStructureGenerator->clean();

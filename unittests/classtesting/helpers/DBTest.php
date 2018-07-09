@@ -153,7 +153,7 @@ final class DBTest extends AbstractTestCase
             'Last inserted ID is not as expected'
         );
 
-        $db->query("SELECT * FORM $table");
+        $db->query("SELECT * FROM $table");
         self::assertEquals
         (
             $db->getLastInsertId(),

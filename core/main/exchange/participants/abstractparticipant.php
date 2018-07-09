@@ -6,11 +6,11 @@ namespace Main\Exchange\Participants;
 use
     RuntimeException,
     InvalidArgumentException,
+    ReflectionException,
     ReflectionClass,
     Main\Data\MapData,
     Main\Helpers\DB,
     Main\Helpers\Logger,
-    Main\Helpers\Data\DBQueryResult,
     Main\Exchange\Participants\Fields\Field,
     Main\Exchange\Participants\Fields\FieldsSet,
     Main\Exchange\Participants\Data\ProvidedData,
@@ -23,45 +23,66 @@ use
  *************************************************************************************************/
 abstract class AbstractParticipant implements Participant
 {
-    private $fields = [];
+    private
+        $code               = '',
+        $fieldsCollection   = [];
     /** **********************************************************************
      * construct
      ************************************************************************/
     public function __construct()
     {
-        $this->fields = $this->constructFieldsCollection();
+        try
+        {
+            $reflection = new ReflectionClass(static::class);
+            $this->code = $reflection->getShortName();
+        }
+        catch (ReflectionException $exception)
+        {
+
+        }
+
+        $this->fieldsCollection = $this->getFieldsCollection();
+
+        $this->addLogMessage('created', 'notice');
     }
     /** **********************************************************************
-     * get participant fields params
+     * get participant code
+     *
+     * @return  string                      participant code
+     ************************************************************************/
+    final public function getCode() : string
+    {
+        return $this->code;
+    }
+    /** **********************************************************************
+     * get participant fields set
      *
      * @return  FieldsSet                   fields params collection
      ************************************************************************/
     final public function getFields() : FieldsSet
     {
-        $result         = new FieldsSet;
-        $logger         = Logger::getInstance();
-        $participant    = static::class;
+        $result = new FieldsSet;
 
-        if (count($this->fields) <= 0)
+        if (count($this->fieldsCollection) <= 0)
         {
-            $logger->addWarning("Participant \"$participant\" has no fields");
+            $this->addLogMessage('has no fields', 'warning');
             return $result;
         }
 
-        try
+        foreach ($this->fieldsCollection as $field)
         {
-            foreach ($this->fields as $field)
+            try
             {
                 $result->push($field);
             }
-        }
-        catch (InvalidArgumentException $exception)
-        {
-            $error = $exception->getMessage();
-            $logger->addWarning("Error on filling participant \"$participant\" fields set: $error");
+            catch (InvalidArgumentException $exception)
+            {
+                $error = $exception->getMessage();
+                $this->addLogMessage("unknown error on constructing fields set, \"$error\"", 'warning');
+            }
         }
 
-        $logger->addNotice("Participant \"$participant\" fields set constructed and returned");
+        $this->addLogMessage('fields set constructed and returned', 'notice');
         $result->rewind();
         return $result;
     }
@@ -72,16 +93,15 @@ abstract class AbstractParticipant implements Participant
      ************************************************************************/
     final public function getProvidedData() : ProvidedData
     {
-        $data           = $this->readProvidedData();
-        $logger         = Logger::getInstance();
-        $participant    = static::class;
+        $fields = $this->getFields();
+        $data   = $this->readProvidedData($fields);
 
         if ($data->count() <= 0)
         {
-            $logger->addNotice("Geted provided data from \"$participant\" participant is empty");
+            $this->addLogMessage('geted provided data is empty', 'notice');
         }
 
-        $logger->addNotice("Participant \"$participant\" provided data gathered and returned");
+        $this->addLogMessage('provided data gathered and returned', 'notice');
         return $data;
     }
     /** **********************************************************************
@@ -92,19 +112,16 @@ abstract class AbstractParticipant implements Participant
      ************************************************************************/
     final public function deliveryData(DataForDelivery $data) : bool
     {
-        $logger         = Logger::getInstance();
-        $participant    = static::class;
-
         if ($data->count() <= 0)
         {
-            $logger->addNotice("\"$participant\" participant data for delivery is empty");
+            $this->addLogMessage('data for delivery is empty', 'notice');
         }
 
-        $logger->addNotice("Participant \"$participant\" delivering data process run");
+        $this->addLogMessage('data delivering process run', 'notice');
         return $this->provideDataForDelivery($data);
     }
     /** **********************************************************************
-     * create fields collection
+     * get fields collection
      *
      * @return  array                       fields collection
      * @example
@@ -113,40 +130,33 @@ abstract class AbstractParticipant implements Participant
      *      fieldName   => field
      * ]
      ************************************************************************/
-    private function constructFieldsCollection() : array
+    private function getFieldsCollection() : array
     {
-        $logger         = Logger::getInstance();
-        $participant    = static::class;
-        $result         = [];
+        $result = [];
 
         try
         {
             $queryResult = $this->queryFieldsInfo();
-            while (!$queryResult->isEmpty())
+            foreach ($queryResult as $item)
             {
-                $fieldDb        = $queryResult->pop();
-                $fieldType      = $fieldDb->get('TYPE');
-                $fieldName      = $fieldDb->get('NAME');
-                $fieldRequired  = $fieldDb->get('IS_REQUIRED');
-
                 $fieldParams = new MapData;
-                $fieldParams->set('type', $fieldType);
-                $fieldParams->set('name', $fieldName);
-                $fieldParams->set('required', $fieldRequired == 'Y');
+                $fieldParams->set('type', $item['TYPE']);
+                $fieldParams->set('name', $item['NAME']);
+                $fieldParams->set('required', $item['IS_REQUIRED'] == 'Y');
 
                 $field = new Field($fieldParams);
-                $result[$fieldName] = $field;
+                $result[$item['NAME']] = $field;
             }
         }
         catch (RuntimeException $exception)
         {
             $error = $exception->getMessage();
-            $logger->addWarning("Failed to query fields for participant \"$participant\": $error");
+            $this->addLogMessage("fields query failed, \"$error\"", 'warning');
         }
         catch (InvalidArgumentException $exception)
         {
             $error = $exception->getMessage();
-            $logger->addWarning("Unable to create participant field for \"$participant\": $error");
+            $this->addLogMessage("unable to create participant field, \"$error\"", 'warning');
         }
 
         return $result;
@@ -154,30 +164,44 @@ abstract class AbstractParticipant implements Participant
     /** **********************************************************************
      * query participant fields info from database
      *
-     * @return  DBQueryResult               query result
-     * @throws  RuntimeException            db connection error
+     * @return  array                       query result
+     * @throws  RuntimeException            query error
      ************************************************************************/
-    private function queryFieldsInfo() : DBQueryResult
+    private function queryFieldsInfo() : array
     {
-        $reflection         = new ReflectionClass(static::class);
-        $participantCode    = $reflection->getShortName();
-        $sqlQuery           = '
-            SELECT
-                participants_fields.`NAME`,
-                participants_fields.`IS_REQUIRED`,
-                fields_types.`CODE` AS TYPE
-            FROM
-                participants_fields
-            INNER JOIN participants
-                ON participants_fields.`PARTICIPANT` = participants.ID
-            INNER JOIN fields_types
-                ON participants_fields.`TYPE` = fields_types.ID
-            WHERE
-                participants.`CODE` = ?';
-
         try
         {
-            return DB::getInstance()->query($sqlQuery, [$participantCode]);
+            $result     = [];
+            $db         = DB::getInstance();
+            $sqlQuery   = '
+                SELECT
+                    participants_fields.`NAME`,
+                    participants_fields.`IS_REQUIRED`,
+                    fields_types.`CODE` AS TYPE
+                FROM
+                    participants_fields
+                INNER JOIN participants
+                    ON participants_fields.`PARTICIPANT` = participants.`ID`
+                INNER JOIN fields_types
+                    ON participants_fields.`TYPE` = fields_types.`ID`
+                WHERE
+                    participants.`CODE` = ?';
+
+            $queryResult = $db->query($sqlQuery, [$this->getCode()]);
+            while (!$queryResult->isEmpty())
+            {
+                $item       = $queryResult->pop();
+                $itemArray  = [];
+
+                foreach ($item->getKeys() as $key)
+                {
+                    $itemArray[$key] = $item->get($key);
+                }
+
+                $result[] = $itemArray;
+            }
+
+            return $result;
         }
         catch (RuntimeException $exception)
         {
@@ -185,11 +209,35 @@ abstract class AbstractParticipant implements Participant
         }
     }
     /** **********************************************************************
+     * add message to log
+     *
+     * @param   string  $message            message
+     * @param   string  $type               message type
+     ************************************************************************/
+    private function addLogMessage(string $message, string $type) : void
+    {
+        $logger         = Logger::getInstance();
+        $code           = $this->getCode();
+        $fullMessage    = "Participant \"$code\": $message";
+
+        switch ($type)
+        {
+            case 'warning':
+                $logger->addWarning($fullMessage);
+                break;
+            case 'notice':
+            default:
+                $logger->addNotice($fullMessage);
+                break;
+        }
+    }
+    /** **********************************************************************
      * read participant provided data and get it
      *
+     * @param   FieldsSet $fields           participant fields set
      * @return  ProvidedData                data
      ************************************************************************/
-    abstract protected function readProvidedData() : ProvidedData;
+    abstract protected function readProvidedData(FieldsSet $fields) : ProvidedData;
     /** **********************************************************************
      * provide delivered data to the participant
      *

@@ -7,7 +7,7 @@ declare(strict_types=1);
  * @author  Hvorostenko
  *************************************************************************************************/
 return
-[
-    'defaultLang'           => 'en',
-    'localizationFolder'    => 'resources'.DS.'loc'
-];
+    [
+        'defaultLang'           => 'en',
+        'localizationFolder'    => 'resources'.DS.'loc'
+    ];

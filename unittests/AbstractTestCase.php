@@ -158,21 +158,29 @@ abstract class AbstractTestCase extends TestCase
     {
         foreach ($array as $index => $value)
         {
-            if (is_array($value))
+            $convertedValue = null;
+
+            switch (gettype($value))
             {
-                $value = $this->sortComplexArray($value);
-            }
-            elseif(is_string($value) && strlen($value) <= 0)
-            {
-                $value = null;
+                case 'string':
+                    $convertedValue = strlen($value) > 0
+                        ? $value
+                        : null;
+                    break;
+                case 'array':
+                    $convertedValue = count($value) > 0
+                        ? $this->sortComplexArray($value)
+                        : null;
+                    break;
+                default:
+                    $convertedValue = $value;
             }
 
-            $array[json_encode($value)] = $value;
+            $array[json_encode($convertedValue)] = $convertedValue;
             unset($array[$index]);
         }
 
         asort($array);
-
         return array_values($array);
     }
 }

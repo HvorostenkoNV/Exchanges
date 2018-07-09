@@ -5,19 +5,22 @@ namespace Main\Exchange\Procedures;
 
 use
     Throwable,
-    DomainException,
     RuntimeException,
     InvalidArgumentException,
+    ReflectionException,
     ReflectionClass,
     Main\Helpers\DB,
     Main\Helpers\Logger,
     Main\Exchange\Participants\Participant,
+    Main\Exchange\Participants\Exceptions\UnknownParticipantException,
+    Main\Exchange\Participants\Exceptions\UnknownParticipantFieldException,
     Main\Exchange\Procedures\Data\ParticipantsSet,
     Main\Exchange\Procedures\Fields\ParticipantField,
     Main\Exchange\Procedures\Fields\ProcedureField,
     Main\Exchange\Procedures\Fields\FieldsSet,
     Main\Exchange\Procedures\Rules\DataMatchingRules,
-    Main\Exchange\Procedures\Rules\DataCombiningRules;
+    Main\Exchange\Procedures\Rules\DataCombiningRules,
+    Main\Exchange\Procedures\Exceptions\UnknownProcedureFieldException;
 /** ***********************************************************************************************
  * Application procedure abstract class
  *
@@ -27,122 +30,136 @@ use
 abstract class AbstractProcedure implements Procedure
 {
     private
-        $participants       = [],
-        $participantsFields = [],
-        $procedureFields    = [],
-        $dataMatchingRules  = [],
-        $dataCombiningRules = [];
+        $code                           = '',
+        $participantsCollection         = [],
+        $participantsFieldsCollection   = [],
+        $procedureFieldsCollection      = [],
+        $dataMatchingRulesCollection    = [],
+        $dataCombiningRulesCollection   = [];
     /** **********************************************************************
      * construct
      ************************************************************************/
     public function __construct()
     {
-        $this->participants         = $this->createParticipantsCollection();
-        $this->participantsFields   = $this->createParticipantsFieldsCollection($this->participants);
-        $this->procedureFields      = $this->createProcedureFieldsCollection($this->participantsFields);
-        $this->dataMatchingRules    = $this->createDataMatchingRulesCollection($this->participants, $this->procedureFields);
-        $this->dataCombiningRules   = $this->createDataCombiningRulesCollection($this->participants);
+        try
+        {
+            $reflection = new ReflectionClass(static::class);
+            $this->code = $reflection->getShortName();
+        }
+        catch (ReflectionException $exception)
+        {
+
+        }
+
+        $this->participantsCollection       = $this->getParticipantsCollection();
+        $this->participantsFieldsCollection = $this->getParticipantsFieldsCollection();
+        $this->procedureFieldsCollection    = $this->getProcedureFieldsCollection();
+        $this->dataMatchingRulesCollection  = $this->getDataMatchingRulesCollection();
+        $this->dataCombiningRulesCollection = $this->getDataCombiningRulesCollection();
+
+        $this->addLogMessage('created', 'notice');
     }
     /** **********************************************************************
-     * get procedure participants
+     * get procedure code
      *
-     * @return  ParticipantsSet                             procedure participants set
+     * @return  string                              procedure code
+     ************************************************************************/
+    public function getCode() : string
+    {
+        return $this->code;
+    }
+    /** **********************************************************************
+     * get procedure participants set
+     *
+     * @return  ParticipantsSet                     procedure participants set
      ************************************************************************/
     final public function getParticipants() : ParticipantsSet
     {
-        $result     = new ParticipantsSet;
-        $logger     = Logger::getInstance();
-        $procedure  = static::class;
+        $result = new ParticipantsSet;
 
-        if (count($this->participants) <= 0)
+        if (count($this->participantsCollection) <= 0)
         {
-            $logger->addWarning("Procedure \"$procedure\" has no participants");
-            return $result;
+            $this->addLogMessage('has no participants', 'warning');
         }
 
-        try
+        foreach ($this->participantsCollection as $participant)
         {
-            foreach ($this->participants as $participant)
+            try
             {
                 $result->push($participant);
             }
-        }
-        catch (InvalidArgumentException $exception)
-        {
-            $error = $exception->getMessage();
-            $logger->addWarning("Error on filling procedure \"$procedure\" participants set: $error");
+            catch (InvalidArgumentException $exception)
+            {
+                $error = $exception->getMessage();
+                $this->addLogMessage("unknown error on constructing participants set, \"$error\"", 'warning');
+            }
         }
 
-        $logger->addNotice("Procedure \"$procedure\" participants set constructed and returned");
+        $this->addLogMessage('participants set constructed and returned', 'notice');
         $result->rewind();
         return $result;
     }
     /** **********************************************************************
-     * get procedure fields
+     * get procedure fields set
      *
-     * @return  FieldsSet                                   procedure fields set
+     * @return  FieldsSet                           procedure fields set
      ************************************************************************/
     final public function getFields() : FieldsSet
     {
-        $result     = new FieldsSet;
-        $logger     = Logger::getInstance();
-        $procedure  = static::class;
+        $result = new FieldsSet;
 
-        if (count($this->procedureFields) <= 0)
+        if (count($this->procedureFieldsCollection) <= 0)
         {
-            $logger->addWarning("Procedure \"$procedure\" has no fields");
-            return $result;
+            $this->addLogMessage('has no fields', 'warning');
         }
 
-        try
+        foreach ($this->procedureFieldsCollection as $field)
         {
-            foreach ($this->procedureFields as $field)
+            try
             {
                 $field->rewind();
                 $result->push($field);
             }
-        }
-        catch (InvalidArgumentException $exception)
-        {
-            $error = $exception->getMessage();
-            $logger->addWarning("Error on filling procedure \"$procedure\" fields set: $error");
+            catch (InvalidArgumentException $exception)
+            {
+                $error = $exception->getMessage();
+                $this->addLogMessage("unknown error on constructing fields set, \"$error\"", 'warning');
+            }
         }
 
-        $logger->addNotice("Procedure \"$procedure\" fields set constructed and returned");
+        $this->addLogMessage('fields set constructed and returned', 'notice');
         $result->rewind();
         return $result;
     }
     /** **********************************************************************
      * get procedure data matching rules
      *
-     * @return  DataMatchingRules                           procedure data matching rules set
+     * @return  DataMatchingRules                   procedure data matching rules
      ************************************************************************/
     final public function getDataMatchingRules() : DataMatchingRules
     {
-        $result     = new DataMatchingRules;
-        $logger     = Logger::getInstance();
-        $procedure  = static::class;
+        $result = new DataMatchingRules;
 
-        if (count($this->dataMatchingRules) <= 0)
+        if (count($this->dataMatchingRulesCollection) <= 0)
         {
-            $logger->addWarning("Procedure \"$procedure\" has no data matching rules");
-            return $result;
+            $this->addLogMessage('has no data matching rules', 'warning');
         }
 
-        try
+        foreach ($this->dataMatchingRulesCollection as $rule)
         {
-            foreach ($this->dataMatchingRules as $rule)
+            try
             {
                 $participantsSet    = new ParticipantsSet;
                 $fieldsSet          = new FieldsSet;
 
                 foreach ($rule['participants'] as $participantCode)
                 {
-                    $participantsSet->push($this->participants[$participantCode]);
+                    $participant = $this->findParticipant($participantCode);
+                    $participantsSet->push($participant);
                 }
                 foreach ($rule['fields'] as $procedureFieldId)
                 {
-                    $procedureField = $this->procedureFields[$procedureFieldId];
+                    $procedureField = $this->findProcedureField((int) $procedureFieldId);
                     $procedureField->rewind();
                     $fieldsSet->push($procedureField);
                 }
@@ -151,319 +168,412 @@ abstract class AbstractProcedure implements Procedure
                 $fieldsSet->rewind();
                 $result->set($participantsSet, $fieldsSet);
             }
-        }
-        catch (InvalidArgumentException $exception)
-        {
-            $error = $exception->getMessage();
-            $logger->addWarning("Error on filling procedure \"$procedure\" data matching rules set: $error");
+            catch (UnknownParticipantException $exception)
+            {
+                $participantCode = $exception->getParticipantCode();
+                $this->addLogMessage("unknown participant \"$participantCode\" on constructing data matching rules set", 'warning');
+            }
+            catch (UnknownProcedureFieldException $exception)
+            {
+                $this->addLogMessage("unknown procedure field on constructing data matching rules set", 'warning');
+            }
+            catch (InvalidArgumentException $exception)
+            {
+                $error = $exception->getMessage();
+                $this->addLogMessage("unknown error on constructing data matching rules set, \"$error\"", 'warning');
+            }
         }
 
-        $logger->addNotice("Procedure \"$procedure\" data matching rules set constructed and returned");
+        $this->addLogMessage('data matching rules set constructed and returned', 'notice');
         return $result;
     }
     /** **********************************************************************
      * get data combining rules
      *
-     * @return  DataCombiningRules                          procedure data combining rules
+     * @return  DataCombiningRules                  procedure data combining rules
      ************************************************************************/
     final public function getDataCombiningRules() : DataCombiningRules
     {
-        $result     = new DataCombiningRules;
-        $logger     = Logger::getInstance();
-        $procedure  = static::class;
+        $result = new DataCombiningRules;
 
-        if (count($this->dataCombiningRules) <= 0)
+        if (count($this->dataCombiningRulesCollection) <= 0)
         {
-            $logger->addWarning("Procedure \"$procedure\" has no data combining rules");
-            return $result;
+            $this->addLogMessage('has no data combining rules', 'warning');;
         }
 
-        try
+        foreach ($this->dataCombiningRulesCollection as $participantCode => $participantFields)
         {
-            foreach ($this->dataCombiningRules as $participantCode => $participantFields)
+            foreach ($participantFields as $participantFieldName => $weight)
             {
-                foreach ($participantFields as $fieldName => $weight)
+                try
                 {
-                    $result->set($this->participantsFields[$participantCode][$fieldName], $weight);
+                    $participantField = $this->findParticipantField($participantCode, $participantFieldName);
+                    $result->set($participantField, $weight);
+                }
+                catch (UnknownParticipantFieldException $exception)
+                {
+                    $this->addLogMessage("unknown participant field \"$participantFieldName\" in \"$participantCode\" on constructing data combining rules set", 'warning');
+                }
+                catch (InvalidArgumentException $exception)
+                {
+                    $error = $exception->getMessage();
+                    $this->addLogMessage("unknown error on constructing data combining rules set, \"$error\"", 'warning');
                 }
             }
         }
-        catch (InvalidArgumentException $exception)
-        {
-            $error = $exception->getMessage();
-            $logger->addWarning("Error on filling procedure \"$procedure\" data combining rules set: $error");
-        }
 
-        $logger->addNotice("Procedure \"$procedure\" data combining rules set constructed and returned");
+        $this->addLogMessage('data combining rules set constructed and returned', 'notice');
         return $result;
     }
     /** **********************************************************************
-     * create procedure participants collection
+     * get participants collection
      *
-     * @return  array                                       procedure participants collection
+     * @return  array                               procedure participants collection
      * @example
      * [
      *      participantCode => participant,
      *      participantCode => participant
      * ]
      ************************************************************************/
-    private function createParticipantsCollection() : array
+    private function getParticipantsCollection() : array
     {
-        $logger     = Logger::getInstance();
-        $procedure  = static::class;
-        $result     = [];
+        $result         = [];
+        $queryResult    = [];
 
         try
         {
-            $queryResult = $this->queryProcedureParticipants();
-            foreach ($queryResult as $item)
+            $queryResult = $this->queryParticipants();
+        }
+        catch (RuntimeException $exception)
+        {
+            $error = $exception->getMessage();
+            $this->addLogMessage("failed to query participants, \"$error\"", 'warning');
+        }
+
+        foreach ($queryResult as $item)
+        {
+            try
             {
                 $result[$item['CODE']] = $this->createParticipant($item['CODE']);
             }
-        }
-        catch (RuntimeException $exception)
-        {
-            $error = $exception->getMessage();
-            $logger->addWarning("Failed to query participants for procedure \"$procedure\": $error");
-        }
-        catch (DomainException $exception)
-        {
-            $error = $exception->getMessage();
-            $logger->addWarning("Failed to create participant for procedure \"$procedure\": $error");
+            catch (UnknownParticipantException $exception)
+            {
+                $participantCode = $exception->getParticipantCode();
+                $this->addLogMessage("failed to create participant \"$participantCode\"", 'warning');
+            }
         }
 
         return $result;
     }
     /** **********************************************************************
-     * create participants fields collection
+     * get participants fields collection
      *
-     * @param   Participant[]   $participantsCollection     participants
-     * @return  array                                       procedure participants fields collection
+     * @return  array                               participants fields collection
      * @example
      * [
      *      participantCode =>
      *      [
-     *          fieldName   => procedureParticipantField,
-     *          fieldName   => procedureParticipantField
+     *          participantFieldName    => procedureParticipantField,
+     *          participantFieldName    => procedureParticipantField
      *      ],
      *      participantCode =>
      *      [
-     *          fieldName   => procedureParticipantField,
-     *          fieldName   => procedureParticipantField
+     *          participantFieldName    => procedureParticipantField,
+     *          participantFieldName    => procedureParticipantField
      *      ]
      * ]
      ************************************************************************/
-    private function createParticipantsFieldsCollection(array $participantsCollection) : array
+    private function getParticipantsFieldsCollection() : array
     {
-        $logger     = Logger::getInstance();
-        $procedure  = static::class;
-        $result     = [];
+        $result = [];
 
-        try
+        foreach ($this->participantsCollection as $participantCode => $participant)
         {
-            foreach ($participantsCollection as $participantCode => $participant)
+            try
             {
-                $participantFields          = $participant->getFields();
-                $result[$participantCode]   = [];
+                $participant        = $this->findParticipant($participantCode);
+                $participantFields  = $participant->getFields();
 
+                $result[$participantCode] = [];
                 while ($participantFields->valid())
                 {
-                    $field              = $participantFields->current();
-                    $fieldName          = $field->getParam('name');
-                    $participantField   = new ParticipantField($participant, $field);
+                    $participantField           = $participantFields->current();
+                    $participantFieldName       = $participantField->getParam('name');
+                    $procedureParticipantField  = new ParticipantField($participant, $participantField);
 
+                    $result[$participantCode][$participantFieldName] = $procedureParticipantField;
                     $participantFields->next();
-                    $result[$participantCode][$fieldName] = $participantField;
                 }
             }
-        }
-        catch (InvalidArgumentException $exception)
-        {
-            $error = $exception->getMessage();
-            $logger->addWarning("Failed to create procedure \"$procedure\" participant field: $error");
+            catch (UnknownParticipantException $exception)
+            {
+
+            }
         }
 
         return $result;
     }
     /** **********************************************************************
-     * create procedure fields collection
+     * get procedure fields collection
      *
-     * @param   array   $participantsFieldsCollection       procedure participants fields collection
-     * @return  array                                       procedure fields collection
+     * @return  array                               procedure fields collection
      * @example
      * [
-     *      fieldId => field,
-     *      fieldId => field
+     *      procedureFieldId    => procedureField,
+     *      procedureFieldId    => procedureField
      * ]
      ************************************************************************/
-    private function createProcedureFieldsCollection(array $participantsFieldsCollection) : array
+    private function getProcedureFieldsCollection() : array
     {
-        $logger     = Logger::getInstance();
-        $procedure  = static::class;
-        $result     = [];
+        $result         = [];
+        $queryResult    = [];
 
         try
         {
-            $queryResult = $this->queryProcedureFields(array_keys($participantsFieldsCollection));
-            foreach ($queryResult as $item)
-            {
-                $procedureField     = new ProcedureField;
-                $procedureFieldId   = $item['ID'];
-
-                foreach ($item['PARTICIPANTS_FIELDS'] as $participantCode => $fieldName)
-                {
-                    $participantField = $participantsFieldsCollection[$participantCode][$fieldName];
-                    $procedureField->push($participantField);
-                }
-
-                if ($procedureField->count() <= 0)
-                {
-                    $logger->addWarning("Procedure field \"$procedureFieldId\" has no participants fields");
-                }
-
-                $procedureField->rewind();
-                $result[$procedureFieldId] = $procedureField;
-            }
+            $participantsCodeArray  = array_keys($this->participantsCollection);
+            $queryResult            = $this->queryProcedureFields($participantsCodeArray);
         }
         catch (RuntimeException $exception)
         {
             $error = $exception->getMessage();
-            $logger->addWarning("Failed to query fields for procedure \"$procedure\": $error");
+            $this->addLogMessage("failed to query procedure fields, \"$error\"", 'warning');
         }
-        catch (InvalidArgumentException $exception)
+
+        foreach ($queryResult as $item)
         {
-            $error = $exception->getMessage();
-            $logger->addWarning("Failed to create procedure \"$procedure\" field: $error");
+            $procedureField     = new ProcedureField;
+            $procedureFieldId   = $item['ID'];
+
+            try
+            {
+                foreach ($item['PARTICIPANTS_FIELDS'] as $participantCode => $participantFieldName)
+                {
+                    $participantField = $this->findParticipantField($participantCode, $participantFieldName);
+                    $procedureField->push($participantField);
+                }
+            }
+            catch (UnknownParticipantFieldException $exception)
+            {
+                $participantCode        = $exception->getParticipantCode();
+                $participantFieldName   = $exception->getParticipantFieldName();
+                $this->addLogMessage("caught unknown participant field\"$participantFieldName\" in participant \"$participantCode\" on constructing procedure field \"$procedureFieldId\"", 'warning');
+            }
+            catch (InvalidArgumentException $exception)
+            {
+                $error = $exception->getMessage();
+                $this->addLogMessage("caught error on constructing procedure field \"$procedureFieldId\", \"$error\"", 'warning');
+            }
+
+            if ($procedureField->count() > 0)
+            {
+                $procedureField->rewind();
+                $result[$procedureFieldId] = $procedureField;
+            }
+            else
+            {
+                $this->addLogMessage("procedure field \"$procedureFieldId\" has no participants fields", 'warning');
+            }
         }
 
         return $result;
     }
     /** **********************************************************************
-     * get procedure data matching rules collection
+     * get data matching rules collection
      *
-     * @param   array   $participantsCollection             procedure participants collection
-     * @param   array   $procedureFieldsCollection          procedure fields collection
-     * @return  array                                       procedure data matching rules collection
+     * @return  array                               data matching rules collection
      * @example
      * [
-     *      ruleId  =>
+     *      [
+     *          'participants'  => [participantCode, participantCode, participantCode],
+     *          'fields'        => [procedureFieldId, procedureFieldId, procedureFieldId]
+     *      ],
      *      [
      *          'participants'  => [participantCode, participantCode, participantCode],
      *          'fields'        => [procedureFieldId, procedureFieldId, procedureFieldId]
      *      ]
      * ]
      ************************************************************************/
-    private function createDataMatchingRulesCollection(array $participantsCollection, array $procedureFieldsCollection) : array
+    private function getDataMatchingRulesCollection() : array
     {
-        $logger     = Logger::getInstance();
-        $procedure  = static::class;
-        $result     = [];
+        $result         = [];
+        $queryResult    = [];
 
         try
         {
-            $rulesQuery = $this->queryProcedureDataMatchingRules(array_keys($participantsCollection), array_keys($procedureFieldsCollection));
-            foreach ($rulesQuery as $index => $rule)
-            {
-                $ruleId             = $rule['ID'];
-                $result[$ruleId]    =
-                [
-                    'participants'  => $rule['PARTICIPANTS'],
-                    'fields'        => $rule['PROCEDURE_FIELDS']
-                ];
-
-                if (count($result[$ruleId]['participants']) <= 0)
-                {
-                    $logger->addWarning("Procedure matching rule \"$ruleId\" has no participants");
-                }
-                if (count($result[$ruleId]['fields']) <= 0)
-                {
-                    $logger->addWarning("Procedure matching rule \"$ruleId\" has no participants fields");
-                }
-            }
+            $participantsCodeArray  = array_keys($this->participantsCollection);
+            $procedureFieldsIdArray = array_keys($this->procedureFieldsCollection);
+            $queryResult            = $this->queryProcedureDataMatchingRules($participantsCodeArray, $procedureFieldsIdArray);
         }
         catch (RuntimeException $exception)
         {
             $error = $exception->getMessage();
-            $logger->addWarning("Failed to query data matching rules for procedure \"$procedure\": $error");
+            $this->addLogMessage("failed to query data matching rules, \"$error\"", 'warning');
+        }
+
+        foreach ($queryResult as $item)
+        {
+            $ruleId                 = $item['ID'];
+            $ruleParticipants       = $item['PARTICIPANTS'];
+            $ruleProcedureFields    = $item['PROCEDURE_FIELDS'];
+
+            if (!is_array($ruleParticipants) || count($ruleParticipants) <= 0)
+            {
+                $this->addLogMessage("matching rule \"$ruleId\" has no participants", 'warning');
+                continue;
+            }
+            if (!is_array($ruleProcedureFields) || count($ruleProcedureFields) <= 0)
+            {
+                $this->addLogMessage("matching rule \"$ruleId\" has no participants fields", 'warning');
+                continue;
+            }
+
+            $result[$ruleId] =
+                [
+                    'participants'  => $ruleParticipants,
+                    'fields'        => $ruleProcedureFields
+                ];
         }
 
         return $result;
     }
     /** **********************************************************************
-     * get procedure data combining rules collection
+     * get data combining rules collection
      *
-     * @param   array   $participantsCollection             procedure participants fields collection
-     * @return  array                                       procedure data combining rules collection
+     * @return  array                               data combining rules collection
      * @example
      * [
      *      participantCode =>
      *      [
-     *          fieldName   => weight,
-     *          fieldName   => weight
+     *          participantFieldName    => weight,
+     *          participantFieldName    => weight
      *      ],
      *      participantCode =>
      *      [
-     *          fieldName   => weight,
-     *          fieldName   => weight
+     *          participantFieldName    => weight,
+     *          participantFieldName    => weight
      *      ]
      * ]
      ************************************************************************/
-    private function createDataCombiningRulesCollection(array $participantsCollection) : array
+    private function getDataCombiningRulesCollection() : array
     {
-        $logger     = Logger::getInstance();
-        $procedure  = static::class;
-        $result     = [];
+        $result         = [];
+        $queryResult    = [];
 
         try
         {
-            $rulesQuery = $this->queryProcedureDataCombiningRules(array_keys($participantsCollection));
-            foreach ($rulesQuery as $index => $rule)
-            {
-                $participantCode    = $rule['PARTICIPANT_CODE'];
-                $fieldName          = $rule['FIELD_NAME'];
-                $weight             = (int) $rule['WEIGHT'];
-
-                if (!array_key_exists($participantCode, $result))
-                {
-                    $result[$participantCode] = [];
-                }
-
-                $result[$participantCode][$fieldName] = $weight;
-            }
+            $participantsCodeArray  = array_keys($this->participantsCollection);
+            $queryResult            = $this->queryProcedureDataCombiningRules($participantsCodeArray);
         }
         catch (RuntimeException $exception)
         {
             $error = $exception->getMessage();
-            $logger->addWarning("Failed to query data combining rules for procedure \"$procedure\": $error");
+            $this->addLogMessage("failed to query data combining rules, \"$error\"", 'warning');
+        }
+
+        foreach ($queryResult as $item)
+        {
+            $participantCode        = $item['PARTICIPANT_CODE'];
+            $participantFieldName   = $item['FIELD_NAME'];
+            $weight                 = (int) $item['WEIGHT'];
+
+            if (!array_key_exists($participantCode, $result))
+            {
+                $result[$participantCode] = [];
+            }
+
+            $result[$participantCode][$participantFieldName] = $weight;
         }
 
         return $result;
     }
     /** **********************************************************************
+     * find participant by code
+     *
+     * @param   string  $participantCode            participant code
+     * @return  Participant                         participant
+     * @throws  UnknownParticipantException         participant not found
+     ************************************************************************/
+    private function findParticipant(string $participantCode) : Participant
+    {
+        if (array_key_exists($participantCode, $this->participantsCollection))
+        {
+            return $this->participantsCollection[$participantCode];
+        }
+
+        $exception = new UnknownParticipantException;
+        $exception->setParticipantCode($participantCode);
+        throw $exception;
+    }
+    /** **********************************************************************
+     * find participant field
+     *
+     * @param   string  $participantCode            participant code
+     * @param   string  $fieldName                  participant field name
+     * @return  ParticipantField                    participant field
+     * @throws  UnknownParticipantFieldException    participant field not found
+     ************************************************************************/
+    private function findParticipantField(string $participantCode, string $fieldName) : ParticipantField
+    {
+        if
+        (
+            array_key_exists($participantCode, $this->participantsFieldsCollection) &&
+            array_key_exists($fieldName, $this->participantsFieldsCollection[$participantCode])
+        )
+        {
+            return $this->participantsFieldsCollection[$participantCode][$fieldName];
+        }
+
+        $exception = new UnknownParticipantFieldException;
+        $exception->setParticipantCode($participantCode);
+        $exception->setParticipantFieldName($fieldName);
+        throw $exception;
+    }
+    /** **********************************************************************
+     * find procedure field
+     *
+     * @param   int $procedureFieldId               procedure field id
+     * @return  ProcedureField                      procedure field
+     * @throws  UnknownProcedureFieldException      procedure field not found
+     ************************************************************************/
+    private function findProcedureField(int $procedureFieldId) : ProcedureField
+    {
+        if (array_key_exists($procedureFieldId, $this->procedureFieldsCollection))
+        {
+            return $this->procedureFieldsCollection[$procedureFieldId];
+        }
+
+        $exception = new UnknownProcedureFieldException;
+        $exception->setProcedureCode($this->getCode());
+        throw $exception;
+    }
+    /** **********************************************************************
      * query procedure participants
      *
-     * @return  array                                       procedure participant query result
-     * @throws  RuntimeException                            query process error
+     * @return  array                               procedure participant query result
+     * @example
+     * [
+     *      ['CODE'  => participantCode],
+     *      ['CODE'  => participantCode]
+     * ]
+     * @throws  RuntimeException                    query process error
      ************************************************************************/
-    private function queryProcedureParticipants() : array
+    private function queryParticipants() : array
     {
         try
         {
-            $reflection     = new ReflectionClass(static::class);
-            $procedureCode  = $reflection->getShortName();
-            $sqlQuery       = '
-            SELECT
-                participants.`CODE`
-            FROM
-                procedures_participants
-            INNER JOIN participants
-                ON procedures_participants.`PARTICIPANT` = participants.`ID`
-            INNER JOIN procedures
-                ON procedures_participants.`PROCEDURE` = procedures.`ID`
-            WHERE
-                procedures.`CODE` = ?';
+            $sqlQuery = '
+                SELECT
+                    participants.`CODE`
+                FROM
+                    procedures_participants
+                INNER JOIN participants
+                    ON procedures_participants.`PARTICIPANT` = participants.`ID`
+                INNER JOIN procedures
+                    ON procedures_participants.`PROCEDURE` = procedures.`ID`
+                WHERE
+                    procedures.`CODE` = ?';
 
-            return $this->getQueryResult($sqlQuery, [$procedureCode]);
+            return $this->getQueryResult($sqlQuery, [$this->getCode()]);
         }
         catch (RuntimeException $exception)
         {
@@ -473,25 +583,44 @@ abstract class AbstractProcedure implements Procedure
     /** **********************************************************************
      * query procedure fields
      *
-     * @param   array   $participants                       procedure participants
-     * @return  array                                       procedure fields query result
-     * @throws  RuntimeException                            query process error
+     * @param   array   $participantsCodeArray      procedure participants code array
+     * @return  array                               procedure fields query result
+     * @example
+     * [
+     *      [
+     *          'ID'                    => procedureFieldId
+     *          'PARTICIPANTS_FIELDS'   =>
+     *          [
+     *              participantCode => participantFieldName,
+     *              participantCode => participantFieldName
+     *          ]
+     *      ],
+     *      [
+     *          'ID'                    => procedureFieldId
+     *          'PARTICIPANTS_FIELDS'   =>
+     *          [
+     *              participantCode => participantFieldName,
+     *              participantCode => participantFieldName
+     *          ]
+     *      ]
+     * ]
+     * @throws  RuntimeException                    query process error
      ************************************************************************/
-    private function queryProcedureFields(array $participants) : array
+    private function queryProcedureFields(array $participantsCodeArray) : array
     {
         try
         {
-            $procedureFieldsQuery   = $this->queryProcedureFieldsId();
-            $procedureFieldsId      = [];
-            $result                 = [];
+            $result                         = [];
+            $procedureFieldsIdArray         = [];
+            $procedureFieldsIdQueryResult   = $this->queryProcedureFieldsId();
 
-            foreach ($procedureFieldsQuery as $item)
+            foreach ($procedureFieldsIdQueryResult as $item)
             {
-                $procedureFieldsId[] = $item['ID'];
+                $procedureFieldsIdArray[] = $item['ID'];
             }
 
-            $procedureParticipantsFieldsQuery = $this->queryProcedureParticipantsFields($participants, $procedureFieldsId);
-            foreach ($procedureParticipantsFieldsQuery as $item)
+            $procedureParticipantsFieldsQueryResult = $this->queryProcedureParticipantsFields($participantsCodeArray, $procedureFieldsIdArray);
+            foreach ($procedureParticipantsFieldsQueryResult as $item)
             {
                 $procedureFieldId       = $item['PROCEDURE_FIELD_ID'];
                 $participantCode        = $item['PARTICIPANT_CODE'];
@@ -500,10 +629,10 @@ abstract class AbstractProcedure implements Procedure
                 if (!array_key_exists($procedureFieldId, $result))
                 {
                     $result[$procedureFieldId] =
-                    [
-                        'ID'                    => $procedureFieldId,
-                        'PARTICIPANTS_FIELDS'   => []
-                    ];
+                        [
+                            'ID'                    => $procedureFieldId,
+                            'PARTICIPANTS_FIELDS'   => []
+                        ];
                 }
 
                 $result[$procedureFieldId]['PARTICIPANTS_FIELDS'][$participantCode] = $participantFieldName;
@@ -519,26 +648,29 @@ abstract class AbstractProcedure implements Procedure
     /** **********************************************************************
      * query procedure fields id
      *
-     * @return  array                                       procedure fields ID query result
-     * @throws  RuntimeException                            query process error
+     * @return  array                               procedure fields id query result
+     * @example
+     * [
+     *      ['ID' => procedureFieldId],
+     *      ['ID' => procedureFieldId]
+     * ]
+     * @throws  RuntimeException                    query process error
      ************************************************************************/
     private function queryProcedureFieldsId() : array
     {
         try
         {
-            $reflection     = new ReflectionClass(static::class);
-            $procedureCode  = $reflection->getShortName();
-            $sqlQuery       = '
-            SELECT
-                procedures_fields.`ID`
-            FROM
-                procedures_fields
-            INNER JOIN procedures
-                ON procedures_fields.`PROCEDURE` = procedures.`ID`
-            WHERE
-                procedures.`CODE` = ?';
+            $sqlQuery = '
+                SELECT
+                    procedures_fields.`ID`
+                FROM
+                    procedures_fields
+                INNER JOIN procedures
+                    ON procedures_fields.`PROCEDURE` = procedures.`ID`
+                WHERE
+                    procedures.`CODE` = ?';
 
-            return $this->getQueryResult($sqlQuery, [$procedureCode]);
+            return $this->getQueryResult($sqlQuery, [$this->getCode()]);
         }
         catch (RuntimeException $exception)
         {
@@ -548,37 +680,50 @@ abstract class AbstractProcedure implements Procedure
     /** **********************************************************************
      * query procedure participants fields
      *
-     * @param   array   $participants                       procedure participants
-     * @param   array   $procedureFields                    procedure fields
-     * @return  array                                       procedure participants fields query result
-     * @throws  RuntimeException                            query process error
+     * @param   array   $participantsCodeArray      procedure participants code array
+     * @param   array   $procedureFieldsIdArray     procedure fields id array
+     * @return  array                               procedure participants fields query result
+     * @example
+     * [
+     *      [
+     *          'PARTICIPANT_CODE'          => participantCode,
+     *          'PROCEDURE_FIELD_ID'        => procedureFieldId,
+     *          'PARTICIPANT_FIELD_NAME'    => participantFieldName
+     *      ],
+     *      [
+     *          'PARTICIPANT_CODE'          => participantCode,
+     *          'PROCEDURE_FIELD_ID'        => procedureFieldId,
+     *          'PARTICIPANT_FIELD_NAME'    => participantFieldName
+     *      ]
+     * ]
+     * @throws  RuntimeException                    query process error
      ************************************************************************/
-    private function queryProcedureParticipantsFields(array $participants, array $procedureFields) : array
+    private function queryProcedureParticipantsFields(array $participantsCodeArray, array $procedureFieldsIdArray) : array
     {
-        if (count($participants) <= 0 || count($procedureFields) <= 0)
+        if (count($participantsCodeArray) <= 0 || count($procedureFieldsIdArray) <= 0)
         {
             return [];
         }
 
         try
         {
-            $queryParams                = array_merge($procedureFields, $participants);
-            $fieldsPlaceholder          = rtrim(str_repeat('?, ', count($procedureFields)), ', ');
-            $participantsPlaceholder    = rtrim(str_repeat('?, ', count($participants)), ', ');
+            $queryParams                = array_merge($procedureFieldsIdArray, $participantsCodeArray);
+            $fieldsPlaceholder          = rtrim(str_repeat('?, ', count($procedureFieldsIdArray)), ', ');
+            $participantsPlaceholder    = rtrim(str_repeat('?, ', count($participantsCodeArray)), ', ');
             $sqlQuery                   = "
-            SELECT
-                participants.`CODE`                               AS PARTICIPANT_CODE,
-                procedures_participants_fields.`PROCEDURE_FIELD`  AS PROCEDURE_FIELD_ID,
-                participants_fields.`NAME`                        AS PARTICIPANT_FIELD_NAME
-            FROM
-                procedures_participants_fields
-            INNER JOIN participants_fields
-                ON procedures_participants_fields.`PARTICIPANT_FIELD` = participants_fields.`ID`
-            INNER JOIN participants
-                ON participants_fields.`PARTICIPANT` = participants.`ID`
-            WHERE
-                procedures_participants_fields.`PROCEDURE_FIELD`  IN  ($fieldsPlaceholder) AND
-                participants.`CODE`                               IN  ($participantsPlaceholder)";
+                SELECT
+                    participants.`CODE`                               AS PARTICIPANT_CODE,
+                    procedures_participants_fields.`PROCEDURE_FIELD`  AS PROCEDURE_FIELD_ID,
+                    participants_fields.`NAME`                        AS PARTICIPANT_FIELD_NAME
+                FROM
+                    procedures_participants_fields
+                INNER JOIN participants_fields
+                    ON procedures_participants_fields.`PARTICIPANT_FIELD` = participants_fields.`ID`
+                INNER JOIN participants
+                    ON participants_fields.`PARTICIPANT` = participants.`ID`
+                WHERE
+                    procedures_participants_fields.`PROCEDURE_FIELD`  IN  ($fieldsPlaceholder) AND
+                    participants.`CODE`                               IN  ($participantsPlaceholder)";
 
             return $this->getQueryResult($sqlQuery, $queryParams);
         }
@@ -590,39 +735,47 @@ abstract class AbstractProcedure implements Procedure
     /** **********************************************************************
      * query procedure data matching rules
      *
-     * @param   array   $participants                       procedure participants
-     * @param   array   $procedureFields                    procedure fields
-     * @return  array                                       procedure data matching rules query result
-     * @throws  RuntimeException                            query process error
+     * @param   array   $participantsCodeArray      procedure participants code array
+     * @param   array   $procedureFieldsIdArray     procedure fields id array
+     * @return  array                               procedure data matching rules query result
+     * @example
+     * [
+     *      [
+     *          'ID'                => ruleId,
+     *          'PARTICIPANTS'      => [participantCode, participantCode],
+     *          'PROCEDURE_FIELDS'  => [procedureFieldId, procedureFieldId]
+     *      ]
+     * ]
+     * @throws  RuntimeException                    query process error
      ************************************************************************/
-    private function queryProcedureDataMatchingRules(array $participants, array $procedureFields) : array
+    private function queryProcedureDataMatchingRules(array $participantsCodeArray, array $procedureFieldsIdArray) : array
     {
         try
         {
-            $rulesQuery = $this->queryProcedureDataMatchingRulesId();
-            $rulesId    = [];
-            $result     = [];
+            $result             = [];
+            $rulesId            = [];
+            $rulesQueryResult   = $this->queryProcedureDataMatchingRulesId();
 
-            foreach ($rulesQuery as $item)
+            foreach ($rulesQueryResult as $item)
             {
                 $ruleId             = $item['ID'];
                 $rulesId[]          = $ruleId;
                 $result[$ruleId]    =
-                [
-                    'ID'                => $ruleId,
-                    'PARTICIPANTS'      => [],
-                    'PROCEDURE_FIELDS'  => []
-                ];
+                    [
+                        'ID'                => $ruleId,
+                        'PARTICIPANTS'      => [],
+                        'PROCEDURE_FIELDS'  => []
+                    ];
             }
 
-            $rulesParticipantsQuery = $this->queryProcedureDataMatchingRulesParticipants($rulesId, $participants);
-            foreach ($rulesParticipantsQuery as $item)
+            $rulesParticipantsQueryResult = $this->queryProcedureDataMatchingRulesParticipants($rulesId, $participantsCodeArray);
+            foreach ($rulesParticipantsQueryResult as $item)
             {
                 $result[$item['RULE']]['PARTICIPANTS'][] = $item['PARTICIPANT_CODE'];
             }
 
-            $rulesFieldsQuery = $this->queryProcedureDataMatchingRulesProcedureFields($rulesId, $procedureFields);
-            foreach ($rulesFieldsQuery as $item)
+            $rulesFieldsQueryResult = $this->queryProcedureDataMatchingRulesProcedureFields($rulesId, $procedureFieldsIdArray);
+            foreach ($rulesFieldsQueryResult as $item)
             {
                 $result[$item['RULE']]['PROCEDURE_FIELDS'][] = $item['PROCEDURE_FIELD'];
             }
@@ -637,26 +790,29 @@ abstract class AbstractProcedure implements Procedure
     /** **********************************************************************
      * query procedure data matching rules id
      *
-     * @return  array                                       procedure data matching rules ID query result
-     * @throws  RuntimeException                            query process error
+     * @return  array                               procedure data matching rules id query result
+     * @example
+     * [
+     *      ['ID' => dataMatchingRuleId],
+     *      ['ID' => dataMatchingRuleId]
+     * ]
+     * @throws  RuntimeException                    query process error
      ************************************************************************/
     private function queryProcedureDataMatchingRulesId() : array
     {
         try
         {
-            $reflection     = new ReflectionClass(static::class);
-            $procedureCode  = $reflection->getShortName();
-            $sqlQuery       = '
-            SELECT
-                procedures_data_matching_rules.`ID`
-            FROM
-                procedures_data_matching_rules
-            INNER JOIN procedures
-                ON procedures_data_matching_rules.`PROCEDURE` = procedures.`ID`
-            WHERE
-                procedures.`CODE` = ?';
+            $sqlQuery = '
+                SELECT
+                    procedures_data_matching_rules.`ID`
+                FROM
+                    procedures_data_matching_rules
+                INNER JOIN procedures
+                    ON procedures_data_matching_rules.`PROCEDURE` = procedures.`ID`
+                WHERE
+                    procedures.`CODE` = ?';
 
-            return $this->getQueryResult($sqlQuery, [$procedureCode]);
+            return $this->getQueryResult($sqlQuery, [$this->getCode()]);
         }
         catch (RuntimeException $exception)
         {
@@ -666,34 +822,45 @@ abstract class AbstractProcedure implements Procedure
     /** **********************************************************************
      * query procedure data matching rules participants
      *
-     * @param   array   $procedureRules                     procedure rules
-     * @param   array   $participants                       procedure participants
-     * @return  array                                       procedure data matching rules participants query result
-     * @throws  RuntimeException                            query process error
+     * @param   array   $procedureRulesIdArray      procedure rules id array
+     * @param   array   $participantsCodeArray      procedure participants code array
+     * @return  array                               procedure data matching rules participants query result
+     * @example
+     * [
+     *      [
+     *          'RULE'              => matchingRuleId,
+     *          'PARTICIPANT_CODE'  => participantCode
+     *      ],
+     *      [
+     *          'RULE'              => matchingRuleId,
+     *          'PARTICIPANT_CODE'  => participantCode
+     *      ]
+     * ]
+     * @throws  RuntimeException                    query process error
      ************************************************************************/
-    private function queryProcedureDataMatchingRulesParticipants(array $procedureRules, array $participants) : array
+    private function queryProcedureDataMatchingRulesParticipants(array $procedureRulesIdArray, array $participantsCodeArray) : array
     {
-        if (count($procedureRules) <= 0 || count($participants) <= 0)
+        if (count($procedureRulesIdArray) <= 0 || count($participantsCodeArray) <= 0)
         {
             return [];
         }
 
         try
         {
-            $queryParams                = array_merge($procedureRules, $participants);
-            $rulesPlaceholder           = rtrim(str_repeat('?, ', count($procedureRules)), ', ');
-            $participantsPlaceholder    = rtrim(str_repeat('?, ', count($participants)), ', ');
+            $queryParams                = array_merge($procedureRulesIdArray, $participantsCodeArray);
+            $rulesPlaceholder           = rtrim(str_repeat('?, ', count($procedureRulesIdArray)), ', ');
+            $participantsPlaceholder    = rtrim(str_repeat('?, ', count($participantsCodeArray)), ', ');
             $sqlQuery                   = "
-            SELECT
-                procedures_data_matching_rules_participants.`RULE`,
-                participants.`CODE` AS PARTICIPANT_CODE
-            FROM
-                procedures_data_matching_rules_participants
-            INNER JOIN participants
-                ON procedures_data_matching_rules_participants.`PARTICIPANT` = participants.`ID`
-            WHERE
-                procedures_data_matching_rules_participants.`RULE`  IN  ($rulesPlaceholder) AND
-                participants.`CODE`                                 IN  ($participantsPlaceholder)";
+                SELECT
+                    procedures_data_matching_rules_participants.`RULE`,
+                    participants.`CODE` AS PARTICIPANT_CODE
+                FROM
+                    procedures_data_matching_rules_participants
+                INNER JOIN participants
+                    ON procedures_data_matching_rules_participants.`PARTICIPANT` = participants.`ID`
+                WHERE
+                    procedures_data_matching_rules_participants.`RULE`  IN  ($rulesPlaceholder) AND
+                    participants.`CODE`                                 IN  ($participantsPlaceholder)";
 
             return $this->getQueryResult($sqlQuery, $queryParams);
         }
@@ -705,32 +872,43 @@ abstract class AbstractProcedure implements Procedure
     /** **********************************************************************
      * query procedure data matching rules fields
      *
-     * @param   array   $procedureRules                     procedure rules
-     * @param   array   $procedureFields                    procedure fields
-     * @return  array                                       procedure data matching rules fields query result
-     * @throws  RuntimeException                            query process error
+     * @param   array   $procedureRulesIdArray      procedure rules id array
+     * @param   array   $procedureFieldsIdArray     procedure fields id array
+     * @return  array                               procedure data matching rules fields query result
+     * @example
+     * [
+     *      [
+     *          'RULE'              => matchingRuleId,
+     *          'PROCEDURE_FIELD'   => procedureFieldId
+     *      ],
+     *      [
+     *          'RULE'              => matchingRuleId,
+     *          'PROCEDURE_FIELD'   => procedureFieldId
+     *      ]
+     * ]
+     * @throws  RuntimeException                    query process error
      ************************************************************************/
-    private function queryProcedureDataMatchingRulesProcedureFields(array $procedureRules, array $procedureFields) : array
+    private function queryProcedureDataMatchingRulesProcedureFields(array $procedureRulesIdArray, array $procedureFieldsIdArray) : array
     {
-        if (count($procedureRules) <= 0 || count($procedureFields) <= 0)
+        if (count($procedureRulesIdArray) <= 0 || count($procedureFieldsIdArray) <= 0)
         {
             return [];
         }
 
         try
         {
-            $queryParams        = array_merge($procedureRules, $procedureFields);
-            $rulesPlaceholder   = rtrim(str_repeat('?, ', count($procedureRules)), ', ');
-            $fieldsPlaceholder  = rtrim(str_repeat('?, ', count($procedureFields)), ', ');
+            $queryParams        = array_merge($procedureRulesIdArray, $procedureFieldsIdArray);
+            $rulesPlaceholder   = rtrim(str_repeat('?, ', count($procedureRulesIdArray)), ', ');
+            $fieldsPlaceholder  = rtrim(str_repeat('?, ', count($procedureFieldsIdArray)), ', ');
             $sqlQuery           = "
-            SELECT
-                procedures_data_matching_rules_fields.`RULE`,
-                procedures_data_matching_rules_fields.`PROCEDURE_FIELD`
-            FROM
-                procedures_data_matching_rules_fields
-            WHERE
-                procedures_data_matching_rules_fields.`RULE`            IN  ($rulesPlaceholder) AND
-                procedures_data_matching_rules_fields.`PROCEDURE_FIELD` IN  ($fieldsPlaceholder)";
+                SELECT
+                    procedures_data_matching_rules_fields.`RULE`,
+                    procedures_data_matching_rules_fields.`PROCEDURE_FIELD`
+                FROM
+                    procedures_data_matching_rules_fields
+                WHERE
+                    procedures_data_matching_rules_fields.`RULE`            IN  ($rulesPlaceholder) AND
+                    procedures_data_matching_rules_fields.`PROCEDURE_FIELD` IN  ($fieldsPlaceholder)";
 
             return $this->getQueryResult($sqlQuery, $queryParams);
         }
@@ -742,39 +920,50 @@ abstract class AbstractProcedure implements Procedure
     /** **********************************************************************
      * query procedure data combining rules
      *
-     * @param   array   $participants                       procedure participants
-     * @return  array                                       procedure data combining rules query result
-     * @throws  RuntimeException                            query process error
+     * @param   array   $participantsCodeArray      procedure participants code array
+     * @return  array                               procedure data combining rules query result
+     * @example
+     * [
+     *      [
+     *          'PARTICIPANT_CODE'  => participantCode,
+     *          'FIELD_NAME'        => participantFieldName,
+     *          'WEIGHT'            => participantFieldWeight
+     *      ],
+     *      [
+     *          'PARTICIPANT_CODE'  => participantCode,
+     *          'FIELD_NAME'        => participantFieldName,
+     *          'WEIGHT'            => participantFieldWeight
+     *      ]
+     * ]
+     * @throws  RuntimeException                    query process error
      ************************************************************************/
-    private function queryProcedureDataCombiningRules(array $participants) : array
+    private function queryProcedureDataCombiningRules(array $participantsCodeArray) : array
     {
-        if (count($participants) <= 0)
+        if (count($participantsCodeArray) <= 0)
         {
             return [];
         }
 
         try
         {
-            $reflection                 = new ReflectionClass(static::class);
-            $procedureCode              = $reflection->getShortName();
-            $queryParams                = array_merge([$procedureCode], $participants);
-            $participantsPlaceholder    = rtrim(str_repeat('?, ', count($participants)), ', ');
+            $queryParams                = array_merge([$this->getCode()], $participantsCodeArray);
+            $participantsPlaceholder    = rtrim(str_repeat('?, ', count($participantsCodeArray)), ', ');
             $sqlQuery                   = "
-            SELECT
-                procedures_data_combining_rules.`WEIGHT`,
-                participants.`CODE`         AS PARTICIPANT_CODE,
-                participants_fields.`NAME`  AS FIELD_NAME
-            FROM
-                procedures_data_combining_rules
-            INNER JOIN procedures
-                ON procedures_data_combining_rules.`PROCEDURE` = procedures.`ID`
-            INNER JOIN participants_fields
-                ON procedures_data_combining_rules.`PARTICIPANT_FIELD` = participants_fields.`ID`
-            INNER JOIN participants
-                ON participants_fields.`PARTICIPANT` = participants.`ID`
-            WHERE
-                procedures.`CODE`   =   ? AND
-                participants.`CODE` IN  ($participantsPlaceholder)";
+                SELECT
+                    procedures_data_combining_rules.`WEIGHT`,
+                    participants.`CODE`         AS PARTICIPANT_CODE,
+                    participants_fields.`NAME`  AS FIELD_NAME
+                FROM
+                    procedures_data_combining_rules
+                INNER JOIN procedures
+                    ON procedures_data_combining_rules.`PROCEDURE` = procedures.`ID`
+                INNER JOIN participants_fields
+                    ON procedures_data_combining_rules.`PARTICIPANT_FIELD` = participants_fields.`ID`
+                INNER JOIN participants
+                    ON participants_fields.`PARTICIPANT` = participants.`ID`
+                WHERE
+                    procedures.`CODE`   =   ? AND
+                    participants.`CODE` IN  ($participantsPlaceholder)";
 
             return $this->getQueryResult($sqlQuery, $queryParams);
         }
@@ -786,10 +975,10 @@ abstract class AbstractProcedure implements Procedure
     /** **********************************************************************
      * get query result as array
      *
-     * @param   string  $sqlQuery                           SQL query
-     * @param   array   $params                             query params
-     * @return  array                                       query result as array
-     * @throws  RuntimeException                            query process error
+     * @param   string  $sqlQuery                   SQL query
+     * @param   array   $params                     query params
+     * @return  array                               query result as array
+     * @throws  RuntimeException                    query process error
      ************************************************************************/
     private function getQueryResult(string $sqlQuery, array $params = []) : array
     {
@@ -821,9 +1010,9 @@ abstract class AbstractProcedure implements Procedure
     /** **********************************************************************
      * create participant by code
      *
-     * @param   string  $code                               participant code
-     * @return  Participant                                 participant
-     * @throws  DomainException                             creating participant error
+     * @param   string $code                        participant code
+     * @return  Participant                         participant
+     * @throws  UnknownParticipantException         creating participant error
      ************************************************************************/
     private function createParticipant(string $code) : Participant
     {
@@ -837,7 +1026,32 @@ abstract class AbstractProcedure implements Procedure
         }
         catch (Throwable $exception)
         {
-            throw new DomainException("creating participant \"$className\" error");
+            $exceptionToThrow = new UnknownParticipantException;
+            $exceptionToThrow->setParticipantCode($code);
+            throw $exceptionToThrow;
+        }
+    }
+    /** **********************************************************************
+     * add message to log
+     *
+     * @param   string  $message                    message
+     * @param   string  $type                       message type
+     ************************************************************************/
+    private function addLogMessage(string $message, string $type) : void
+    {
+        $logger         = Logger::getInstance();
+        $code           = $this->getCode();
+        $fullMessage    = "Procedure \"$code\": $message";
+
+        switch ($type)
+        {
+            case 'warning':
+                $logger->addWarning($fullMessage);
+                break;
+            case 'notice':
+            default:
+                $logger->addNotice($fullMessage);
+                break;
         }
     }
 }

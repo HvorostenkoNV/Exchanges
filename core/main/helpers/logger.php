@@ -20,30 +20,30 @@ class Logger
     use Singleton;
 
     private static $messagesTypes =
-    [
-        'note'      =>
         [
-            'weight'    => 0,
-            'critical'  => false
-        ],
-        'warning'   =>
-        [
-            'weight'    => 3,
-            'critical'  => false
-        ],
-        'error'     =>
-        [
-            'weight'    => 5,
-            'critical'  => true
-        ]
-    ];
+            'note'      =>
+                [
+                    'weight'    => 0,
+                    'critical'  => false
+                ],
+            'warning'   =>
+                [
+                    'weight'    => 3,
+                    'critical'  => false
+                ],
+            'error'     =>
+                [
+                    'weight'    => 5,
+                    'critical'  => true
+                ]
+        ];
     private $messages = [];
     /** **********************************************************************
      * constructor
      ************************************************************************/
     private function __construct()
     {
-        $this->addNotice('Logger object created');
+        $this->addNotice('Logger object: successfully created');
     }
     /** **********************************************************************
      * add notice into log file
@@ -87,10 +87,10 @@ class Logger
         }
 
         $this->messages[] =
-        [
-            'type'      => $type,
-            'message'   => $message
-        ];
+            [
+                'type'      => $type,
+                'message'   => $message
+            ];
 
         if (self::$messagesTypes[$type]['critical'])
         {
@@ -120,13 +120,13 @@ class Logger
             switch ($messageWeight)
             {
                 case 0:
-                    $messages[] = "NOTICE: $message";
+                    $messages[] = "#NOTICE# $message";
                     break;
                 case 3:
-                    $messages[] = "WARNING: $message";
+                    $messages[] = "#WARNING# $message";
                     break;
                 case 5:
-                    $messages[] = "FATAL ERROR: $message";
+                    $messages[] = "#FATAL ERROR# $message";
                     break;
             }
         }
@@ -143,10 +143,8 @@ class Logger
                     ->fwrite(implode("\n", $messages));
                 break;
             }
-            else
-            {
-                $date->add(new DateInterval('PT1S'));
-            }
+
+            $date->add(new DateInterval('PT1S'));
         }
     }
 }

@@ -23,12 +23,12 @@ class StructureGenerator
     {
         $result = [];
 
-        foreach ($this->generateProcedures() as $procedureCode => $procedureInfo)
+        foreach ($this->generateProcedures() as $procedureCode => $procedureStructure)
         {
-            $result[$procedureCode]                 = $procedureInfo;
+            $result[$procedureCode]                 = $procedureStructure;
             $result[$procedureCode]['participants'] = $this->generateParticipants();
 
-            foreach ($result[$procedureCode]['participants'] as $participantCode => $participantInfo)
+            foreach ($result[$procedureCode]['participants'] as $participantCode => $participantStructure)
             {
                 $result[$procedureCode]['participants'][$participantCode]['fields'] = $this->generateParticipantFields($participantCode);
             }
@@ -38,6 +38,9 @@ class StructureGenerator
             $result[$procedureCode]['dataMatchingRules']    = $this->generateDataMatchingRules($result[$procedureCode]);
             $result[$procedureCode]['dataCombiningRules']   = $this->generateDataCombiningRules($result[$procedureCode]);
         }
+
+        $result = $this->addSharingIntoData($result);
+        $result = $this->addIncorrectData($result);
 
         return $result;
     }
@@ -49,7 +52,7 @@ class StructureGenerator
     private function generateProcedures() : array
     {
         $result             = [];
-        $proceduresCount    = rand(3, 10);
+        $proceduresCount    = rand(1, 10);
         $procedureBaseName  = 'UT Procedure - ';
         $procedureBaseCode  = 'UTProcedure';
 
@@ -59,11 +62,11 @@ class StructureGenerator
             $code   = $procedureBaseCode.self::$proceduresIndex;
 
             $result[$code] =
-            [
-                'name'      => $name,
-                'code'      => $code,
-                'activity'  => rand(1, 2) == 2
-            ];
+                [
+                    'name'      => $name,
+                    'code'      => $code,
+                    'activity'  => rand(1, 2) == 2
+                ];
 
             self::$proceduresIndex++;
         }
@@ -77,13 +80,8 @@ class StructureGenerator
      ************************************************************************/
     private function generateParticipants() : array
     {
-        if (rand(1, 5) == 5)
-        {
-            return [];
-        }
-
         $result                 = [];
-        $participantsCount      = rand(2, 5);
+        $participantsCount      = rand(0, 8);
         $participantBaseName    = 'UT Participant - ';
         $participantBaseCode    = 'UTParticipant';
 
@@ -93,10 +91,10 @@ class StructureGenerator
             $code   = $participantBaseCode.self::$participantsIndex;
 
             $result[$code] =
-            [
-                'name'  => $name,
-                'code'  => $code
-            ];
+                [
+                    'name'  => $name,
+                    'code'  => $code
+                ];
 
             self::$participantsIndex++;
         }
@@ -111,33 +109,34 @@ class StructureGenerator
      ************************************************************************/
     private function generateParticipantFields(string $participantCode) : array
     {
-        if (rand(1, 5) == 5)
-        {
-            return [];
-        }
-
         $result         = [];
-        $fieldsCount    = rand(0, 5);
-        $fieldBaseName  = "UTPartField-$participantCode-";
         $fieldsTypes    = FieldsTypesManager::getFieldsTypes();
-        $idFieldName    = $fieldBaseName.'ID';
+        $fieldsCount    = rand(0, 10);
+        $fieldBaseName  = "UTPartField-$participantCode-";
 
-        $result[$idFieldName] =
-        [
-            'name'      => $idFieldName,
-            'type'      => self::$fieldIdType,
-            'required'  => true
-        ];
-
+        unset($fieldsTypes[self::$fieldIdType]);
         for ($index = 1; $index <= $fieldsCount; $index++)
         {
             $name = $fieldBaseName.$index;
-            $result[$name] =
-            [
-                'name'      => $name,
-                'type'      => array_rand($fieldsTypes),
-                'required'  => rand(1, 2) == 2
-            ];
+
+            if (count($result) <= 0)
+            {
+                $result[$name] =
+                    [
+                        'name'      => $name,
+                        'type'      => self::$fieldIdType,
+                        'required'  => true
+                    ];
+            }
+            else
+            {
+                $result[$name] =
+                    [
+                        'name'      => $name,
+                        'type'      => array_rand($fieldsTypes),
+                        'required'  => rand(1, 2) == 2
+                    ];
+            }
         }
 
         return $result;
@@ -150,52 +149,50 @@ class StructureGenerator
      ************************************************************************/
     private function generateProcedureFields(array $procedureStructure = []) : array
     {
-        foreach ($procedureStructure['participants'] as $participantCode => $participantInfo)
+        $result             = [];
+        $procedureCode      = $procedureStructure['code'];
+        $fieldBaseName      = "UTPrField-$procedureCode-";
+        $participantsFields = [];
+        $fieldsCount        = rand(0, 20);
+
+        foreach ($procedureStructure['participants'] as $participantCode => $participantStructure)
         {
-            foreach ($participantInfo['fields'] as $fieldName => $fieldInfo)
+            $participantAvailableFields = [];
+            foreach ($participantStructure['fields'] as $participantFieldName => $participantFieldStructure)
             {
-                if ($fieldInfo['type'] == self::$fieldIdType)
+                if ($participantFieldStructure['type'] != self::$fieldIdType)
                 {
-                    unset($procedureStructure['participants'][$participantCode]['fields'][$fieldName]);
+                    $participantAvailableFields[$participantFieldName] = null;
                 }
             }
 
-            if (count($procedureStructure['participants'][$participantCode]['fields']) <= 0)
+            if (count($participantAvailableFields) > 0)
             {
-                unset($procedureStructure['participants'][$participantCode]);
+                $participantsFields[$participantCode] = $participantAvailableFields;
             }
         }
 
-        if (count($procedureStructure['participants']) < 2 || rand(1, 10) == 10)
-        {
-            return [];
-        }
-
-        $result         = [];
-        $procedureCode  = $procedureStructure['code'];
-        $fieldBaseName  = "UTPrField-$procedureCode-";
-        $fieldsCounter  = 1;
-        $fieldsCount    = rand(5, 15);
-
-        while ($fieldsCount > 0 && count($procedureStructure['participants']) > 2)
+        $fieldsCounter = 1;
+        while ($fieldsCount > 0 && count($participantsFields) > 2)
         {
             $field                  = [];
-            $fieldParticipantsCount = rand(2, count($procedureStructure['participants']));
-            $fieldParticipants      = array_rand($procedureStructure['participants'], $fieldParticipantsCount);
+            $fieldParticipantsCount = rand(2, count($participantsFields));
+            $fieldParticipants      = array_rand($participantsFields, $fieldParticipantsCount);
 
             foreach ($fieldParticipants as $participantCode)
             {
-                $participantFieldName       = array_rand($procedureStructure['participants'][$participantCode]['fields']);
+                $participantFieldName       = array_rand($participantsFields[$participantCode]);
                 $field[$participantCode]    = $participantFieldName;
 
-                unset($procedureStructure['participants'][$participantCode]['fields'][$participantFieldName]);
-                if (count($procedureStructure['participants'][$participantCode]['fields']) <= 0)
+                unset($participantsFields[$participantCode][$participantFieldName]);
+                if (count($participantsFields[$participantCode]) <= 0)
                 {
-                    unset($procedureStructure['participants'][$participantCode]);
+                    unset($participantsFields[$participantCode]);
                 }
             }
 
             $result[$fieldBaseName.$fieldsCounter] = $field;
+            $fieldsCount--;
             $fieldsCounter++;
         }
 
@@ -209,35 +206,53 @@ class StructureGenerator
      ************************************************************************/
     private function generateDataMatchingRules(array $procedureStructure = []) : array
     {
-        $result         = [];
-        $participants   = array_flip(array_keys($procedureStructure['participants']));
-        $fields         = array_flip(array_keys($procedureStructure['fields']));
-        $ruleBaseName   = 'UTMatchingRule-';
-        $rulesCount     = rand(10, 20);
+        $result                 = [];
+        $ruleBaseName           = 'UTMatchingRule-';
+        $procedureFieldsGroups  = [];
+        $rulesCount             = rand(0, 20);
 
-        if (count($participants) < 2 || count($fields) <= 0 || rand(1, 10) == 10)
+        foreach ($procedureStructure['fields'] as $procedureFieldName => $procedureFieldStructure)
         {
-            return [];
+            $procedureFieldSize = count($procedureFieldStructure);
+            if (!array_key_exists($procedureFieldSize, $procedureFieldsGroups))
+            {
+                $procedureFieldsGroups[$procedureFieldSize] = [];
+            }
+            $procedureFieldsGroups[$procedureFieldSize][$procedureFieldName] = $procedureFieldStructure;
         }
 
-        for ($index = 1; $index <= $rulesCount; $index++)
+        $fieldsCounter = 1;
+        while ($rulesCount > 0 && count($procedureFieldsGroups) > 0)
         {
-            $ruleParticipantsCount  = rand(2, count($participants));
-            $ruleFieldsCount        = rand(1, count($fields));
-            $ruleParticipants       = array_rand($participants, $ruleParticipantsCount);
-            $ruleFields             = array_rand($fields, $ruleFieldsCount);
+            $randProcedureFieldsGroupIndex  = array_rand($procedureFieldsGroups);
+            $randProcedureFieldsGroup       = $procedureFieldsGroups[$randProcedureFieldsGroupIndex];
+            $ruleFieldsCount                = rand(1, count($randProcedureFieldsGroup));
+            $ruleFields                     = (array) array_rand($randProcedureFieldsGroup, $ruleFieldsCount);
+            $availableParticipants          = [];
 
-            $result[$ruleBaseName.$index] = json_encode
-            ([
-                'participants'  => $ruleParticipants,
-                'fields'        => (array) $ruleFields
-            ]);
-        }
+            foreach ($ruleFields as $procedureFieldName)
+            {
+                $procedureFieldParticipants = array_keys($randProcedureFieldsGroup[$procedureFieldName]);
+                $availableParticipants      = array_merge($availableParticipants, $procedureFieldParticipants);
 
-        $result = array_unique($result);
-        foreach ($result as $index => $value)
-        {
-            $result[$index] = json_decode($value, true);
+                unset($procedureFieldsGroups[$randProcedureFieldsGroupIndex][$procedureFieldName]);
+                if (count($procedureFieldsGroups[$randProcedureFieldsGroupIndex]) <= 0)
+                {
+                    unset($procedureFieldsGroups[$randProcedureFieldsGroupIndex]);
+                }
+            }
+
+            $availableParticipants  = array_unique($availableParticipants);
+            $ruleParticipantsCount  = rand(2, count($availableParticipants));
+            $ruleParticipants       = array_rand(array_flip($availableParticipants), $ruleParticipantsCount);
+
+            $result[$ruleBaseName.$fieldsCounter] =
+                [
+                    'participants'  => $ruleParticipants,
+                    'fields'        => $ruleFields
+                ];
+            $rulesCount--;
+            $fieldsCounter++;
         }
 
         return $result;
@@ -252,11 +267,11 @@ class StructureGenerator
     {
         $result = [];
 
-        foreach ($procedureStructure['participants'] as $participantCode => $participantInfo)
+        foreach ($procedureStructure['participants'] as $participantCode => $participantStructure)
         {
             $fieldsWeight = [];
 
-            foreach (array_keys($participantInfo['fields']) as $participantFieldName)
+            foreach (array_keys($participantStructure['fields']) as $participantFieldName)
             {
                 if (rand(1, 4) != 4)
                 {
@@ -273,25 +288,48 @@ class StructureGenerator
         return $result;
     }
     /** **********************************************************************
-     * correct participants fields according to matching rules
+     * correct participants fields according procedure fields couples
      *
      * @param   array $procedureStructure   generated procedure structure
      * @return  array                       corrected procedure structure
      ************************************************************************/
     private function correctParticipantFields(array $procedureStructure) : array
     {
-        foreach ($procedureStructure['fields'] as $procedureFieldName => $procedureField)
-        {
-            $randomParticipantCode      = array_keys($procedureField)[0];
-            $randomParticipantFieldName = $procedureField[$randomParticipantCode];
-            $commonFieldType            = $procedureStructure['participants'][$randomParticipantCode]['fields'][$randomParticipantFieldName]['type'];
+        $availableFieldsTypes = FieldsTypesManager::getFieldsTypes();
+        unset($availableFieldsTypes[self::$fieldIdType]);
+        unset($availableFieldsTypes['boolean']);
 
-            foreach ($procedureField as $participantCode => $participantFieldName)
+        foreach ($procedureStructure['fields'] as $procedureFieldName => $procedureFieldStructure)
+        {
+            $commonFieldType = array_rand($availableFieldsTypes);
+            foreach ($procedureFieldStructure as $participantCode => $participantFieldName)
             {
                 $procedureStructure['participants'][$participantCode]['fields'][$participantFieldName]['type'] = $commonFieldType;
             }
         }
 
         return $procedureStructure;
+    }
+    /** **********************************************************************
+     * add some sharing into generated structure
+     *
+     * @param   array $structure            generated structure
+     * @return  array                       supplemented generated structure
+     * //TODO
+     ************************************************************************/
+    private function addSharingIntoData(array $structure) : array
+    {
+        return $structure;
+    }
+    /** **********************************************************************
+     * add some incorrect data into generated structure
+     *
+     * @param   array $structure            generated structure
+     * @return  array                       supplemented generated structure
+     * //TODO
+     ************************************************************************/
+    private function addIncorrectData(array $structure) : array
+    {
+        return $structure;
     }
 }

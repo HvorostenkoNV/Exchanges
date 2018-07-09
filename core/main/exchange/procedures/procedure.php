@@ -17,6 +17,12 @@ use
 interface Procedure
 {
     /** **********************************************************************
+     * get procedure code
+     *
+     * @return  string                      procedure code
+     ************************************************************************/
+    public function getCode() : string;
+    /** **********************************************************************
      * get participants
      *
      * @return  ParticipantsSet             participants

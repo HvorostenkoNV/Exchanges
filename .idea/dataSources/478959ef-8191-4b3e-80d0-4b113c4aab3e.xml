@@ -94,8 +94,7 @@
     </column>
     <column id="34" parent="9" name="PARTICIPANT_ITEM_ID">
       <Position>4</Position>
-      <DataType>int(11)|0</DataType>
-      <NotNull>1</NotNull>
+      <DataType>varchar(255)|0</DataType>
     </column>
     <index id="35" parent="9" name="MATCHED_ITEMS_PARTICIPANTS_PARTICIPANTS_ID_FK">
       <ColNames>PARTICIPANT</ColNames>

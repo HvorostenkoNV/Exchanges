@@ -22,19 +22,20 @@ class Config
 {
     use Singleton;
 
-    private $params = [];
+    private
+        $paramsFolder   = PARAMS_FOLDER,
+        $params         = [];
     /** **********************************************************************
      * constructor
-     * IMPORTANT: application shut down on any config constructing error
      ************************************************************************/
     private function __construct()
     {
-        $paramsFiles    = $this->getParamsFiles(PARAMS_FOLDER);
+        $paramsFiles    = $this->getAllParamsFiles();
         $logger         = Logger::getInstance();
 
         if (count($paramsFiles) <= 0)
         {
-            $logger->addError('Config object creating error: no params files was found');
+            $logger->addError('Config object: creating error, no params files was found');
         }
 
         foreach ($paramsFiles as $file)
@@ -52,7 +53,7 @@ class Config
             }
         }
 
-        $logger->addNotice('Config object created');
+        $logger->addNotice('Config object: successfully created');
     }
     /** **********************************************************************
      * get parameter value by name
@@ -68,44 +69,51 @@ class Config
         {
             return $this->params[$paramName];
         }
-        else
-        {
-            Logger::getInstance()->addWarning("Trying to get unknown parameter \"$paramName\"");
-            return '';
-        }
+
+        Logger::getInstance()->addWarning("Config object: trying to get unknown parameter \"$paramName\"");
+        return '';
     }
     /** **********************************************************************
      * get all params files
      *
-     * @param   string  $folderPath         inspecting folder path
      * @return  SplFileInfo[]               files
      ************************************************************************/
-    private function getParamsFiles(string $folderPath) : array
+    private function getAllParamsFiles() : array
     {
-        if (strlen($folderPath) <= 0)
-        {
-            return [];
-        }
-
         try
         {
             $result     = [];
-            $directory  = new RecursiveDirectoryIterator($folderPath);
+            $logger     = Logger::getInstance();
+            $directory  = new RecursiveDirectoryIterator($this->paramsFolder);
             $iterator   = new RecursiveIteratorIterator($directory);
 
             while ($iterator->valid())
             {
                 $file = $iterator->current();
-                if ($file->isFile() && $file->isReadable() && $file->getExtension() == 'php')
+
+                if ($file->isFile() && $file->getExtension() == 'php')
                 {
-                    $result[] = $file;
+                    if ($file->isReadable())
+                    {
+                        $result[] = $file;
+                    }
+                    else
+                    {
+                        $filePath = $file->getFilename();
+                        $logger->addWarning("Config object: caught unreadable file \"$filePath\"");
+                    }
                 }
+
                 $iterator->next();
             }
 
             return $result;
         }
-        catch (UnexpectedValueException|RuntimeException $exception)
+        catch (UnexpectedValueException $exception)
+        {
+            return [];
+        }
+        catch (RuntimeException $exception)
         {
             return [];
         }
@@ -118,9 +126,9 @@ class Config
      ************************************************************************/
     private function getLibraryName(string $filePath) : string
     {
-        $libraryName    = str_replace(PARAMS_FOLDER.DS, '',     $filePath);
-        $libraryName    = str_replace('.php',           '',     $libraryName);
-        $libraryName    = str_replace(DS,               '.',    $libraryName);
+        $libraryName    = str_replace($this->paramsFolder.DS,   '',     $filePath);
+        $libraryName    = str_replace('.php',                   '',     $libraryName);
+        $libraryName    = str_replace(DS,                       '.',    $libraryName);
 
         return $libraryName;
     }

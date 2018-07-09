@@ -7,7 +7,6 @@ use
     UnitTests\AbstractTestCase,
     UnitTests\ProjectTempStructure\MainGenerator as TempStructureGenerator,
     UnitTests\ClassTesting\Exchange\Participants\ParticipantForUnitTest,
-    Main\Exchange\Participants\Participant,
     Main\Exchange\Procedures\Procedure,
     Main\Exchange\DataProcessors\Collector;
 /** ***********************************************************************************************
@@ -66,7 +65,7 @@ final class CollectorTest extends AbstractTestCase
             foreach ($collectedData->getKeys() as $participant)
             {
                 $providedData       = $collectedData->get($participant);
-                $participantCode    = $this->getParticipantCode($participant, $procedureClassesInfo);
+                $participantCode    = $participant->getCode();
 
                 $getedData[$participantCode] = [];
                 while (!$providedData->isEmpty())
@@ -100,7 +99,7 @@ final class CollectorTest extends AbstractTestCase
      * @param   array   $procedureXmlInfo           procedure XML data structure
      * @return  Procedure                           procedure
      ************************************************************************/
-    private function getProcedureFilledWithParticipantsProvidedData($procedureClassesInfo, $procedureXmlInfo) : Procedure
+    private function getProcedureFilledWithParticipantsProvidedData(array $procedureClassesInfo, array $procedureXmlInfo) : Procedure
     {
         $procedure      = $this->constructProcedure($procedureClassesInfo['class']);
         $participants   = $procedure->getParticipants();
@@ -108,7 +107,7 @@ final class CollectorTest extends AbstractTestCase
         while ($participants->valid())
         {
             $participant        = $participants->current();
-            $participantCode    = $this->getParticipantCode($participant, $procedureClassesInfo);
+            $participantCode    = $participant->getCode();
             $xml                = $procedureXmlInfo[$participantCode];
 
             $participant->{'xmlWithProvidedData'} = $xml;
@@ -126,26 +125,5 @@ final class CollectorTest extends AbstractTestCase
     private function constructProcedure(string $className) : Procedure
     {
         return new $className;
-    }
-    /** **********************************************************************
-     * get participant code form object
-     *
-     * @param   Participant $participant            participant
-     * @param   array       $procedureClassesInfo   procedure classes structure
-     * @return  string                              participant code
-     ************************************************************************/
-    private function getParticipantCode(Participant $participant, array $procedureClassesInfo) : string
-    {
-        $participantClassName = get_class($participant);
-
-        foreach ($procedureClassesInfo['participants'] as $participantCode => $participantInfo)
-        {
-            if ($participantInfo['class'] == $participantClassName)
-            {
-                return $participantCode;
-            }
-        }
-
-        return '';
     }
 }

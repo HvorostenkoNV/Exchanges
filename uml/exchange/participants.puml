@@ -2,32 +2,34 @@
 
 namespace Main.Exchange.Participants #BBB {
     interface Participant {
+        +getCode() : string
         +getFields() : Fields.FieldsSet
         +getProvidedData() : Data.ProvidedData
         +deliveryData(Data.DataForDelivery $data) : bool
     }
 
     abstract AbstractParticipant {
+        +getCode() : string
         +getFields() : Fields.FieldsSet
         +getProvidedData() : Data.ProvidedData
         +deliveryData(Data.DataForDelivery $data) : bool
 
-        -{abstract}readProvidedData() : Data.ProvidedData
+        -{abstract}readProvidedData(Fields.FieldsSet $fields) : Data.ProvidedData
         -{abstract}provideDataForDelivery(Data.DataForDelivery $data) : bool
     }
 
     class Users1C {
-        -{abstract}readProvidedData() : Data.ProvidedData
+        -{abstract}readProvidedData(Fields.FieldsSet $fields) : Data.ProvidedData
         -{abstract}provideDataForDelivery(Data.DataForDelivery $data) : bool
     }
 
     class UsersAD {
-        -{abstract}readProvidedData() : Data.ProvidedData
+        -{abstract}readProvidedData(Fields.FieldsSet $fields) : Data.ProvidedData
         -{abstract}provideDataForDelivery(Data.DataForDelivery $data) : bool
     }
 
     class UsersBitrix {
-        -{abstract}readProvidedData() : Data.ProvidedData
+        -{abstract}readProvidedData(Fields.FieldsSet $fields) : Data.ProvidedData
         -{abstract}provideDataForDelivery(Data.DataForDelivery $data) : bool
     }
     /' ------------------------------------------- '/

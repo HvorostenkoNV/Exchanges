@@ -12,12 +12,13 @@ use
     Main\Exchange\Participants\AbstractParticipant,
     Main\Exchange\Participants\Data\ItemData,
     Main\Exchange\Participants\Data\ProvidedData,
-    Main\Exchange\Participants\Data\DataForDelivery;
+    Main\Exchange\Participants\Data\DataForDelivery,
+    Main\Exchange\Participants\Fields\FieldsSet;
 /** ***********************************************************************************************
  * Application participant Users1C
  *
- * @package     exchange_unit_tests
- * @author      Hvorostenko
+ * @package exchange_unit_tests
+ * @author  Hvorostenko
  *************************************************************************************************/
 class ParticipantForUnitTest extends AbstractParticipant
 {
@@ -28,41 +29,45 @@ class ParticipantForUnitTest extends AbstractParticipant
     /** **********************************************************************
      * read participant provided data and get it
      *
+     * @param   FieldsSet $fields           participant fields set
      * @return  ProvidedData                data
      ************************************************************************/
-    protected function readProvidedData() : ProvidedData
+    protected function readProvidedData(FieldsSet $fields) : ProvidedData
     {
         $result = new ProvidedData;
+        $data   = null;
 
         try
         {
             $xml    = new XML($this->xmlWithProvidedData);
             $data   = $xml->read();
-            $fields = $this->getFields();
-
-            foreach ($data as $item)
-            {
-                $map = new ItemData;
-
-                if (is_array($item))
-                {
-                    foreach ($item as $key => $value)
-                    {
-                        $field = $fields->findField($key);
-                        $map->set($field, $value);
-                    }
-                }
-
-                $result->push($map);
-            }
         }
         catch (RuntimeException $exception)
         {
-
+            return $result;
         }
-        catch (InvalidArgumentException $exception)
-        {
 
+        foreach ($data as $item)
+        {
+            if (!is_array($item))
+            {
+                continue;
+            }
+
+            try
+            {
+                $map = new ItemData;
+                foreach ($item as $key => $value)
+                {
+                    $field = $fields->findField($key);
+                    $map->set($field, $value);
+                }
+                $result->push($map);
+            }
+            catch (InvalidArgumentException $exception)
+            {
+
+            }
         }
 
         return $result;

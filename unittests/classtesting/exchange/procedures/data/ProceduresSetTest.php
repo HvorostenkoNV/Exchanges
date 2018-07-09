@@ -4,8 +4,8 @@ declare(strict_types=1);
 namespace UnitTests\ClassTesting\Exchange\Procedures\Data;
 
 use
+    UnitTests\ProjectTempStructure\MainGenerator as TempStructureGenerator,
     UnitTests\ClassTesting\Data\SetDataAbstractTest,
-    Main\Exchange\Procedures\UsersExchange,
     Main\Exchange\Procedures\Data\ProceduresSet;
 /** ***********************************************************************************************
  * Test Main\Exchange\Procedures\Data\ProceduresSet class
@@ -15,10 +15,31 @@ use
  *************************************************************************************************/
 final class ProceduresSetTest extends SetDataAbstractTest
 {
+    /** @var TempStructureGenerator */
+    private static $structureGenerator = null;
     /** **********************************************************************
-     * get Queue class name
+     * construct
+     ************************************************************************/
+    public static function setUpBeforeClass() : void
+    {
+        parent::setUpBeforeClass();
+
+        self::$structureGenerator = new TempStructureGenerator;
+        self::$structureGenerator->generate();
+    }
+    /** **********************************************************************
+     * destruct
+     ************************************************************************/
+    public static function tearDownAfterClass() : void
+    {
+        parent::tearDownAfterClass();
+
+        self::$structureGenerator->clean();
+    }
+    /** **********************************************************************
+     * get set class name
      *
-     * @return  string                      Queue class name
+     * @return  string                      set class name
      ************************************************************************/
     public static function getSetClassName() : string
     {
@@ -31,10 +52,17 @@ final class ProceduresSetTest extends SetDataAbstractTest
      ************************************************************************/
     public static function getCorrectDataValues() : array
     {
-        return
-        [
-            new UsersExchange
-        ];
+        $result                 = [];
+        $tempStructure          = self::$structureGenerator->getStructure();
+        $tempClassesStructure   = self::$structureGenerator->getClassesStructure();
+
+        foreach ($tempStructure as $procedureCode => $procedureInfo)
+        {
+            $procedureClassName = $tempClassesStructure[$procedureCode]['class'];
+            $result[] = new $procedureClassName;
+        }
+
+        return $result;
     }
     /** **********************************************************************
      * get incorrect data

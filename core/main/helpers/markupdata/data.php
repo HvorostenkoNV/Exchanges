@@ -19,7 +19,7 @@ interface Data
      ************************************************************************/
     public function __construct(SplFileInfo $file);
     /** **********************************************************************
-     * read markup data file and get data form it
+     * read markup data file and get data from it
      *
      * @return  array                       data
      ************************************************************************/

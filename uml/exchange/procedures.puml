@@ -6,6 +6,7 @@ namespace Main.Exchange.Procedures #BBB {
     }
 
     interface Procedure {
+        +getCode() : string
         +getParticipants() : Data.ParticipantsSet
         +getFields() : Fields.FieldsSet
         +getDataMatchingRules() : Rules.DataMatchingRules
@@ -13,6 +14,7 @@ namespace Main.Exchange.Procedures #BBB {
     }
 
     abstract AbstractProcedure {
+        +getCode() : string
         +getParticipants() : Data.ParticipantsSet
         +getFields() : Fields.FieldsSet
         +getDataMatchingRules() : Rules.DataMatchingRules

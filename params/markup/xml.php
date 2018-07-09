@@ -7,9 +7,9 @@ declare(strict_types=1);
  * @author  Hvorostenko
  *************************************************************************************************/
 return
-[
-    'version'           => '1.0',
-    'encoding'          => 'UTF-8',
-    'rootTagName'       => 'DOCUMENT',
-    'arrayValueTagName' => 'VALUE'
-];
+    [
+        'version'           => '1.0',
+        'encoding'          => 'UTF-8',
+        'rootTagName'       => 'DOCUMENT',
+        'arrayValueTagName' => 'VALUE'
+    ];

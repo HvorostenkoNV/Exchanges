@@ -7,12 +7,11 @@ use
     UnitTests\AbstractTestCase,
     UnitTests\ProjectTempStructure\MainGenerator as TempStructureGenerator,
     UnitTests\ClassTesting\Exchange\Participants\ParticipantForUnitTest,
-    Main\Exchange\Participants\Participant,
     Main\Exchange\Procedures\Procedure,
     Main\Exchange\DataProcessors\Collector,
     Main\Exchange\DataProcessors\Matcher;
 /** ***********************************************************************************************
- * Test Main\Exchange\DataProcessors\Collector class
+ * Test Main\Exchange\DataProcessors\Matcher class
  *
  * @package exchange_unit_tests
  * @author  Hvorostenko
@@ -62,10 +61,10 @@ final class MatcherTest extends AbstractTestCase
             $collector              = new Collector($procedure);
             $matcher                = new Matcher($procedure);
             $collectedData          = $collector->collectData();
+            $matchedData            = $matcher->matchItems($collectedData);
             $expectedData           = $tempProvidedMatchedData[$procedureCode];
             $getedData              = [];
 
-            $matchedData = $matcher->matchItems($collectedData);
             while ($matchedData->count() > 0)
             {
                 $item       = $matchedData->pop();
@@ -74,7 +73,7 @@ final class MatcherTest extends AbstractTestCase
                 foreach ($item->getKeys() as $participant)
                 {
                     $participantItem        = $item->get($participant);
-                    $participantCode        = $this->getParticipantCode($participant, $procedureClassesInfo);
+                    $participantCode        = $participant->getCode();
                     $participantItemArray   = [];
 
                     foreach ($participantItem->getKeys() as $field)
@@ -105,7 +104,7 @@ final class MatcherTest extends AbstractTestCase
      * @param   array   $procedureXmlInfo               procedure XML data structure
      * @return  Procedure                               procedure
      ************************************************************************/
-    private function getProcedureFilledWithParticipantsProvidedData($procedureClassesInfo, $procedureXmlInfo) : Procedure
+    private function getProcedureFilledWithParticipantsProvidedData(array $procedureClassesInfo, array $procedureXmlInfo) : Procedure
     {
         $procedure      = $this->constructProcedure($procedureClassesInfo['class']);
         $participants   = $procedure->getParticipants();
@@ -113,7 +112,7 @@ final class MatcherTest extends AbstractTestCase
         while ($participants->valid())
         {
             $participant        = $participants->current();
-            $participantCode    = $this->getParticipantCode($participant, $procedureClassesInfo);
+            $participantCode    = $participant->getCode();
             $xml                = $procedureXmlInfo[$participantCode];
 
             $participant->{'xmlWithProvidedData'} = $xml;
@@ -131,26 +130,5 @@ final class MatcherTest extends AbstractTestCase
     private function constructProcedure(string $className) : Procedure
     {
         return new $className;
-    }
-    /** **********************************************************************
-     * get participant code form object
-     *
-     * @param   Participant $participant                participant
-     * @param   array       $procedureClassesInfo       procedure classes structure
-     * @return  string                                  participant code
-     ************************************************************************/
-    private function getParticipantCode(Participant $participant, array $procedureClassesInfo) : string
-    {
-        $participantClassName = get_class($participant);
-
-        foreach ($procedureClassesInfo['participants'] as $participantCode => $participantInfo)
-        {
-            if ($participantInfo['class'] == $participantClassName)
-            {
-                return $participantCode;
-            }
-        }
-
-        return '';
     }
 }

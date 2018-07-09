@@ -126,7 +126,11 @@ class Localization
 
             return $result;
         }
-        catch (UnexpectedValueException|RuntimeException $exception)
+        catch (UnexpectedValueException $exception)
+        {
+            return [];
+        }
+        catch (RuntimeException $exception)
         {
             return [];
         }

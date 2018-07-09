@@ -6,6 +6,7 @@ namespace Main\Exchange;
 use
     Main\Singleton,
     Main\Helpers\Logger,
+    Main\Data\MapData,
     Main\Exchange\Procedures\Manager        as ProceduresManager,
     Main\Exchange\DataProcessors\Manager    as ProcessorsManager;
 /** ***********************************************************************************************
@@ -27,27 +28,29 @@ class Exchange
     }
     /** **********************************************************************
      * run exchange process
-     * TODO
      ************************************************************************/
     public function run() : void
     {
         Logger::getInstance()->addNotice('Exchange process start');
-/*
-        foreach (ProceduresManager::getProcedures() as $procedure)
+
+        $filter = new MapData;
+        $filter->set('ACTIVITY', true);
+        $proceduresSet = ProceduresManager::getProcedures($filter);
+
+        while ($proceduresSet->valid())
         {
+            $procedure  = $proceduresSet->current();
             $collector  = ProcessorsManager::getCollector($procedure);
             $matcher    = ProcessorsManager::getMatcher($procedure);
             $combiner   = ProcessorsManager::getCombiner($procedure);
             $provider   = ProcessorsManager::getProvider($procedure);
 
-            $collector->process();
-            $matcher->setCollectedData($collector->getCollectedData());
-            $matcher->process();
-            $combiner->setMatchedData($matcher->getMatchedData());
-            $combiner->process();
-            $provider->setCombinedData($combiner->getCombinedData());
-            $provider->process();
+            $collectedData  = $collector->collectData();
+            $matchedData    = $matcher->matchItems($collectedData);
+            $combinedData   = $combiner->combineItems($matchedData);
+            $provider->provideData($combinedData);
+
+            $proceduresSet->next();
         }
-*/
     }
 }

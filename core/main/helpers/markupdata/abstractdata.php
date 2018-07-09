@@ -25,7 +25,7 @@ abstract class AbstractData implements Data
         $this->file = $file;
     }
     /** **********************************************************************
-     * read markup data file and get data form it
+     * read markup data file and get data from it
      *
      * @return  array                       data
      * @throws  RuntimeException            reading error

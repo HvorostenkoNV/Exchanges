@@ -102,10 +102,28 @@ class Users1C extends AbstractParticipant
      *
      * @param   DataForDelivery $data       data to write
      * @return  bool                        process result
-     * TODO
      ************************************************************************/
     protected function provideDataForDelivery(DataForDelivery $data) : bool
     {
-        return false;
+        $code = $this->getCode();
+        echo"===============$code===============<br>";
+
+        while ($data->count() > 0)
+        {
+            $item   = $data->pop();
+            $array  = [];
+            echo"------item------<br>";
+            foreach ($item->getKeys() as $field)
+            {
+                $value      = $item->get($field);
+                $fieldName  = $field->getParam('name');
+                $array[$fieldName] = $value;
+            }
+            echo'<pre>';
+            print_r($array);
+            echo'</pre>';
+        }
+
+        return true;
     }
 }

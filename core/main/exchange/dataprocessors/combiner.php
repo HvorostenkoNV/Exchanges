@@ -7,8 +7,9 @@ use
     RuntimeException,
     InvalidArgumentException,
     Main\Helpers\Logger,
+    Main\Exchange\Procedures\Procedure,
     Main\Exchange\Procedures\Fields\ProcedureField,
-    Main\Exchange\Procedures\Exceptions\UnknownProcedureFieldException,
+    Main\Exchange\DataProcessors\Data\MatchedItem,
     Main\Exchange\DataProcessors\Data\CombinedItem,
     Main\Exchange\DataProcessors\Results\MatchedData,
     Main\Exchange\DataProcessors\Results\CombinedData;
@@ -19,13 +20,22 @@ use
  * @package exchange_exchange_dataprocessors
  * @author  Hvorostenko
  *************************************************************************************************/
-class Combiner extends AbstractProcessor
+class Combiner
 {
     private
-        $proceduresFieldsCollection = [],
-        $combiningRulesCollection   = [],
-        $matchedDataCollection      = [],
-        $combinedDataCollection     = [];
+        $procedure      = null,
+        $procedureData  = null;
+    /** **********************************************************************
+     * constructor
+     *
+     * @param   Procedure       $procedure      procedure
+     * @param   ProcedureData   $data           procedure already exist data
+     ************************************************************************/
+    public function __construct(Procedure $procedure, ProcedureData $data)
+    {
+        $this->procedure        = $procedure;
+        $this->procedureData    = $data;
+    }
     /** **********************************************************************
      * combine procedure participants data
      *
@@ -43,43 +53,44 @@ class Combiner extends AbstractProcessor
             return $result;
         }
 
-        $this->proceduresFieldsCollection   = $this->getProceduresFieldsCollection();
-        $this->combiningRulesCollection     = $this->getCombiningRulesCollection();
-        $this->matchedDataCollection        = $this->getMatchedDataCollection($matchedData);
-        $this->combinedDataCollection       = $this->getCombinedDataCollection();
-
-        foreach ($this->combinedDataCollection as $commonItem)
+        $procedureFieldsSet = $this->procedure->getFields();
+        foreach ($matchedData->getKeys() as $commonItemId)
         {
-            $combinedItem = new CombinedItem;
+            $combinedItem   = new CombinedItem;
+            $matchedItem    = $matchedData->get($commonItemId);
 
-            foreach ($commonItem as $procedureFieldName => $value)
+            $procedureFieldsSet->rewind();
+            while ($procedureFieldsSet->valid())
             {
+                $procedureField         = $procedureFieldsSet->current();
+                $procedureFieldValue    = $this->getProcedureFieldValue($procedureField, $matchedItem);
+
                 try
                 {
-                    $procedureField = $this->findProcedureField($procedureFieldName);
-                    $combinedItem->set($procedureField, $value);
-                }
-                catch (UnknownProcedureFieldException $exception)
-                {
-                    $procedureCode = $exception->getProcedureCode();
-                    $this->addLogMessage("unknown procedure field in procedure \"$procedureCode\" on constructing combined data item", 'warning');
+                    $combinedItem->set($procedureField, $procedureFieldValue);
+                    $this->procedureData->setData($commonItemId, $procedureField, $procedureFieldValue);
                 }
                 catch (InvalidArgumentException $exception)
                 {
-                    $this->addLogMessage('unexpected error on constructing combined data item', 'warning');
+                    $error = $exception->getMessage();
+                    $this->addLogMessage("unexpected error on constructing combined data, \"$error\"", 'warning');
                 }
+                catch (RuntimeException $exception)
+                {
+                    $error = $exception->getMessage();
+                    $this->addLogMessage("error on saving data into procedure data container, \"$error\"", 'warning');
+                }
+                $procedureFieldsSet->next();
             }
 
-            if ($combinedItem->count() == count($commonItem))
+            try
             {
-                try
-                {
-                    $result->push($combinedItem);
-                }
-                catch (InvalidArgumentException $exception)
-                {
-                    $this->addLogMessage('unexpected error on constructing combined data item', 'warning');
-                }
+                $result->set($commonItemId, $combinedItem);
+            }
+            catch (InvalidArgumentException $exception)
+            {
+                $error = $exception->getMessage();
+                $this->addLogMessage("unexpected error on constructing combined data, \"$error\"", 'warning');
             }
         }
 
@@ -87,259 +98,104 @@ class Combiner extends AbstractProcessor
         {
             $this->addLogMessage('returning empty combined data while matched data is not empty', 'warning');
         }
-
-        return $result;
-    }
-    /** **********************************************************************
-     * get procedure fields collection
-     *
-     * @return  array                           procedure fields collection
-     * @example
-     * [
-     *      procedureFieldName  => procedureField,
-     *      procedureFieldName  => procedureField
-     * ]
-     ************************************************************************/
-    private function getProceduresFieldsCollection() : array
+echo"<br>===========COMBINER==========<br>";
+$array = [];
+foreach ($result->getKeys() as $commonItemId)
+{
+    $data = $result->get($commonItemId);
+    $array[$commonItemId] = [];
+    foreach ($data->getKeys() as $procedureField)
     {
-        $result             = [];
-        $procedureFieldsSet = $this->getProcedure()->getFields();
-
-        while ($procedureFieldsSet->valid())
+        $procedureField->rewind();
+        $fieldParts = [];
+        while ($procedureField->valid())
         {
-            $procedureField     = $procedureFieldsSet->current();
-            $procedureFieldName = $this->getProcedureFieldName($procedureField);
-
-            $result[$procedureFieldName] = $procedureField;
-            $procedureFieldsSet->next();
-        }
-
-        return $result;
-    }
-    /** **********************************************************************
-     * get data combining rules collection
-     *
-     * @return  array                           data combining rules collection
-     * @example
-     * [
-     *      participantCode =>
-     *      [
-     *          participantFieldName    => participantFieldWeight,
-     *          participantFieldName    => participantFieldWeight
-     *      ],
-     *      participantCode =>
-     *      [
-     *          participantFieldName    => participantFieldWeight,
-     *          participantFieldName    => participantFieldWeight
-     *      ]
-     * ]
-     ************************************************************************/
-    private function getCombiningRulesCollection() : array
-    {
-        $result         = [];
-        $combiningRules = $this->getProcedure()->getDataCombiningRules();
-
-        foreach ($combiningRules->getKeys() as $participantField)
-        {
-            $participantCode        = $participantField->getParticipant()->getCode();
+            $participantField       = $procedureField->current();
             $participantFieldName   = $participantField->getField()->getParam('name');
-            $weight                 = $combiningRules->get($participantField);
+            $participantCode        = $participantField->getParticipant()->getCode();
 
-            if (!array_key_exists($participantCode, $result))
-            {
-                $result[$participantCode] = [];
-            }
-            $result[$participantCode][$participantFieldName] = $weight;
+            $fieldParts[] = "$participantCode - $participantFieldName";
+            $procedureField->next();
         }
 
+        $array[$commonItemId][implode(', ', $fieldParts)] = $data->get($procedureField);
+    }
+}
+echo"<pre>";
+print_r($array);
+echo"</pre>";
         return $result;
     }
     /** **********************************************************************
-     * get matched data collection
+     * get combined procedure field value
      *
-     * @param   MatchedData $matchedData        matched data
-     * @return  array                           matched data collection
-     * @example
-     * [
-     *      [
-     *          participantCode =>
-     *          [
-     *              participantFieldName    => value,
-     *              participantFieldName    => value
-     *          ],
-     *          participantCode =>
-     *          [
-     *              participantFieldName    => value,
-     *              participantFieldName    => value
-     *          ]
-     *      ],
-     *      [
-     *          participantCode =>
-     *          [
-     *              participantFieldName    => value,
-     *              participantFieldName    => value
-     *          ],
-     *          participantCode =>
-     *          [
-     *              participantFieldName    => value,
-     *              participantFieldName    => value
-     *          ]
-     *      ]
-     * ]
+     * @param   ProcedureField  $procedureField procedure field
+     * @param   MatchedItem     $matchedItem    matched item
+     * @return  mixed                           value
      ************************************************************************/
-    private function getMatchedDataCollection(MatchedData $matchedData) : array
+    private function getProcedureFieldValue(ProcedureField $procedureField, MatchedItem $matchedItem)
     {
-        $result = [];
+        $combiningRules         = $this->procedure->getDataCombiningRules();
+        $participantFieldValues = [];
 
-        while ($matchedData->count() > 0)
+        $procedureField->rewind();
+        while ($procedureField->valid())
         {
-            try
+            $procedureParticipantField  = $procedureField->current();
+            $participant                = $procedureParticipantField->getParticipant();
+            $participantField           = $procedureParticipantField->getField();
+            $participantItemData        = $matchedItem->hasKey($participant)
+                ? $matchedItem->get($participant)
+                : null;
+            $participantFieldValue      = $participantItemData && $participantItemData->hasKey($participantField)
+                ? $participantItemData->get($participantField)
+                : null;
+            $participantFieldWeight     = $combiningRules->hasKey($procedureParticipantField)
+                ? $combiningRules->get($procedureParticipantField)
+                : 0;
+
+            if (!($participantFieldWeight == 0 && $this->checkValueIsEmpty($participantFieldValue)))
             {
-                $item       = $matchedData->pop();
-                $itemArray  = [];
+                $participantFieldValues[$participantFieldWeight] = $participantFieldValue;
+            }
+            $procedureField->next();
+        }
 
-                foreach ($item->getKeys() as $participant)
+        if (count($participantFieldValues) <= 0)
+        {
+            return null;
+        }
+
+        $maxWeight = max(array_keys($participantFieldValues));
+        return $participantFieldValues[$maxWeight];
+    }
+    /** **********************************************************************
+     * check value is empty
+     *
+     * @param   mixed $value                        value
+     * @return  bool                                value is empty
+     ************************************************************************/
+    private function checkValueIsEmpty($value) : bool
+    {
+        switch (gettype($value))
+        {
+            case 'string':
+                return strlen($value) > 0 ? false : true;
+            case 'array':
+                foreach ($value as $arrayValue)
                 {
-                    $valueItem          = $item->get($participant);
-                    $participantCode    = $participant->getCode();
-
-                    $itemArray[$participantCode] = [];
-                    foreach ($valueItem->getKeys() as $participantField)
+                    if (!$this->checkValueIsEmpty($arrayValue))
                     {
-                        $value                  = $valueItem->get($participantField);
-                        $participantFieldName   = $participantField->getParam('name');
-
-                        $itemArray[$participantCode][$participantFieldName] = $value;
+                        return false;
                     }
                 }
 
-                if (count($itemArray) > 0)
-                {
-                    $result[] = $itemArray;
-                }
-            }
-            catch (RuntimeException $exception)
-            {
-
-            }
+                return true;
+            case 'NULL':
+                return true;
+            default:
+                return false;
         }
-
-        return $result;
-    }
-    /** **********************************************************************
-     * get combined data collection
-     *
-     * @return  array                           combined data collection
-     * @example
-     * [
-     *      [
-     *          procedureFieldName  => value,
-     *          procedureFieldName  => value
-     *      ],
-     *      [
-     *          procedureFieldName  => value,
-     *          procedureFieldName  => value
-     *      ]
-     * ]
-     ************************************************************************/
-    private function getCombinedDataCollection() : array
-    {
-        $result = [];
-
-        foreach ($this->matchedDataCollection as $itemData)
-        {
-            $itemArray = [];
-
-            foreach ($this->proceduresFieldsCollection as $procedureFieldName => $procedureField)
-            {
-                try
-                {
-                    $values         = [];
-                    $procedureField = $this->findProcedureField($procedureFieldName);
-
-                    $procedureField->rewind();
-                    while ($procedureField->valid())
-                    {
-                        $participantField       = $procedureField->current();
-                        $participantFieldName   = $participantField->getField()->getParam('name');
-                        $participantCode        = $participantField->getParticipant()->getCode();
-
-                        if (array_key_exists($participantCode, $itemData) && array_key_exists($participantFieldName, $itemData[$participantCode]))
-                        {
-                            $value  = $itemData[$participantCode][$participantFieldName];
-                            $weight =
-                                array_key_exists($participantCode, $this->combiningRulesCollection) &&
-                                array_key_exists($participantFieldName, $this->combiningRulesCollection[$participantCode])
-                                    ? $this->combiningRulesCollection[$participantCode][$participantFieldName]
-                                    : 0;
-
-                            $values[$weight] = $value;
-                        }
-
-                        $procedureField->next();
-                    }
-
-                    $maxWeight  = count($values) > 0                    ? max(array_keys($values))  : 0;
-                    $finalValue = array_key_exists($maxWeight, $values) ? $values[$maxWeight]       : null;
-
-                    $itemArray[$procedureFieldName] = $finalValue;
-                }
-                catch (UnknownProcedureFieldException $exception)
-                {
-
-                }
-            }
-
-            if (count($itemArray) > 0)
-            {
-                $result[] = $itemArray;
-            }
-        }
-
-        return $result;
-    }
-    /** **********************************************************************
-     * find procedure field by special index
-     *
-     * @param   string  $procedureFieldName         procedure field special index
-     * @return  ProcedureField                      procedure field
-     * @throws  UnknownProcedureFieldException      procedure field not found
-     ************************************************************************/
-    private function findProcedureField(string $procedureFieldName) : ProcedureField
-    {
-        if (array_key_exists($procedureFieldName, $this->proceduresFieldsCollection))
-        {
-            return $this->proceduresFieldsCollection[$procedureFieldName];
-        }
-
-        $exception      = new UnknownProcedureFieldException;
-        $procedureCode  = $this->getProcedure()->getCode();
-        $exception->setProcedureCode($procedureCode);
-
-        throw $exception;
-    }
-    /** **********************************************************************
-     * get procedure field special index
-     *
-     * @param   ProcedureField $field           procedure field
-     * @return  string                          procedure field special index
-     ************************************************************************/
-    private function getProcedureFieldName(ProcedureField $field) : string
-    {
-        $fieldNameParts = [];
-
-        $field->rewind();
-        while ($field->valid())
-        {
-            $participantField       = $field->current();
-            $participantCode        = $participantField->getParticipant()->getCode();
-            $participantFieldName   = $participantField->getField()->getParam('name');
-
-            $fieldNameParts[] = "$participantCode|$participantFieldName";
-            $field->next();
-        }
-
-        return implode('||', $fieldNameParts);
     }
     /** **********************************************************************
      * get object short name
@@ -350,7 +206,7 @@ class Combiner extends AbstractProcessor
     private function addLogMessage(string $message, string $type) : void
     {
         $logger         = Logger::getInstance();
-        $procedureCode  = $this->getProcedure()->getCode();
+        $procedureCode  = $this->procedure->getCode();
         $fullMessage    = "Combiner for procedure \"$procedureCode\": $message";
 
         switch ($type)

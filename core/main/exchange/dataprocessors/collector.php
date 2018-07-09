@@ -6,6 +6,7 @@ namespace Main\Exchange\DataProcessors;
 use
     InvalidArgumentException,
     Main\Helpers\Logger,
+    Main\Exchange\Procedures\Procedure,
     Main\Exchange\DataProcessors\Results\CollectedData;
 /** ***********************************************************************************************
  * Collector data-processor
@@ -14,8 +15,18 @@ use
  * @package exchange_exchange_dataprocessors
  * @author  Hvorostenko
  *************************************************************************************************/
-class Collector extends AbstractProcessor
+class Collector
 {
+    private $procedure = null;
+    /** **********************************************************************
+     * constructor
+     *
+     * @param   Procedure $procedure        procedure
+     ************************************************************************/
+    public function __construct(Procedure $procedure)
+    {
+        $this->procedure = $procedure;
+    }
     /** **********************************************************************
      * collect procedure participants data
      *
@@ -24,7 +35,7 @@ class Collector extends AbstractProcessor
     public function collectData() : CollectedData
     {
         $result         = new CollectedData;
-        $participants   = $this->getProcedure()->getParticipants();
+        $participants   = $this->procedure->getParticipants();
 
         $this->addLogMessage('collecting data start', 'notice');
         while ($participants->valid())
@@ -37,12 +48,34 @@ class Collector extends AbstractProcessor
             }
             catch (InvalidArgumentException $exception)
             {
-                $this->addLogMessage('unexpected error on constructing collected data item', 'warning');
+                $error = $exception->getMessage();
+                $this->addLogMessage("unexpected error on constructing collected data item, \"$error\"", 'warning');
             }
 
             $participants->next();
         }
+echo"<br>===========COLLECTOR==========<br>";
+foreach ($result->getKeys() as $participant)
+{
+    echo $participant->getCode().'<br>';
+    $data   = $result->get($participant);
+    $count  = $data->count();
+    for ($index = $count; $index > 0; $index--)
+    {
+        $item   = $data->pop();
+        $array  = [];
+        foreach ($item->getKeys() as $field)
+        {
+            $array[$field->getParam('name')] = $item->get($field);
+        }
 
+        echo"-------<br>";
+        echo'<pre>';
+        print_r($array);
+        echo'</pre>';
+        $data->push($item);
+    }
+}
         return $result;
     }
     /** **********************************************************************
@@ -54,7 +87,7 @@ class Collector extends AbstractProcessor
     private function addLogMessage(string $message, string $type) : void
     {
         $logger         = Logger::getInstance();
-        $procedureCode  = $this->getProcedure()->getCode();
+        $procedureCode  = $this->procedure->getCode();
         $fullMessage    = "Collector for procedure \"$procedureCode\": $message";
 
         switch ($type)

@@ -6,14 +6,14 @@ namespace Main\Exchange\DataProcessors;
 use
     RuntimeException,
     InvalidArgumentException,
-    Main\Helpers\DB,
+    UnexpectedValueException,
     Main\Helpers\Logger,
     Main\Exchange\Participants\Participant,
     Main\Exchange\Participants\Fields\Field     as ParticipantField,
-    Main\Exchange\Participants\Data\ItemData    as ParticipantItem,
+    Main\Exchange\Participants\Data\ItemData    as ParticipantItemData,
     Main\Exchange\Participants\Exceptions\UnknownParticipantException,
     Main\Exchange\Participants\Exceptions\UnknownParticipantFieldException,
-    Main\Exchange\Participants\Exceptions\UnknownParticipantItemException,
+    Main\Exchange\Procedures\Procedure,
     Main\Exchange\DataProcessors\Data\MatchedItem,
     Main\Exchange\DataProcessors\Results\CollectedData,
     Main\Exchange\DataProcessors\Results\MatchedData;
@@ -24,17 +24,37 @@ use
  * @package exchange_exchange_dataprocessors
  * @author  Hvorostenko
  *************************************************************************************************/
-class Matcher extends AbstractProcessor
+class Matcher
 {
     private static
-        $idFieldType = 'item-id';
+        $participantIdFieldType         = 'item-id';
     private
+        $procedure                      = null,
+        $procedureItemsMap              = null,
+        $procedureData                  = null,
         $participantsCollection         = [],
         $participantsFieldsCollection   = [],
+        $participantsIdFieldsCollection = [],
+        $itemsDataCollection            = [],
         $matchingRulesCollection        = [],
-        $collectedDataCollection        = [],
-        $alreadyMatchedItemsCollection  = [],
-        $matchedDataCollection          = [];
+        $matchedItemsCollection         = [];
+    /** **********************************************************************
+     * constructor
+     *
+     * @param   Procedure           $procedure      procedure
+     * @param   ProcedureItemsMap   $map            procedure items map
+     * @param   ProcedureData       $data           procedure already exist data
+     ************************************************************************/
+    public function __construct(Procedure $procedure, ProcedureItemsMap $map, ProcedureData $data)
+    {
+        $this->procedure            = $procedure;
+        $this->procedureItemsMap    = $map;
+        $this->procedureData        = $data;
+
+        $this->fillParticipantsInfoCollections($procedure);
+        $this->fillMatchingRulesCollection($procedure);
+        $this->fillDataCollectionFromProcedureData($procedure, $map, $data);
+    }
     /** **********************************************************************
      * match procedure participants data
      *
@@ -52,58 +72,57 @@ class Matcher extends AbstractProcessor
             return $result;
         }
 
-        $this->participantsCollection       = $this->getParticipantsCollection();
-        $this->participantsFieldsCollection = $this->getParticipantsFieldsCollection();
-        $this->matchingRulesCollection      = $this->getMatchingRulesCollection();
-
-        try
+        $this->fillDataCollectionsFromCollectedData($collectedData);
+        foreach ($collectedData->getKeys() as $participant)
         {
-            $this->alreadyMatchedItemsCollection = $this->getAlreadyMatchedItemsCollection();
-        }
-        catch (RuntimeException $exception)
-        {
-            $error = $exception->getMessage();
-            $this->addLogMessage("caught error on getting already matched items collection, \"$error\"", 'warning');
-        }
+            $participantCode    = $participant->getCode();
+            $participantData    = $collectedData->get($participant);
 
-        $this->collectedDataCollection  = $this->getCollectedDataCollection($collectedData);
-        $this->matchedDataCollection    = $this->getMatchedDataCollection();
-
-        foreach ($this->matchedDataCollection as $commonItem)
-        {
-            $matchedItem = new MatchedItem;
-
-            foreach ($commonItem as $participantCode => $participantItemId)
+            try
             {
-                try
-                {
-                    $participant        = $this->findParticipant($participantCode);
-                    $participantItem    = $this->findParticipantItem($participantCode, $participantItemId);
-                    $matchedItem->set($participant, $participantItem);
-                }
-                catch (UnknownParticipantException $exception)
-                {
-                    $this->addLogMessage("unknown participant \"$participantCode\" on constructing matched data item", 'warning');
-                }
-                catch (UnknownParticipantItemException $exception)
-                {
-                    $this->addLogMessage("not found participant item with \"$participantItemId\" in participant \"$participantCode\" on constructing matched data item", 'warning');
-                }
-                catch (InvalidArgumentException $exception)
-                {
-                    $this->addLogMessage('unexpected error on constructing matched data item', 'warning');
-                }
+                $this->findParticipant($participantCode);
+            }
+            catch (UnknownParticipantException $exception)
+            {
+                $this->addLogMessage("unknown participant \"$participantCode\" on constructing matched data", 'warning');
+                continue;
             }
 
-            if ($matchedItem->count() == count($commonItem))
+            while ($participantData->count() > 0)
             {
+                $participantItemData    = null;
+                $commonItemId           = null;
+
                 try
                 {
-                    $result->push($matchedItem);
+                    $participantItemData    = $participantData->pop();
+                    $commonItemId           = $this->findParticipantItemCommonId($participant, $participantItemData);
+                }
+                catch (UnexpectedValueException $exception)
+                {
+                    $error = $exception->getMessage();
+                    $this->addLogMessage("caught item in participant \"$participantCode\" without common ID on constructing matched data, \"$error\"", 'warning');
+                    continue;
+                }
+                catch (RuntimeException $exception)
+                {
+                    $error = $exception->getMessage();
+                    $this->addLogMessage("unexpected error on constructing matched data, \"$error\"", 'warning');
+                    continue;
+                }
+
+                try
+                {
+                    if (!$result->hasKey($commonItemId))
+                    {
+                        $result->set($commonItemId, new MatchedItem);
+                    }
+                    $result->get($commonItemId)->set($participant, $participantItemData);
                 }
                 catch (InvalidArgumentException $exception)
                 {
-                    $this->addLogMessage('unexpected error on constructing matched data item', 'warning');
+                    $error = $exception->getMessage();
+                    $this->addLogMessage("unexpected error on constructing matched data, \"$error\"", 'warning');
                 }
             }
         }
@@ -112,101 +131,89 @@ class Matcher extends AbstractProcessor
         {
             $this->addLogMessage('returning empty matched data while collected data is not empty', 'warning');
         }
-
+echo"<br>===========MATCHER==========<br>";
+$array = [];
+foreach ($result->getKeys() as $commonItemId)
+{
+    $data = $result->get($commonItemId);
+    $array[$commonItemId] = [];
+    foreach ($data->getKeys() as $participant)
+    {
+        $array[$commonItemId][$participant->getCode()] = [];
+        foreach ($data->get($participant)->getKeys() as $field)
+        {
+            $array[$commonItemId][$participant->getCode()][$field->getParam('name')] = $data->get($participant)->get($field);
+        }
+    }
+}
+echo"<pre>";
+print_r($array);
+echo"</pre>";
         return $result;
     }
     /** **********************************************************************
-     * get participants collection
+     * fill participants info collections
      *
-     * @return  array                               participants collection
-     * @example
-     * [
-     *      participantCode => participant,
-     *      participantCode => participant
-     * ]
+     * @param   Procedure $procedure                procedure
      ************************************************************************/
-    private function getParticipantsCollection() : array
+    private function fillParticipantsInfoCollections(Procedure $procedure) : void
     {
-        $result             = [];
-        $participantsSet    = $this->getProcedure()->getParticipants();
+        $participantsSet = $procedure->getParticipants();
+
+        if ($participantsSet->count() <= 0)
+        {
+            $this->addLogMessage('procedure has no participants', 'warning');
+            return;
+        }
 
         while ($participantsSet->valid())
         {
-            $participant = $participantsSet->current();
+            $participant        = $participantsSet->current();
+            $participantFields  = $participant->getFields();
+            $participantCode    = $participant->getCode();
 
-            $result[$participant->getCode()] = $participant;
+            $this->participantsCollection[$participantCode]         = $participant;
+            $this->participantsFieldsCollection[$participantCode]   = [];
+
+            while ($participantFields->valid())
+            {
+                $field      = $participantFields->current();
+                $fieldName  = $field->getParam('name');
+
+                $this->participantsFieldsCollection[$participantCode][$fieldName] = $field;
+                if ($field->getParam('type') == self::$participantIdFieldType)
+                {
+                    $this->participantsIdFieldsCollection[$participantCode] = $field;
+                }
+
+                $participantFields->next();
+            }
+
+            if (count($this->participantsFieldsCollection[$participantCode]) <= 0)
+            {
+                $this->addLogMessage("participant \"$participantCode\" has no fields", 'warning');
+            }
+            if (!array_key_exists($participantCode, $this->participantsIdFieldsCollection))
+            {
+                $this->addLogMessage("participant \"$participantCode\" has no ID field", 'warning');
+            }
             $participantsSet->next();
         }
-
-        return $result;
     }
     /** **********************************************************************
-     * get participants fields collection
+     * fill participants info collections
      *
-     * @return  array                               participants fields collection
-     * @example
-     * [
-     *      participantCode =>
-     *      [
-     *          participantFieldName    => participantField,
-     *          participantFieldName    => participantField
-     *      ],
-     *      participantCode =>
-     *      [
-     *          participantFieldName    => participantField,
-     *          participantFieldName    => participantField
-     *      ]
-     * ]
+     * @param   Procedure $procedure                procedure
      ************************************************************************/
-    private function getParticipantsFieldsCollection() : array
+    private function fillMatchingRulesCollection(Procedure $procedure) : void
     {
-        $result = [];
+        $matchingRules = $procedure->getDataMatchingRules();
 
-        foreach ($this->participantsCollection as $participantCode => $participant)
+        if ($matchingRules->count() <= 0)
         {
-            try
-            {
-                $participant        = $this->findParticipant($participantCode);
-                $participantFields  = $participant->getFields();
-
-                $result[$participantCode] = [];
-                while ($participantFields->valid())
-                {
-                    $participantField       = $participantFields->current();
-                    $participantFieldName   = $participantField->getParam('name');
-
-                    $result[$participantCode][$participantFieldName] = $participantField;
-                    $participantFields->next();
-                }
-            }
-            catch (UnknownParticipantException $exception)
-            {
-
-            }
+            $this->addLogMessage('procedure has no data matching rules', 'warning');
+            return;
         }
-
-        return $result;
-    }
-    /** **********************************************************************
-     * get data matching rules collection
-     *
-     * @return  array                               data matching rules collection
-     * @example
-     * [
-     *      [
-     *          participantCode => [participantFieldName, participantFieldName],
-     *          participantCode => [participantFieldName, participantFieldName]
-     *      ],
-     *      [
-     *          participantCode => [participantFieldName, participantFieldName],
-     *          participantCode => [participantFieldName, participantFieldName]
-     *      ]
-     * ]
-     ************************************************************************/
-    private function getMatchingRulesCollection() : array
-    {
-        $result         = [];
-        $matchingRules  = $this->getProcedure()->getDataMatchingRules();
 
         foreach ($matchingRules->getKeys() as $participantsSet)
         {
@@ -216,15 +223,15 @@ class Matcher extends AbstractProcessor
 
             while ($participantsSet->valid())
             {
+                $participantCode = $participantsSet->current()->getCode();
+
                 try
                 {
-                    $participantCode = $participantsSet->current()->getCode();
                     $this->findParticipant($participantCode);
                     $ruleParticipants[] = $participantCode;
                 }
                 catch (UnknownParticipantException $exception)
                 {
-                    $participantCode = $exception->getParticipantCode();
                     $this->addLogMessage("caught unknown participant \"$participantCode\" in data matching rules", 'warning');
                 }
 
@@ -238,12 +245,12 @@ class Matcher extends AbstractProcessor
                 $procedureField->rewind();
                 while ($procedureField->valid())
                 {
+                    $participantField       = $procedureField->current();
+                    $participantCode        = $participantField->getParticipant()->getCode();
+                    $participantFieldName   = $participantField->getField()->getParam('name');
+
                     try
                     {
-                        $participantField       = $procedureField->current();
-                        $participantCode        = $participantField->getParticipant()->getCode();
-                        $participantFieldName   = $participantField->getField()->getParam('name');
-
                         $this->findParticipantField($participantCode, $participantFieldName);
                         if (in_array($participantCode, $ruleParticipants))
                         {
@@ -252,7 +259,6 @@ class Matcher extends AbstractProcessor
                     }
                     catch (UnknownParticipantFieldException $exception)
                     {
-                        $participantCode = $exception->getParticipantCode();
                         $this->addLogMessage("caught unknown participant \"$participantCode\" in data matching rules", 'warning');
                     }
 
@@ -295,217 +301,156 @@ class Matcher extends AbstractProcessor
 
             if (count($rule) >= 2)
             {
-                $result[] = $rule;
+                $this->matchingRulesCollection[] = $rule;
             }
             else
             {
                 $this->addLogMessage("caught rule that includes less than two participants in data matching rules", 'warning');
             }
         }
-
-        return $result;
     }
     /** **********************************************************************
-     * get collected data collection
+     * fill participants info collections
      *
-     * @param   CollectedData $collectedData        collected data
-     * @return  array                               collected data collection
-     * @example
-     * [
-     *      participantCode =>
-     *      [
-     *          participantItemId   => participantItem,
-     *          participantItemId   => participantItem
-     *      ],
-     *      participantCode =>
-     *      [
-     *          participantItemId   => participantItem,
-     *          participantItemId   => participantItem
-     *      ]
-     * ]
+     * @param   Procedure           $procedure      procedure
+     * @param   ProcedureItemsMap   $map            procedure items map
+     * @param   ProcedureData       $data           procedure already exist data
      ************************************************************************/
-    private function getCollectedDataCollection(CollectedData $collectedData) : array
+    private function fillDataCollectionFromProcedureData(Procedure $procedure, ProcedureItemsMap $map, ProcedureData $data) : void
     {
-        $result = [];
+        $procedureFieldsSet = $procedure->getFields();
+        $dataItemsArray     = $data->getItemsIdArray();
 
-        foreach ($collectedData->getKeys() as $participant)
+        while ($procedureFieldsSet->valid())
         {
-            try
+            $procedureField     = $procedureFieldsSet->current();
+            $participantsFields = [];
+
+            $procedureField->rewind();
+            while ($procedureField->valid())
             {
-                $participantCode        = $participant->getCode();
-                $participantDataArray   = [];
-                $participant            = $this->findParticipant($participantCode);
-                $participantData        = $collectedData->get($participant);
-                $participantIdField     = $this->findParticipantIdField($participantCode);
+                $participantField       = $procedureField->current();
+                $participantCode        = $participantField->getParticipant()->getCode();
+                $participantFieldName   = $participantField->getField()->getParam('name');
 
-                while ($participantData->count() > 0)
+                $participantsFields[$participantCode] = $participantFieldName;
+                $procedureField->next();
+            }
+
+            foreach ($dataItemsArray as $commonItemId)
+            {
+                $value = null;
+
+                try
                 {
-                    $participantItem = $participantData->pop();
+                    $value = $data->getData($commonItemId, $procedureField);
+                }
+                catch (UnexpectedValueException $exception)
+                {
 
-                    if ($participantItem->hasKey($participantIdField))
-                    {
-                        $participantItemId = $participantItem->get($participantIdField);
-                        $participantDataArray[$participantItemId] = $participantItem;
-                    }
-                    else
-                    {
-                        $exception = new UnknownParticipantItemException;
-                        $exception->setParticipantCode($participantCode);
-                        throw $exception;
-                    }
                 }
 
-                if (count($participantDataArray) > 0)
+                foreach ($participantsFields as $participantCode => $participantFieldName)
                 {
-                    $result[$participantCode] = $participantDataArray;
+                    try
+                    {
+                        $participant        = $this->findParticipant($participantCode);
+                        $participantItemId  = $map->getItemId($participant, $commonItemId);
+
+                        if (!array_key_exists($participantCode, $this->itemsDataCollection))
+                        {
+                            $this->itemsDataCollection[$participantCode] = [];
+                        }
+                        if (!array_key_exists($participantFieldName, $this->itemsDataCollection[$participantCode]))
+                        {
+                            $this->itemsDataCollection[$participantCode][$participantFieldName] = [];
+                        }
+                        $this->itemsDataCollection[$participantCode][$participantFieldName][$participantItemId] = $value;
+                    }
+                    catch (UnknownParticipantException $exception)
+                    {
+
+                    }
+                    catch (UnexpectedValueException $exception)
+                    {
+
+                    }
                 }
             }
-            catch (UnknownParticipantException $exception)
+
+            $procedureFieldsSet->next();
+        }
+    }
+    /** **********************************************************************
+     * fill participants info collections
+     *
+     * @param   CollectedData $collectedData        collected data
+     ************************************************************************/
+    private function fillDataCollectionsFromCollectedData(CollectedData $collectedData) : void
+    {
+        foreach ($collectedData->getKeys() as $participant)
+        {
+            $participantCode        = $participant->getCode();
+            $participantData        = $collectedData->get($participant);
+            $participantIdField     = null;
+            $participantDataCount   = $participantData->count();
+
+            try
             {
-                $participantCode = $exception->getParticipantCode();
-                $this->addLogMessage("unknown participant \"$participantCode\" in collected data", 'warning');
+                $participantIdField = $this->findParticipantIdField($participantCode);
             }
             catch (UnknownParticipantFieldException $exception)
             {
-                $participantCode = $exception->getParticipantCode();
-                $this->addLogMessage("participant \"$participantCode\" has no ID field", 'warning');
+                continue;
             }
-            catch (UnknownParticipantItemException $exception)
-            {
-                $participantCode = $exception->getParticipantCode();
-                $this->addLogMessage("participant \"$participantCode\" has item with incorrect or absent ID", 'warning');
-            }
-            catch (RuntimeException $exception)
-            {
-                $this->addLogMessage("unexpected error on constructing collected data collection", 'warning');
-            }
-        }
 
-        return $result;
-    }
-    /** **********************************************************************
-     * get already matched items collection
-     *
-     * @return  array                               already matched items collection
-     * @example
-     * [
-     *      participantCode =>
-     *      [
-     *          participantItemId   => commonItemId,
-     *          participantItemId   => commonItemId
-     *      ],
-     *      participantCode =>
-     *      [
-     *          participantItemId   => commonItemId,
-     *          participantItemId   => commonItemId
-     *      ]
-     * ]
-     * @throws  RuntimeException                    getting collection problems
-     ************************************************************************/
-    private function getAlreadyMatchedItemsCollection() : array
-    {
-        try
-        {
-            $result         = [];
-            $queryResult    = $this->queryMatchedItems();
-
-            foreach ($queryResult as $item)
+            for ($index = $participantDataCount; $index > 0; $index--)
             {
-                $participantCode    = $item['PARTICIPANT_CODE'];
-                $participantItemId  = $item['PARTICIPANT_ITEM_ID'];
-                $commonItemId       = $item['COMMON_ITEM_ID'];
-
-                if (!array_key_exists($participantCode, $result))
+                $participantItemData = null;
+                try
                 {
-                    $result[$participantCode] = [];
+                    $participantItemData = $participantData->pop();
+                }
+                catch (RuntimeException $exception)
+                {
+                    continue;
                 }
 
-                $result[$participantCode][$participantItemId] = $commonItemId;
-            }
-
-            return $result;
-        }
-        catch (RuntimeException $exception)
-        {
-            throw $exception;
-        }
-    }
-    /** **********************************************************************
-     * get matched data collection
-     *
-     * @return  array                               matched data
-     * @example
-     * [
-     *      [
-     *          participantCode => participantItemId,
-     *          participantCode => participantItemId
-     *      ],
-     *      [
-     *          participantCode => participantItemId,
-     *          participantCode => participantItemId
-     *      ]
-     * ]
-     ************************************************************************/
-    private function getMatchedDataCollection() : array
-    {
-        $result         = [];
-        $items          = [];
-        $clearItemsData = function(array $items, array $matchedItems)
-        {
-            foreach ($matchedItems as $commonItemStructure)
-            {
-                foreach ($commonItemStructure as $participantCode => $participantItemId)
+                if ($participantItemData->hasKey($participantIdField))
                 {
-                    $participantItemIdIndex = array_search($participantItemId, $items[$participantCode]);
-                    unset($items[$participantCode][$participantItemIdIndex]);
-                    if (count($items[$participantCode]) <= 0)
+                    $participantItemId = $participantItemData->get($participantIdField);
+                    foreach ($participantItemData->getKeys() as $participantField)
                     {
-                        unset($items[$participantCode]);
+                        $value                  = $participantItemData->get($participantField);
+                        $participantFieldName   = $participantField->getParam('name');
+
+                        if (!array_key_exists($participantCode, $this->itemsDataCollection))
+                        {
+                            $this->itemsDataCollection[$participantCode] = [];
+                        }
+                        if (!array_key_exists($participantFieldName, $this->itemsDataCollection[$participantCode]))
+                        {
+                            $this->itemsDataCollection[$participantCode][$participantFieldName] = [];
+                        }
+                        $this->itemsDataCollection[$participantCode][$participantFieldName][$participantItemId] = $value;
                     }
                 }
-            }
 
-            return $items;
-        };
+                try
+                {
+                    $participantData->push($participantItemData);
+                }
+                catch (InvalidArgumentException $exception)
+                {
 
-        foreach ($this->collectedDataCollection as $participantCode => $participantItemStructure)
-        {
-            $items[$participantCode] = array_keys($participantItemStructure);
-        }
-
-        try
-        {
-            $matchedItems   = $this->matchAlreadyMatchedItems($items);
-            $result         = array_merge($result, $matchedItems);
-            $items          = $clearItemsData($items, $matchedItems);
-        }
-        catch (RuntimeException $exception)
-        {
-            $error = $exception->getMessage();
-            $this->addLogMessage("problems with getting already matched items, \"$error\"", 'warning');
-        }
-
-        if (count($items) > 0)
-        {
-            $matchedItems   = $this->matchUnmatchedItems($items);
-            $result         = array_merge($result, $matchedItems);
-            $items          = $clearItemsData($items, $matchedItems);
-        }
-
-        foreach ($items as $participantCode => $participantItems)
-        {
-            foreach ($participantItems as $participantItemId)
-            {
-                $this->addLogMessage("unmatched item was found in participant \"$participantCode\" data with ID \"$participantItemId\"", 'warning');
+                }
             }
         }
-
-        return $result;
     }
     /** **********************************************************************
      * find participant by code
      *
-     * @param   string  $participantCode            participant code
+     * @param   string $participantCode             participant code
      * @return  Participant                         participant
      * @throws  UnknownParticipantException         participant not found
      ************************************************************************/
@@ -545,31 +490,17 @@ class Matcher extends AbstractProcessor
         throw $exception;
     }
     /** **********************************************************************
-     * find participant ID field
+     * find participant id field
      *
      * @param   string $participantCode             participant code
-     * @return  ParticipantField                    participant field
-     * @throws  UnknownParticipantFieldException    participant has no ID field
+     * @return  ParticipantField                    participant id field
+     * @throws  UnknownParticipantFieldException    participant id field not found
      ************************************************************************/
     private function findParticipantIdField(string $participantCode) : ParticipantField
     {
-        if (array_key_exists($participantCode, $this->participantsFieldsCollection))
+        if (array_key_exists($participantCode, $this->participantsIdFieldsCollection))
         {
-            foreach ($this->participantsFieldsCollection[$participantCode] as $fieldName => $field)
-            {
-                try
-                {
-                    $field = $this->findParticipantField($participantCode, $fieldName);
-                    if ($field->getParam('type') == static::$idFieldType)
-                    {
-                        return $field;
-                    }
-                }
-                catch (UnknownParticipantFieldException $exception)
-                {
-                    break;
-                }
-            }
+            return $this->participantsIdFieldsCollection[$participantCode];
         }
 
         $exception = new UnknownParticipantFieldException;
@@ -577,540 +508,174 @@ class Matcher extends AbstractProcessor
         throw $exception;
     }
     /** **********************************************************************
-     * find participant item
+     * find participant item common id
      *
-     * @param   string  $participantCode            participant code
-     * @param   mixed   $participantItemId          participant item ID
-     * @return  ParticipantItem                     participant item
-     * @throws  UnknownParticipantItemException     no participant item was found
+     * @param   Participant         $participant    participant
+     * @param   ParticipantItemData $data           participant item data
+     * @return  int                                 participant item common id
+     * @throws  UnexpectedValueException            participant item common id was not found
      ************************************************************************/
-    private function findParticipantItem(string $participantCode, $participantItemId) : ParticipantItem
+    private function findParticipantItemCommonId(Participant $participant, ParticipantItemData $data) : int
     {
-        if
-        (
-            array_key_exists($participantCode, $this->collectedDataCollection) &&
-            array_key_exists($participantItemId, $this->collectedDataCollection[$participantCode])
-        )
-        {
-            return $this->collectedDataCollection[$participantCode][$participantItemId];
-        }
+        $participantItemId  = null;
+        $participantCode    = $participant->getCode();
 
-        $exception = new UnknownParticipantItemException;
-        $exception->setParticipantCode($participantCode);
-        $exception->setParticipantItemId($participantItemId);
-        throw $exception;
-    }
-    /** **********************************************************************
-     * match already matched items
-     *
-     * @param   array $items                        items
-     * @example
-     * [
-     *      participantCode => [participantItemId, participantItemId, participantItemId],
-     *      participantCode => [participantItemId, participantItemId, participantItemId]
-     * ]
-     * @return  array                               matched items
-     * @example
-     * [
-     *      [
-     *          participantCode => participantItemId,
-     *          participantCode => participantItemId
-     *      ],
-     *      [
-     *          participantCode => participantItemId,
-     *          participantCode => participantItemId
-     *      ]
-     * ]
-     * @throws  RuntimeException                    matching problems
-     ************************************************************************/
-    private function matchAlreadyMatchedItems(array $items) : array
-    {
         try
         {
-            $result         = [];
-            $matchingMap    = $this->getMatchingMap();
+            $participantIdField = $this->findParticipantIdField($participantCode);
 
-            if (count($matchingMap) > 0)
+            if (!$data->hasKey($participantIdField))
             {
-                foreach ($items as $participantCode => $participantItems)
-                {
-                    foreach ($participantItems as $participantItemId)
-                    {
-                        if (array_key_exists($participantCode, $matchingMap) && array_key_exists($participantItemId, $matchingMap[$participantCode]))
-                        {
-                            $commonItemId = $matchingMap[$participantCode][$participantItemId];
-
-                            if (!array_key_exists($commonItemId, $result))
-                            {
-                                $result[$commonItemId] = [];
-                            }
-
-                            $result[$commonItemId][$participantCode] = $participantItemId;
-                        }
-                    }
-                }
+                throw new RuntimeException;
             }
 
-            return array_values($result);
+            $participantItemId  = (string) $data->get($participantIdField);
+            $commonItemId       = $this->procedureItemsMap->getItemCommonId($participant, $participantItemId);
+            return $commonItemId;
+        }
+        catch (UnexpectedValueException $exception)
+        {
+
+        }
+        catch (UnknownParticipantFieldException $exception)
+        {
+            throw new UnexpectedValueException("participant \"$participantCode\" has no ID field");
         }
         catch (RuntimeException $exception)
         {
-            throw $exception;
+            throw new UnexpectedValueException("item of participant \"$participantCode\" has no ID");
         }
-    }
-    /** **********************************************************************
-     * match unmatched items
-     *
-     * @param   array $items                        items
-     * @example
-     * [
-     *      participantCode => [participantItemId, participantItemId, participantItemId],
-     *      participantCode => [participantItemId, participantItemId, participantItemId]
-     * ]
-     * @return  array                               matched items
-     * @example
-     * [
-     *      [
-     *          participantCode => participantItemId,
-     *          participantCode => participantItemId
-     *      ],
-     *      [
-     *          participantCode => participantItemId,
-     *          participantCode => participantItemId
-     *      ]
-     * ]
-     ************************************************************************/
-    private function matchUnmatchedItems(array $items) : array
-    {
-        $result         = [];
-        $matchingRules  = $this->matchingRulesCollection;
-        $clearItemsData = function(array $items, array $matchedItems)
+
+        $data = $this->getItemsMatchedByRules();
+        foreach ($data as $matchedGroup)
         {
-            foreach ($matchedItems as $participantCode => $participantItemId)
+            if (array_key_exists($participantCode, $matchedGroup) && in_array($participantItemId, $matchedGroup[$participantCode]))
             {
-                if (array_key_exists($participantCode, $items))
+                unset($matchedGroup[$participantCode]);
+                foreach ($matchedGroup as $otherParticipantCode => $otherParticipantItems)
                 {
-                    foreach ($items[$participantCode] as $participantFieldName => $participantFieldData)
+                    try
                     {
-                        if (array_key_exists($participantItemId, $participantFieldData))
+                        $otherParticipant = $this->findParticipant($otherParticipantCode);
+                        foreach ($otherParticipantItems as $otherParticipantItemId)
                         {
-                            unset($items[$participantCode][$participantFieldName][$participantItemId]);
+                            $commonItemId = $this->procedureItemsMap->getItemCommonId($otherParticipant, $otherParticipantItemId);
+                            $this->procedureItemsMap->setParticipantItem($commonItemId, $participant, $participantItemId);
+                            return $commonItemId;
                         }
+                    }
+                    catch (UnknownParticipantException $exception)
+                    {
+
+                    }
+                    catch (UnexpectedValueException $exception)
+                    {
+
+                    }
+                    catch (RuntimeException $exception)
+                    {
+                        throw new UnexpectedValueException($exception->getMessage());
                     }
                 }
             }
-
-            return $items;
-        };
-
-        if (count($matchingRules) <= 0)
-        {
-            $this->addLogMessage('unable to match unmatched items with empty data matching rules', 'notice');
-            return $result;
         }
 
-        $itemsData = $this->getConvertedItemsData($items);
+        try
+        {
+            $commonItemId = $this->procedureItemsMap->createNewItem($participant, $participantItemId);
+            return $commonItemId;
+        }
+        catch (RuntimeException $exception)
+        {
+            throw new UnexpectedValueException($exception->getMessage());
+        }
+    }
+    /** **********************************************************************
+     * get array of items matched by data matching rules
+     *
+     * @return  array                               array of items
+     * @example
+     * [
+     *      [
+     *          participantCode => [participantItemId, participantItemId],
+     *          participantCode => [participantItemId, participantItemId]
+     *      ],
+     *      [
+     *          participantCode => [participantItemId, participantItemId],
+     *          participantCode => [participantItemId, participantItemId]
+     *      ]
+     * ]
+     ************************************************************************/
+    private function getItemsMatchedByRules() : array
+    {
+        if (count($this->matchedItemsCollection) > 0)
+        {
+            return $this->matchedItemsCollection;
+        }
+
+        $matchingRules  = $this->matchingRulesCollection;
+        $itemsData      = $this->itemsDataCollection;
+
         foreach ($matchingRules as $rule)
         {
-            $data       = $this->getItemsGroupedByRule($itemsData, $rule);
-            $ruleSize   = count($rule);
-
-            foreach ($data as $group)
+            foreach ($rule as $participantCode => $participantFields)
             {
-                $matchedItems = [];
+                $participantData        = [];
+                $participantDataItemsId = [];
 
-                foreach ($rule as $participantCode => $participantFields)
+                if (!array_key_exists($participantCode, $itemsData))
                 {
-                    if (array_key_exists($participantCode, $group))
+                    continue;
+                }
+                foreach ($participantFields as $participantFieldName)
+                {
+                    if (array_key_exists($participantFieldName, $itemsData[$participantCode]))
                     {
-                        $matchedItems[$participantCode] = $group[$participantCode][0];
+                        $fieldData = $itemsData[$participantCode][$participantFieldName];
+                        $participantData[$participantFieldName] = $fieldData;
+                        $participantDataItemsId = array_merge($participantDataItemsId, array_keys($fieldData));
                     }
                 }
-
-                if (count($matchedItems) == $ruleSize)
-                {
-                    $result[]   = $matchedItems;
-                    $itemsData  = $clearItemsData($itemsData, $matchedItems);
-                }
-            }
-        }
-
-        $this->saveNewMatchedItems($result);
-        return $result;
-    }
-    /** **********************************************************************
-     * get participants items data as converted array
-     *
-     * @param   array $items                        items
-     * @example
-     * [
-     *      participantCode => [participantItemId, participantItemId, participantItemId],
-     *      participantCode => [participantItemId, participantItemId, participantItemId]
-     * ]
-     * @return  array                               data
-     * @example
-     * [
-     *      participantCode =>
-     *      [
-     *          participantFieldName    =>
-     *          [
-     *              participantItemId   => value,
-     *              participantItemId   => value
-     *          ],
-     *          participantFieldName    =>
-     *          [
-     *              participantItemId   => value,
-     *              participantItemId   => value
-     *          ]
-     *      ],
-     *      participantCode =>
-     *      [
-     *          participantFieldName    =>
-     *          [
-     *              participantItemId   => value,
-     *              participantItemId   => value
-     *          ],
-     *          participantFieldName    =>
-     *          [
-     *              participantItemId   => value,
-     *              participantItemId   => value
-     *          ]
-     *      ]
-     * ]
-     ************************************************************************/
-    private function getConvertedItemsData(array $items) : array
-    {
-        $result = [];
-
-        foreach ($items as $participantCode => $participantItems)
-        {
-            $result[$participantCode] = [];
-            foreach ($participantItems as $participantItemId)
-            {
-                try
-                {
-                    $participantItem = $this->findParticipantItem($participantCode, $participantItemId);
-                    foreach ($participantItem->getKeys() as $participantField)
-                    {
-                        $participantFieldName   = $participantField->getParam('name');
-                        $value                  = $participantItem->get($participantField);
-
-                        if (!array_key_exists($participantFieldName, $result[$participantCode]))
-                        {
-                            $result[$participantCode][$participantFieldName] = [];
-                        }
-
-                        $result[$participantCode][$participantFieldName][$participantItemId] = $value;
-                    }
-                }
-                catch (UnknownParticipantItemException $exception)
-                {
-
-                }
-            }
-        }
-
-        return $result;
-    }
-    /** **********************************************************************
-     * get items array grouped by rule
-     *
-     * @param   array   $data                       data
-     * @example
-     * [
-     *      participantCode =>
-     *      [
-     *          participantFieldName    =>
-     *          [
-     *              participantItemId   => value,
-     *              participantItemId   => value
-     *          ],
-     *          participantFieldName    =>
-     *          [
-     *              participantItemId   => value,
-     *              participantItemId   => value
-     *          ]
-     *      ],
-     *      participantCode =>
-     *      [
-     *          participantFieldName    =>
-     *          [
-     *              participantItemId   => value,
-     *              participantItemId   => value
-     *          ],
-     *          participantFieldName    =>
-     *          [
-     *              participantItemId   => value,
-     *              participantItemId   => value
-     *          ]
-     *      ]
-     * ]
-     * @param   array   $rule                       matching rule
-     * @example
-     * [
-     *      participantCode => [participantFieldName, participantFieldName],
-     *      participantCode => [participantFieldName, participantFieldName]
-     * ]
-     * @return  array                               combined converted data
-     * @example
-     * [
-     *      [
-     *          participantCode => [participantItemId, participantItemId],
-     *          participantCode => [participantItemId, participantItemId]
-     *      ],
-     *      [
-     *          participantCode => [participantItemId, participantItemId],
-     *          participantCode => [participantItemId, participantItemId]
-     *      ]
-     * ]
-     ************************************************************************/
-    private function getItemsGroupedByRule(array $data, array $rule) : array
-    {
-        $result = [];
-
-        foreach ($rule as $participantCode => $ruleParticipantFields)
-        {
-            $participantData        = [];
-            $participantDataItemsId = [];
-
-            if (!array_key_exists($participantCode, $data))
-            {
-                continue;
-            }
-            foreach ($ruleParticipantFields as $participantFieldName)
-            {
-                if (array_key_exists($participantFieldName, $data[$participantCode]))
-                {
-                    $participantData[$participantFieldName] = $data[$participantCode][$participantFieldName];
-                }
-            }
-            if (count($participantData) != count($ruleParticipantFields))
-            {
-                continue;
-            }
-
-            foreach ($ruleParticipantFields as $participantFieldName)
-            {
-                $participantDataItemsId = array_merge($participantDataItemsId, array_keys($participantData[$participantFieldName]));
-            }
-            $participantDataItemsId = array_unique($participantDataItemsId);
-
-            foreach ($participantDataItemsId as $participantItemId)
-            {
-                $itemValues = [];
-
-                foreach ($ruleParticipantFields as $participantFieldName)
-                {
-                    $value = array_key_exists($participantItemId, $participantData[$participantFieldName])
-                        ? $participantData[$participantFieldName][$participantItemId]
-                        : null;
-                    if (!$this->checkIsEmpty($value))
-                    {
-                        $itemValues[] = json_encode($value);
-                    }
-                }
-                if (count($itemValues) != count($ruleParticipantFields))
+                if (count($participantData) != count($participantFields))
                 {
                     continue;
                 }
 
-                $combinedData = implode('|', $itemValues);
-                if (!array_key_exists($combinedData, $result))
+                foreach (array_unique($participantDataItemsId) as $participantItemId)
                 {
-                    $result[$combinedData] = [];
-                }
-                if (!array_key_exists($participantCode, $result[$combinedData]))
-                {
-                    $result[$combinedData][$participantCode] = [];
-                }
+                    $itemValues = [];
 
-                $result[$combinedData][$participantCode][] = $participantItemId;
-            }
-        }
-
-        return array_values($result);
-    }
-    /** **********************************************************************
-     * query matched items
-     *
-     * @return  array                               query result
-     * @throws  RuntimeException                    querying error
-     ************************************************************************/
-    private function queryMatchedItems() : array
-    {
-        try
-        {
-            $result         = [];
-            $db             = DB::getInstance();
-            $procedureCode  = $this->getProcedure()->getCode();
-            $queryString    = "
-            SELECT
-                matched_items_participants.`PROCEDURE_ITEM`       AS COMMON_ITEM_ID,
-                participants.`CODE`                               AS PARTICIPANT_CODE,
-                matched_items_participants.`PARTICIPANT_ITEM_ID`  AS PARTICIPANT_ITEM_ID
-            FROM
-                matched_items_participants
-            INNER JOIN matched_items
-                ON matched_items_participants.`PROCEDURE_ITEM` = matched_items.`ID`
-            INNER JOIN procedures
-                ON matched_items.`PROCEDURE` = procedures.`ID`
-            INNER JOIN participants
-                ON matched_items_participants.`PARTICIPANT` = participants.`ID`
-            WHERE
-                procedures.`CODE` = ?";
-
-            $queryResult = $db->query($queryString, [$procedureCode]);
-            while ($queryResult->count() > 0)
-            {
-                $item       = $queryResult->pop();
-                $itemArray  = [];
-
-                foreach ($item->getKeys() as $key)
-                {
-                    $itemArray[$key] = $item->get($key);
-                }
-
-                $result[] = $itemArray;
-            }
-
-            return $result;
-        }
-        catch (RuntimeException $exception)
-        {
-            throw $exception;
-        }
-    }
-    /** **********************************************************************
-     * save new matched items into DB
-     *
-     * @param   array $newMatchedItems              new matched items array
-     * @example
-     * [
-     *      [
-     *          participantCode => participantItemId,
-     *          participantCode => participantItemId
-     *      ],
-     *      [
-     *          participantCode => participantItemId,
-     *          participantCode => participantItemId
-     *      ]
-     * ]
-     ************************************************************************/
-    private function saveNewMatchedItems(array $newMatchedItems) : void
-    {
-        try
-        {
-            $db                     = DB::getInstance();
-            $procedureId            = $this->queryProcedureId();
-            $participantsIdArray    = $this->queryParticipantsId();
-
-            foreach ($newMatchedItems as $commonItemStructure)
-            {
-                $db->query("INSERT INTO matched_items (`PROCEDURE`) VALUES (?)", [$procedureId]);
-                $commonItemId = $db->getLastInsertId();
-
-                if ($commonItemId > 0)
-                {
-                    foreach ($commonItemStructure as $participantCode => $participantItemId)
+                    foreach ($participantFields as $participantFieldName)
                     {
-                        if (!array_key_exists($participantCode, $participantsIdArray))
+                        $value = array_key_exists($participantItemId, $participantData[$participantFieldName])
+                            ? $participantData[$participantFieldName][$participantItemId]
+                            : null;
+                        if (!$this->checkValueIsEmpty($value))
                         {
-                            $this->addLogMessage("not found participant ID by code \"$participantCode\" on saving new matched items into DB", 'warning');
-                            continue;
-                        }
-
-                        $participantId  = $participantsIdArray[$participantCode];
-                        $queryString    = "INSERT INTO matched_items_participants (`PROCEDURE_ITEM`, `PARTICIPANT`, `PARTICIPANT_ITEM_ID`) VALUES (?, ?, ?)";
-
-                        $db->query($queryString, [$commonItemId, $participantId, $participantItemId]);
-                        $participantMatchedItemId = $db->getLastInsertId();
-
-                        if ($participantMatchedItemId <= 0)
-                        {
-                            $this->addLogMessage("participant matched item \"$participantItemId\" was not written into DB with unknown problem", 'warning');
+                            $itemValues[] = json_encode($value);
                         }
                     }
-                }
-                else
-                {
-                    $this->addLogMessage("common matched item was not written into DB with unknown problem", 'warning');
-                }
-            }
-        }
-        catch (RuntimeException $exception)
-        {
-            $error = $exception->getMessage();
-            $this->addLogMessage("problems with writing new matched items into DB, \"$error\"", 'warning');
-        }
-    }
-    /** **********************************************************************
-     * query procedure ID
-     *
-     * @return  int                                 procedure ID
-     * @throws  RuntimeException                    querying error
-     ************************************************************************/
-    private function queryProcedureId() : int
-    {
-        try
-        {
-            $db             = DB::getInstance();
-            $procedureCode  = $this->getProcedure()->getCode();
-            $queryString    = "SELECT procedures.`ID` FROM procedures WHERE procedures.`CODE` = ?";
-            $queryResult    = $db->query($queryString, [$procedureCode]);
+                    if (count($itemValues) != count($participantFields))
+                    {
+                        continue;
+                    }
 
-            while ($queryResult->count() > 0)
-            {
-                $procedureId = (int) $queryResult->pop()->get('ID');
-                if ($procedureId > 0)
-                {
-                    return $procedureId;
+                    $combinedData = implode('|', $itemValues);
+                    if (!array_key_exists($combinedData, $this->matchedItemsCollection))
+                    {
+                        $this->matchedItemsCollection[$combinedData] = [];
+                    }
+                    if (!array_key_exists($participantCode, $this->matchedItemsCollection[$combinedData]))
+                    {
+                        $this->matchedItemsCollection[$combinedData][$participantCode] = [];
+                    }
+                    $this->matchedItemsCollection[$combinedData][$participantCode][] = $participantItemId;
                 }
             }
-
-            throw new RuntimeException("procedure ID by code \"$procedureCode\" was not found");
         }
-        catch (RuntimeException $exception)
-        {
-            throw $exception;
-        }
-    }
-    /** **********************************************************************
-     * query participants ID
-     *
-     * @return  array                               participants ID
-     * @example
-     * [
-     *      participantCode => participantId,
-     *      participantCode => participantId
-     * ]
-     * @throws  RuntimeException                    querying error
-     ************************************************************************/
-    private function queryParticipantsId() : array
-    {
-        try
-        {
-            $result                     = [];
-            $db                         = DB::getInstance();
-            $participantsCodes          = array_keys($this->participantsCollection);
-            $participantsPlaceholder    = rtrim(str_repeat('?, ', count($participantsCodes)), ', ');
-            $queryString                = "SELECT participants.`ID`, participants.`CODE` FROM participants WHERE participants.`CODE` IN ($participantsPlaceholder)";
-            $queryResult                = $db->query($queryString, $participantsCodes);
 
-            while ($queryResult->count() > 0)
-            {
-                $item               = $queryResult->pop();
-                $participantId      = (int) $item->get('ID');
-                $participantCode    = $item->get('CODE');
-
-                $result[$participantCode] = $participantId;
-            }
-
-            return $result;
-        }
-        catch (RuntimeException $exception)
-        {
-            throw $exception;
-        }
+        $this->matchedItemsCollection = array_values($this->matchedItemsCollection);
+        return $this->matchedItemsCollection;
     }
     /** **********************************************************************
      * check value is empty
@@ -1118,7 +683,7 @@ class Matcher extends AbstractProcessor
      * @param   mixed $value                        value
      * @return  bool                                value is empty
      ************************************************************************/
-    private function checkIsEmpty($value) : bool
+    private function checkValueIsEmpty($value) : bool
     {
         switch (gettype($value))
         {
@@ -1127,7 +692,7 @@ class Matcher extends AbstractProcessor
             case 'array':
                 foreach ($value as $arrayValue)
                 {
-                    if (!$this->checkIsEmpty($arrayValue))
+                    if (!$this->checkValueIsEmpty($arrayValue))
                     {
                         return false;
                     }
@@ -1149,7 +714,7 @@ class Matcher extends AbstractProcessor
     private function addLogMessage(string $message, string $type) : void
     {
         $logger         = Logger::getInstance();
-        $procedureCode  = $this->getProcedure()->getCode();
+        $procedureCode  = $this->procedure->getCode();
         $fullMessage    = "Matcher for procedure \"$procedureCode\": $message";
 
         switch ($type)

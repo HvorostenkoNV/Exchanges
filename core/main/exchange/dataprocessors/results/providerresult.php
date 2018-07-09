@@ -13,7 +13,7 @@ use
  * @package exchange_exchange_dataprocessors
  * @author  Hvorostenko
  *************************************************************************************************/
-class ProviderResult extends MapData implements Result
+class ProviderResult extends MapData
 {
     /** **********************************************************************
      * delete value by key

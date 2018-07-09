@@ -1,45 +1,44 @@
 @startuml
 
 namespace Main.Exchange.DataProcessors #BBB {
-    class Manager {
-        +getCollector(Procedure $procedure) : Collector
-        +getMatcher(Procedure $procedure) : Matcher
-        +getCombiner(Procedure $procedure) : Combiner
-        +getProvider(Procedure $procedure) : Provider
-    }
-
-    interface Processor {
-        +__construct(Procedure $procedure)
-        +getProcedure() : Procedure
-    }
-
-    abstract AbstractProcessor {
-        +__construct(Procedure $procedure)
-        +getProcedure() : Procedure
-    }
-
     class Collector {
+        +__construct(Procedure $procedure)
         +collectData() : CollectedData
     }
 
     class Matcher {
-        +matchItems(CollectedData $data) : MatchedData
+        +__construct(Procedure $procedure, ProcedureItemsMap $map, ProcedureData $data)
+        +matchItems(CollectedData $newData) : MatchedData
     }
 
     class Combiner {
+        +__construct(Procedure $procedure, ProcedureData $data)
         +combineItems(MatchedData $data) : CombinedData
     }
 
     class Provider {
+        +__construct(Procedure $procedure, ProcedureItemsMap $map)
         +provideData(CombinedData $data) : ProviderResult
+    }
+
+    class ProcedureItemsMap {
+        +__construct(Procedure $procedure)
+        +getItemsIdArray() : int[]
+        +getItemId(Participant $participant, int $commonItemId) : string
+        +getItemCommonId(Participant $participant, string $itemId) : int
+        +setParticipantItem(int $commonItemId, Participant $participant, string $itemId) : void
+        +createNewItem(Participant $participant, string $itemId) : int
+    }
+
+    class ProcedureData {
+        +__construct(Procedure $procedure)
+        +getItemsIdArray() : int[]
+        +getData(int $commonItemId, ProcedureField $field) : mixed
     }
     /' ------------------------------------------- '/
     /' ----------------- Results ----------------- '/
     /' ------------------------------------------- '/
     namespace Results #FFF {
-        interface Result {
-
-        }
         /' ---------------------------- '/
         /' ------- CollectedData ------ '/
         /' ---------------------------- '/
@@ -52,25 +51,15 @@ namespace Main.Exchange.DataProcessors #BBB {
         [
             Participant =>
             [
-                [
-                    participantField => participantFieldValue,
-                    participantField => participantFieldValue
-                ],
-                [
-                    participantField => participantFieldValue,
-                    participantField => participantFieldValue
-                ]
+                itemData,
+                itemData,
+                itemData
             ],
             Participant =>
             [
-                [
-                    participantField => participantFieldValue,
-                    participantField => participantFieldValue
-                ],
-                [
-                    participantField => participantFieldValue,
-                    participantField => participantFieldValue
-                ]
+                itemData,
+                itemData,
+                itemData
             ]
         ]
         endnote
@@ -84,31 +73,17 @@ namespace Main.Exchange.DataProcessors #BBB {
 
         note bottom of MatchedData
         [
-            commonItem =>
+            commonItemId =>
             [
-                Participant =>
-                [
-                    participantField => participantFieldValue,
-                    participantField => participantFieldValue
-                ],
-                Participant =>
-                [
-                    participantField => participantFieldValue,
-                    participantField => participantFieldValue
-                ]
+                Participant => itemData,
+                Participant => itemData,
+                Participant => itemData
             ],
-            commonItem =>
+            commonItemId =>
             [
-                Participant =>
-                [
-                    participantField => participantFieldValue,
-                    participantField => participantFieldValue
-                ],
-                Participant =>
-                [
-                    participantField => participantFieldValue,
-                    participantField => participantFieldValue
-                ]
+                Participant => itemData,
+                Participant => itemData,
+                Participant => itemData
             ]
         ]
         endnote
@@ -122,16 +97,9 @@ namespace Main.Exchange.DataProcessors #BBB {
 
         note bottom of CombinedData
         [
-            commonItem =>
-            [
-                commonField => commonFieldValue,
-                commonField => commonFieldValue
-            ],
-            commonItem =>
-            [
-                commonField => commonFieldValue,
-                commonField => commonFieldValue
-            ]
+            commonItemId => commonItemData,
+            commonItemId => commonItemData,
+            commonItemId => commonItemData
         ]
         endnote
         /' ---------------------------- '/
@@ -141,13 +109,6 @@ namespace Main.Exchange.DataProcessors #BBB {
             +set(Participants.Participant $key, bool $value) : void
             +get(Participants.Participant $key) : bool
         }
-        /' ---------------------------- '/
-        /' --------- Relations -------- '/
-        /' ---------------------------- '/
-        Result  <|--    CollectedData
-        Result  <|--    MatchedData
-        Result  <|--    CombinedData
-        Result  <|--    ProviderResult
     }
     /' ------------------------------------------- '/
     /' ------------------ Data ------------------- '/
@@ -166,17 +127,17 @@ namespace Main.Exchange.DataProcessors #BBB {
     /' ------------------------------------------- '/
     /' ---------------- Relations ---------------- '/
     /' ------------------------------------------- '/
-    Manager             -       Processor
-    Processor           <|--    AbstractProcessor
-    AbstractProcessor   <|--    Collector
-    AbstractProcessor   <|--    Matcher
-    AbstractProcessor   <|--    Combiner
-    AbstractProcessor   <|--    Provider
+    Collector   *-- Main.Exchange.DataProcessors.Results.CollectedData
+    Matcher     *-- Main.Exchange.DataProcessors.Results.MatchedData
+    Combiner    *-- Main.Exchange.DataProcessors.Results.CombinedData
+    Provider    *-- Main.Exchange.DataProcessors.Results.ProviderResult
 
     Main.Exchange.DataProcessors.Results.MatchedData    o-- Main.Exchange.DataProcessors.Data.MatchedItem
     Main.Exchange.DataProcessors.Results.CombinedData   o-- Main.Exchange.DataProcessors.Data.CombinedItem
 
-    Processor o-- Main.Exchange.DataProcessors.Results.Result
+    Matcher     *-- ProcedureItemsMap
+    Matcher     *-- ProcedureData
+    Combiner    *-- ProcedureData
 }
 
 @enduml

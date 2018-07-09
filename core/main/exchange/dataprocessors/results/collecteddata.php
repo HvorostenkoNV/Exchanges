@@ -14,7 +14,7 @@ use
  * @package exchange_exchange_dataprocessors
  * @author  Hvorostenko
  *************************************************************************************************/
-class CollectedData extends MapData implements Result
+class CollectedData extends MapData
 {
     /** **********************************************************************
      * delete value by key

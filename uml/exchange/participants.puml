@@ -33,42 +33,14 @@ namespace Main.Exchange.Participants #BBB {
         -{abstract}provideDataForDelivery(Data.DataForDelivery $data) : bool
     }
     /' ------------------------------------------- '/
-    /' ------------------ Data ------------------- '/
-    /' ------------------------------------------- '/
-    namespace Data #FFF {
-        interface Data {
-
-        }
-
-        class ProvidedData < extends Main.Data.QueueData > {
-            +pop() : ItemData
-            +push(ItemData $data) : void
-        }
-
-        class DataForDelivery < extends Main.Data.QueueData > {
-            +pop() : ItemData
-            +push(ItemData $data) : void
-        }
-
-        class ItemData < extends Main.Data.MapData > {
-            +get(Fields.Field $key) : mixed
-            +set(Fields.Field $key, mixed $value) : void
-        }
-
-        Data    <|--    ProvidedData
-        Data    <|--    DataForDelivery
-
-        ProvidedData    o-- ItemData
-        DataForDelivery o-- ItemData
-    }
-    /' ------------------------------------------- '/
     /' ----------------- Fields ------------------ '/
     /' ------------------------------------------- '/
     namespace Fields #FFF {
         class Field {
-            +__construct(Main.Data.Map $params)
-            +getParam(string $param) : mixed
+            +__construct(Participant $participant, Main.Data.Map $params)
+            +getParticipant() : Participant
             +getFieldType() : FieldsTypes.Field
+            +getParam(string $param) : mixed
         }
 
         class FieldsSet < extends Main.Data.SetData > {
@@ -107,6 +79,35 @@ namespace Main.Exchange.Participants #BBB {
         Field           <|--    AbstractField
         AbstractField   <|--    String
         AbstractField   <|--    Number
+    }
+    /' ------------------------------------------- '/
+    /' ------------------ Data ------------------- '/
+    /' ------------------------------------------- '/
+    namespace Data #FFF {
+        interface Data {
+
+        }
+
+        class ProvidedData < extends Main.Data.QueueData > {
+            +pop() : ItemData
+            +push(ItemData $data) : void
+        }
+
+        class DataForDelivery < extends Main.Data.QueueData > {
+            +pop() : ItemData
+            +push(ItemData $data) : void
+        }
+
+        class ItemData < extends Main.Data.MapData > {
+            +get(Fields.Field $key) : mixed
+            +set(Fields.Field $key, mixed $value) : void
+        }
+
+        Data    <|--    ProvidedData
+        Data    <|--    DataForDelivery
+
+        ProvidedData    o-- ItemData
+        DataForDelivery o-- ItemData
     }
     /' ------------------------------------------- '/
     /' ---------------- Relations ---------------- '/

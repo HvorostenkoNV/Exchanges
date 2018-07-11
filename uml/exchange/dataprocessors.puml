@@ -33,7 +33,7 @@ namespace Main.Exchange.DataProcessors #BBB {
     class ProcedureData {
         +__construct(Procedure $procedure)
         +getItemsIdArray() : int[]
-        +getData(int $commonItemId, ProcedureField $field) : mixed
+        +getData(int $commonItemId, Procedures.Fields.Field $field) : mixed
     }
     /' ------------------------------------------- '/
     /' ----------------- Results ----------------- '/
@@ -66,24 +66,24 @@ namespace Main.Exchange.DataProcessors #BBB {
         /' ---------------------------- '/
         /' ------- MatchedData ------ '/
         /' ---------------------------- '/
-        class MatchedData < extends Main.Data.QueueData > {
-            +pop() : Data.MatchedItem
-            +push(Data.MatchedItem $data) : void
+        class MatchedData < extends Main.Data.MapData > {
+            +set(int $key, Data.MatchedItem $value) : void
+            +get(int $key) : ?Data.MatchedItem
         }
 
         note bottom of MatchedData
         [
             commonItemId =>
             [
-                Participant => itemData,
-                Participant => itemData,
-                Participant => itemData
+                participant => itemData,
+                participant => itemData,
+                participant => itemData
             ],
             commonItemId =>
             [
-                Participant => itemData,
-                Participant => itemData,
-                Participant => itemData
+                participant => itemData,
+                participant => itemData,
+                participant => itemData
             ]
         ]
         endnote
@@ -120,8 +120,8 @@ namespace Main.Exchange.DataProcessors #BBB {
         }
 
         class CombinedItem < extends Main.Data.MapData > {
-            +set(Procedures.Fields.ProcedureField $key, mixed $value) : void
-            +get(Procedures.Fields.ProcedureField $key) : mixed
+            +set(Procedures.Fields.Field $key, mixed $value) : void
+            +get(Procedures.Fields.Field $key) : mixed
         }
     }
     /' ------------------------------------------- '/
@@ -134,10 +134,6 @@ namespace Main.Exchange.DataProcessors #BBB {
 
     Main.Exchange.DataProcessors.Results.MatchedData    o-- Main.Exchange.DataProcessors.Data.MatchedItem
     Main.Exchange.DataProcessors.Results.CombinedData   o-- Main.Exchange.DataProcessors.Data.CombinedItem
-
-    Matcher     *-- ProcedureItemsMap
-    Matcher     *-- ProcedureData
-    Combiner    *-- ProcedureData
 }
 
 @enduml

@@ -6,11 +6,14 @@ namespace Main\Exchange\DataProcessors;
 use
     InvalidArgumentException,
     UnexpectedValueException,
+    Main\Data\MapData,
     Main\Helpers\Logger,
     Main\Exchange\Participants\Participant,
     Main\Exchange\Participants\Fields\Field     as ParticipantField,
+    Main\Exchange\Participants\Fields\FieldsSet as ParticipantFieldsSet,
     Main\Exchange\Participants\Data\DataForDelivery,
     Main\Exchange\Participants\Data\ItemData    as ParticipantItemData,
+    Main\Exchange\Participants\Exceptions\UnknownParticipantException,
     Main\Exchange\Participants\Exceptions\UnknownParticipantFieldException,
     Main\Exchange\Procedures\Procedure,
     Main\Exchange\DataProcessors\Results\CombinedData,
@@ -31,8 +34,7 @@ class Provider
         $procedure                      = null,
         $procedureItemsMap              = null,
         $participantsCollection         = [],
-        $participantsFieldsCollection   = [],
-        $participantsIdFieldsCollection = [];
+        $participantsFieldsCollection   = [];
     /** **********************************************************************
      * constructor
      *
@@ -41,10 +43,20 @@ class Provider
      ************************************************************************/
     public function __construct(Procedure $procedure, ProcedureItemsMap $map)
     {
-        $this->procedure            = $procedure;
-        $this->procedureItemsMap    = $map;
+        $this->procedure                    = $procedure;
+        $this->procedureItemsMap            = $map;
+        $this->participantsCollection       = $procedure->getParticipants();
+        $this->participantsFieldsCollection = new MapData;
 
-        $this->fillParticipantsInfoCollections($procedure);
+        $this->participantsCollection->rewind();
+        while ($this->participantsCollection->valid())
+        {
+            $participant            = $this->participantsCollection->current();
+            $participantFieldsSet   = $participant->getFields();
+
+            $this->participantsFieldsCollection->set($participant, $participantFieldsSet);
+            $this->participantsCollection->next();
+        }
     }
     /** **********************************************************************
      * provide procedure participants data
@@ -126,52 +138,48 @@ class Provider
         return $result;
     }
     /** **********************************************************************
-     * fill participants info collections
+     * find participant by code
      *
-     * @param   Procedure $procedure                procedure
+     * @param   string $participantCode             participant code
+     * @return  Participant                         participant
+     * @throws  UnknownParticipantException         participant not found
      ************************************************************************/
-    private function fillParticipantsInfoCollections(Procedure $procedure) : void
+    private function findParticipant(string $participantCode) : Participant
     {
-        $participantsSet = $procedure->getParticipants();
-
-        if ($participantsSet->count() <= 0)
+        $this->participantsCollection->rewind();
+        while ($this->participantsCollection->valid())
         {
-            $this->addLogMessage('procedure has no participants', 'warning');
-            return;
+            $participant = $this->participantsCollection->current();
+            if ($participant->getCode() == $participantCode)
+            {
+                return $participant;
+            }
+            $this->participantsCollection->next();
         }
 
-        while ($participantsSet->valid())
+        $exception = new UnknownParticipantException;
+        $exception->setParticipantCode($participantCode);
+        throw $exception;
+    }
+    /** **********************************************************************
+     * find participant field
+     *
+     * @param   string $participantCode             participant code
+     * @return  ParticipantFieldsSet                participant fields set
+     * @throws  UnknownParticipantException         participant fields set not found
+     ************************************************************************/
+    private function findParticipantFieldsSet(string $participantCode) : ParticipantFieldsSet
+    {
+        try
         {
-            $participant        = $participantsSet->current();
-            $participantFields  = $participant->getFields();
-            $participantCode    = $participant->getCode();
-
-            $this->participantsCollection[$participantCode]         = $participant;
-            $this->participantsFieldsCollection[$participantCode]   = [];
-
-            while ($participantFields->valid())
-            {
-                $field      = $participantFields->current();
-                $fieldName  = $field->getParam('name');
-
-                $this->participantsFieldsCollection[$participantCode][$fieldName] = $field;
-                if ($field->getParam('type') == self::$participantIdFieldType)
-                {
-                    $this->participantsIdFieldsCollection[$participantCode] = $field;
-                }
-
-                $participantFields->next();
-            }
-
-            if (count($this->participantsFieldsCollection[$participantCode]) <= 0)
-            {
-                $this->addLogMessage("participant \"$participantCode\" has no fields", 'warning');
-            }
-            if (!array_key_exists($participantCode, $this->participantsIdFieldsCollection))
-            {
-                $this->addLogMessage("participant \"$participantCode\" has no ID field", 'warning');
-            }
-            $participantsSet->next();
+            $participant = $this->findParticipant($participantCode);
+            return $this->participantsFieldsCollection->get($participant);
+        }
+        catch (UnknownParticipantException $exception)
+        {
+            $needException = new UnknownParticipantException;
+            $needException->setParticipantCode($participantCode);
+            throw $needException;
         }
     }
     /** **********************************************************************
@@ -183,14 +191,31 @@ class Provider
      ************************************************************************/
     private function findParticipantIdField(string $participantCode) : ParticipantField
     {
-        if (array_key_exists($participantCode, $this->participantsIdFieldsCollection))
+        $participantFieldsSet   = null;
+        $needException          = new UnknownParticipantFieldException;
+        $needException->setParticipantCode($participantCode);
+
+        try
         {
-            return $this->participantsIdFieldsCollection[$participantCode];
+            $participantFieldsSet = $this->findParticipantFieldsSet($participantCode);
+        }
+        catch (UnknownParticipantException $exception)
+        {
+            throw $needException;
         }
 
-        $exception = new UnknownParticipantFieldException;
-        $exception->setParticipantCode($participantCode);
-        throw $exception;
+        $participantFieldsSet->rewind();
+        while ($participantFieldsSet->valid())
+        {
+            $participantField = $participantFieldsSet->current();
+            if ($participantField->getParam('type') == self::$participantIdFieldType)
+            {
+                return $participantField;
+            }
+            $participantFieldsSet->next();
+        }
+
+        throw $needException;
     }
     /** **********************************************************************
      * construct participant item data
@@ -206,14 +231,13 @@ class Provider
 
         foreach ($combinedItemData->getKeys() as $procedureField)
         {
-            $value = $combinedItemData->get($procedureField);
+            $value                  = $combinedItemData->get($procedureField);
+            $participantFieldsSet   = $procedureField->getParticipantsFields();
 
-            $procedureField->rewind();
-            while ($procedureField->valid())
+            while ($participantFieldsSet->valid())
             {
-                $procedureParticipantField  = $procedureField->current();
-                $fieldParticipantCode       = $procedureParticipantField->getParticipant()->getCode();
-                $participantField           = $procedureParticipantField->getField();
+                $participantField       = $participantFieldsSet->current();
+                $fieldParticipantCode   = $participantField->getParticipant()->getCode();
 
                 if ($fieldParticipantCode == $participantCode)
                 {
@@ -227,7 +251,7 @@ class Provider
                     }
                 }
 
-                $procedureField->next();
+                $participantFieldsSet->next();
             }
         }
 

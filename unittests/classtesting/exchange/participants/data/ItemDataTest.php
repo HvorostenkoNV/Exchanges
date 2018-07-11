@@ -4,15 +4,15 @@ declare(strict_types=1);
 namespace UnitTests\ClassTesting\Exchange\Participants\Data;
 
 use
+    Throwable,
+    UnexpectedValueException,
     InvalidArgumentException,
-    ReflectionClass,
+    DomainException,
     UnitTests\ClassTesting\Data\MapDataAbstractTest,
-    UnitTests\ClassTesting\Exchange\Participants\FieldsTypes\ParticipantFieldClass  as FieldTypeTest,
-    UnitTests\ClassTesting\Exchange\Participants\FieldsTypes\StringFieldTest        as RandomFieldTypeTest,
+    UnitTests\ClassTesting\Exchange\Participants\ParticipantStub,
     Main\Data\MapData,
-    Main\Exchange\Participants\FieldsTypes\Manager                                  as FieldsTypesManager,
-    Main\Exchange\Participants\FieldsTypes\Field                                    as FieldType,
-    Main\Exchange\Participants\Fields\Field,
+    Main\Exchange\Participants\FieldsTypes\Manager  as FieldsTypesManager,
+    Main\Exchange\Participants\Fields\Field         as ParticipantField,
     Main\Exchange\Participants\Data\ItemData;
 /** ***********************************************************************************************
  * Test Main\Exchange\Participants\Data\ItemData class
@@ -41,19 +41,26 @@ final class ItemDataTest extends MapDataAbstractTest
     {
         $result                 = [];
         $availableFieldsTypes   = FieldsTypesManager::getAvailableFieldsTypes();
+        $participant            = new ParticipantStub;
 
         foreach ($availableFieldsTypes as $type)
         {
             for ($index = 1; $index <= 10; $index++)
             {
-                $params     = new MapData;
-                $fieldName  = 'field'.ucfirst($type).$index;
-                $value      = FieldsTypesManager::getField($type)->getRandomValue();
+                $fieldParams    = new MapData;
+                $itemValue      = null;
 
-                $params->set('name', $fieldName);
-                $params->set('type', $type);
+                while (empty($itemValue))
+                {
+                    $itemValue = FieldsTypesManager::getField($type)->getRandomValue();
+                }
 
-                $result[] = [new Field($params), $value];
+                $fieldParams->set('id',     rand(1, getrandmax()));
+                $fieldParams->set('name',   "field-$type-$index");
+                $fieldParams->set('type',   $type);
+
+                $field      = new ParticipantField($participant, $fieldParams);
+                $result[]   = [$field, $itemValue];
             }
         }
 
@@ -68,10 +75,18 @@ final class ItemDataTest extends MapDataAbstractTest
     public static function getIncorrectDataKeys() : array
     {
         return
-        [
-            new MapData,
-            new ItemData
-        ];
+            [
+                'someString',
+                '',
+                15,
+                0,
+                1.5,
+                true,
+                false,
+                null,
+                new MapData,
+                new ItemData
+            ];
     }
     /** **********************************************************************
      * get incorrect values
@@ -91,69 +106,102 @@ final class ItemDataTest extends MapDataAbstractTest
      ************************************************************************/
     public function setingIncorrectFieldValue() : void
     {
-        $itemData               = new ItemData;
-        $availableFieldsTypes   = FieldsTypesManager::getAvailableFieldsTypes();
-        $exceptionName          = InvalidArgumentException::class;
+        $itemData       = new ItemData;
+        $exceptionName  = InvalidArgumentException::class;
 
-        foreach ($availableFieldsTypes as $fieldType)
+        foreach ($this->getCorrectParticipantsFields() as $field)
         {
-            $fieldTypeObject    = FieldsTypesManager::getField($fieldType);
-            $incorrectValues    = $this->getFieldIncorrectValues($fieldTypeObject);
-            $fieldParams        = new MapData;
+            $incorrectValue = null;
 
-            $fieldParams->set('name', 'fieldName');
-            $fieldParams->set('type', $fieldType);
-            $field = new Field($fieldParams);
-
-            foreach ($incorrectValues as $value)
+            try
             {
-                try
-                {
-                    $itemData->set($field, $value);
-                    self::fail("Expect \"$exceptionName\" on seting field with incorrect value");
-                }
-                catch (InvalidArgumentException $exception)
-                {
-                    self::assertTrue(true);
-                }
+                $incorrectValue = $this->getFieldIncorrectValue($field->getParam('type'));
+            }
+            catch (UnexpectedValueException $exception)
+            {
+                self::assertTrue(true);
+                continue;
+            }
+
+            try
+            {
+                $itemData->set($field, $incorrectValue);
+                self::fail("Expect \"$exceptionName\" on seting incorrect value");
+            }
+            catch (InvalidArgumentException $exception)
+            {
+                self::assertTrue(true);
             }
         }
     }
     /** **********************************************************************
-     * get incorrect values for field type
+     * get correct participants fields
      *
-     * @param   FieldType   $fieldType      field type
-     * @return  array                       array of incorrect values
+     * @return  ParticipantField[]          correct participants fields
      ************************************************************************/
-    private function getFieldIncorrectValues(FieldType $fieldType) : array
+    private function getCorrectParticipantsFields() : array
     {
         $result = [];
 
-        $testClass  = $this->getParticipantFieldTestClass($fieldType);
-        $values     = $testClass::getValuesForValidation();
-
-        foreach ($values as $valuesArray)
+        try
         {
-            if (count($valuesArray) === 1)
+            foreach (self::getCorrectData() as $data)
             {
-                $result[] = $valuesArray[0];
+                $result[] = $data[0];
             }
+        }
+        catch (Throwable $exception)
+        {
+
         }
 
         return $result;
     }
     /** **********************************************************************
-     * get participant field test class
+     * get incorrect value for field type
      *
-     * @param   FieldType   $fieldType      field type
-     * @return  FieldTypeTest               field type test
+     * @param   string $fieldType           field type
+     * @return  mixed                       incorrect value
+     * @throws  UnexpectedValueException    incorrect value was not found
      ************************************************************************/
-    private function getParticipantFieldTestClass(FieldType $fieldType) : FieldTypeTest
+    private function getFieldIncorrectValue(string $fieldType)
     {
-        $fieldReflection        = new ReflectionClass($fieldType);
-        $fieldTestReflection    = new ReflectionClass(RandomFieldTypeTest::class);
-        $fieldTypeTest          = $fieldTestReflection->getNamespaceName().'\\'.$fieldReflection->getShortName().'Test';
+        $fieldTypeObject    = null;
+        $availableValues    =
+            [
+                'someString',
+                '',
+                15,
+                0,
+                1.5,
+                true,
+                false,
+                null,
+                [],
+                new MapData
+            ];
 
-        return new $fieldTypeTest;
+        try
+        {
+            $fieldTypeObject = FieldsTypesManager::getField($fieldType);
+        }
+        catch (InvalidArgumentException $exception)
+        {
+            throw new UnexpectedValueException;
+        }
+
+        foreach ($availableValues as $value)
+        {
+            try
+            {
+                $fieldTypeObject->validateValue($value);
+            }
+            catch (DomainException $exception)
+            {
+                return $value;
+            }
+        }
+
+        throw new UnexpectedValueException;
     }
 }

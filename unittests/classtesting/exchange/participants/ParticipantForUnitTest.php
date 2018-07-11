@@ -12,7 +12,7 @@ use
     Main\Exchange\Participants\AbstractParticipant,
     Main\Exchange\Participants\Data\ItemData,
     Main\Exchange\Participants\Data\ProvidedData,
-    Main\Exchange\Participants\Data\DataForDelivery,
+    Main\Exchange\Participants\Data\Data,
     Main\Exchange\Participants\Fields\FieldsSet;
 /** ***********************************************************************************************
  * Application participant Users1C
@@ -30,9 +30,9 @@ class ParticipantForUnitTest extends AbstractParticipant
      * read participant provided data and get it
      *
      * @param   FieldsSet $fields           participant fields set
-     * @return  ProvidedData                data
+     * @return  Data                        data
      ************************************************************************/
-    protected function readProvidedData(FieldsSet $fields) : ProvidedData
+    protected function readProvidedData(FieldsSet $fields) : Data
     {
         $result = new ProvidedData;
         $data   = null;
@@ -75,10 +75,10 @@ class ParticipantForUnitTest extends AbstractParticipant
     /** **********************************************************************
      * provide delivered data to the participant
      *
-     * @param   DataForDelivery $data       data to write
+     * @param   Data $data                  data to write
      * @return  bool                        process result
      ************************************************************************/
-    protected function provideDataForDelivery(DataForDelivery $data) : bool
+    protected function provideDataForDelivery(Data $data) : bool
     {
         $dataArray  = [];
         $xml        = new XML($this->xmlForDelivery);

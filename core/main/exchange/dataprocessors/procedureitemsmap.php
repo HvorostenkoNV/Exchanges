@@ -38,7 +38,7 @@ class ProcedureItemsMap
     /** **********************************************************************
      * get items id array
      *
-     * @return  int[]                       items id array
+     * @return  int[]                           items id array
      ************************************************************************/
     public function getItemsIdArray() : array
     {

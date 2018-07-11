@@ -6,7 +6,7 @@ namespace Main\Exchange\Procedures\Rules;
 use
     InvalidArgumentException,
     Main\Data\MapData,
-    Main\Exchange\Procedures\Fields\ParticipantField;
+    Main\Exchange\Participants\Fields\Field as ParticipantField;
 /** ***********************************************************************************************
  * Data combining rules
  * Display participants fields weight

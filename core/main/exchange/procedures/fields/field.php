@@ -1,40 +1,46 @@
 <?php
 declare(strict_types=1);
 
-namespace Main\Exchange\Participants\Fields;
+namespace Main\Exchange\Procedures\Fields;
 
 use
     InvalidArgumentException,
     Main\Data\Map,
-    Main\Exchange\Participants\Participant,
-    Main\Exchange\Participants\FieldsTypes\Manager  as FieldsTypesManager,
-    Main\Exchange\Participants\FieldsTypes\Field    as FieldType;
+    Main\Exchange\Participants\Fields\FieldsSet as ParticipantsFieldsSet,
+    Main\Exchange\Procedures\Procedure;
 /** ***********************************************************************************************
- * Participant field
+ * Procedure field class
+ * Display object as set of different participants fields like ONE procedure field
  *
- * @package exchange_exchange_participants
+ * @package exchange_exchange_procedures
  * @author  Hvorostenko
  *************************************************************************************************/
-final class Field
+class Field
 {
     private
-        $participant    = null,
-        $params         = null,
-        $type           = null;
+        $procedure          = null,
+        $params             = null,
+        $participantsFields = [];
     /** **********************************************************************
      * construct
      *
-     * @param   Participant $participant    participant
-     * @param   Map         $params         field params
-     * @throws  InvalidArgumentException    incorrect params
+     * @param   Procedure               $procedure          procedure
+     * @param   Map                     $params             field params
+     * @param   ParticipantsFieldsSet   $participantsFields participants fields
+     * @throws  InvalidArgumentException                    incorrect params
      ************************************************************************/
-    public function __construct(Participant $participant, Map $params)
+    public function __construct(Procedure $procedure, Map $params, ParticipantsFieldsSet $participantsFields)
     {
         try
         {
-            $this->participant  = $participant;
-            $this->params       = $this->validateParams($params);
-            $this->type         = FieldsTypesManager::getField($this->params->get('type'));
+            if ($participantsFields->count() <= 0)
+            {
+                throw new InvalidArgumentException('participants fields set is empty');
+            }
+
+            $this->procedure            = $procedure;
+            $this->params               = $this->validateParams($params);
+            $this->participantsFields   = $participantsFields;
         }
         catch (InvalidArgumentException $exception)
         {
@@ -42,22 +48,23 @@ final class Field
         }
     }
     /** **********************************************************************
-     * get field participant
+     * get field procedure
      *
-     * @return  Participant                 participant
+     * @return  Procedure                                   procedure
      ************************************************************************/
-    public function getParticipant() : Participant
+    public function getProcedure() : Procedure
     {
-        return $this->participant;
+        return $this->procedure;
     }
     /** **********************************************************************
-     * get field type
+     * get participants fields
      *
-     * @return  FieldType                   field type object
+     * @return  ParticipantsFieldsSet                       participants fields
      ************************************************************************/
-    public function getFieldType() : FieldType
+    public function getParticipantsFields() : ParticipantsFieldsSet
     {
-        return $this->type;
+        $this->participantsFields->rewind();
+        return $this->participantsFields;
     }
     /** **********************************************************************
      * get field param
@@ -80,29 +87,12 @@ final class Field
      ************************************************************************/
     private function validateParams(Map $params) : Map
     {
-        $id         = $params->hasKey('id')         ? $params->get('id')        : 0;
-        $name       = $params->hasKey('name')       ? $params->get('name')      : '';
-        $type       = $params->hasKey('type')       ? $params->get('type')      : '';
-        $required   = $params->hasKey('required')   ? $params->get('required')  : false;
+        $id = $params->hasKey('id') ? $params->get('id') : 0;
 
         if (!is_int($id) || $id <= 0)
         {
             throw new InvalidArgumentException('"id" param have to be not empty integer');
         }
-        if (!is_string($name) || strlen($name) <= 0)
-        {
-            throw new InvalidArgumentException('"name" param have to be not empty string');
-        }
-        if (!is_string($type) || strlen($type) <= 0)
-        {
-            throw new InvalidArgumentException('"type" param have to be not empty string');
-        }
-        if (!is_bool($required))
-        {
-            throw new InvalidArgumentException('"required" param have to be boolean value');
-        }
-
-        $params->set('required', $required);
 
         return $params;
     }

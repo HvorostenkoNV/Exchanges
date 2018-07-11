@@ -8,7 +8,7 @@ use
     InvalidArgumentException,
     Main\Helpers\Logger,
     Main\Exchange\Procedures\Procedure,
-    Main\Exchange\Procedures\Fields\ProcedureField,
+    Main\Exchange\Procedures\Fields\Field as ProcedureField,
     Main\Exchange\DataProcessors\Data\MatchedItem,
     Main\Exchange\DataProcessors\Data\CombinedItem,
     Main\Exchange\DataProcessors\Results\MatchedData,
@@ -100,22 +100,25 @@ class Combiner
         }
 echo"<br>===========COMBINER==========<br>";
 $array = [];
+
 foreach ($result->getKeys() as $commonItemId)
 {
     $data = $result->get($commonItemId);
     $array[$commonItemId] = [];
+
     foreach ($data->getKeys() as $procedureField)
     {
-        $procedureField->rewind();
-        $fieldParts = [];
-        while ($procedureField->valid())
+        $fieldParts             = [];
+        $participantFieldsSet   = $procedureField->getParticipantsFields();
+
+        while ($participantFieldsSet->valid())
         {
-            $participantField       = $procedureField->current();
-            $participantFieldName   = $participantField->getField()->getParam('name');
+            $participantField       = $participantFieldsSet->current();
+            $participantFieldName   = $participantField->getParam('name');
             $participantCode        = $participantField->getParticipant()->getCode();
 
             $fieldParts[] = "$participantCode - $participantFieldName";
-            $procedureField->next();
+            $participantFieldsSet->next();
         }
 
         $array[$commonItemId][implode(', ', $fieldParts)] = $data->get($procedureField);
@@ -136,29 +139,28 @@ echo"</pre>";
     private function getProcedureFieldValue(ProcedureField $procedureField, MatchedItem $matchedItem)
     {
         $combiningRules         = $this->procedure->getDataCombiningRules();
+        $participantFieldsSet   = $procedureField->getParticipantsFields();
         $participantFieldValues = [];
 
-        $procedureField->rewind();
-        while ($procedureField->valid())
+        while ($participantFieldsSet->valid())
         {
-            $procedureParticipantField  = $procedureField->current();
-            $participant                = $procedureParticipantField->getParticipant();
-            $participantField           = $procedureParticipantField->getField();
-            $participantItemData        = $matchedItem->hasKey($participant)
+            $participantField       = $participantFieldsSet->current();
+            $participant            = $participantField->getParticipant();
+            $participantItemData    = $matchedItem->hasKey($participant)
                 ? $matchedItem->get($participant)
                 : null;
-            $participantFieldValue      = $participantItemData && $participantItemData->hasKey($participantField)
+            $participantFieldValue  = $participantItemData && $participantItemData->hasKey($participantField)
                 ? $participantItemData->get($participantField)
                 : null;
-            $participantFieldWeight     = $combiningRules->hasKey($procedureParticipantField)
-                ? $combiningRules->get($procedureParticipantField)
+            $participantFieldWeight = $combiningRules->hasKey($participantField)
+                ? $combiningRules->get($participantField)
                 : 0;
 
             if (!($participantFieldWeight == 0 && $this->checkValueIsEmpty($participantFieldValue)))
             {
                 $participantFieldValues[$participantFieldWeight] = $participantFieldValue;
             }
-            $procedureField->next();
+            $participantFieldsSet->next();
         }
 
         if (count($participantFieldValues) <= 0)
@@ -172,8 +174,8 @@ echo"</pre>";
     /** **********************************************************************
      * check value is empty
      *
-     * @param   mixed $value                        value
-     * @return  bool                                value is empty
+     * @param   mixed $value                    value
+     * @return  bool                            value is empty
      ************************************************************************/
     private function checkValueIsEmpty($value) : bool
     {

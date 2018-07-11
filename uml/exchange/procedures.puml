@@ -25,6 +25,39 @@ namespace Main.Exchange.Procedures #BBB {
 
     }
     /' ------------------------------------------- '/
+    /' ----------------- Fields ------------------ '/
+    /' ------------------------------------------- '/
+    namespace Fields #FFF {
+        class Field {
+            +__construct(Procedure $procedure, Main.Data.Map $params, Participants.Fields.Field[] $participantFields)
+            +getProcedure() : Procedure
+            +getParam(string $param) : mixed
+            +getParticipantsFields() : Participants.Fields.Field[]
+        }
+
+        class FieldsSet < extends Main.Data.SetData > {
+            +current() : ?Field
+            +delete(Field $object) : void
+            +push(Field $object) :void
+        }
+
+        FieldsSet o-- Field
+    }
+    /' ------------------------------------------- '/
+    /' ------------------ Rules ------------------ '/
+    /' ------------------------------------------- '/
+    namespace Rules #FFF {
+        class DataMatchingRules < extends Main.Data.MapData > {
+            +set(Data.ParticipantsSet $key, Fields.FieldsSet $value) : void
+            +get(Data.ParticipantsSet $key) : Fields.FieldsSet
+        }
+
+        class DataCombiningRules < extends Main.Data.MapData > {
+            +set(Participants.Fields.Field $key, int $value) : void
+            +get(Participants.Fields.Field $key) : int
+        }
+    }
+    /' ------------------------------------------- '/
     /' ------------------ Data ------------------- '/
     /' ------------------------------------------- '/
     namespace Data #FFF {
@@ -38,45 +71,6 @@ namespace Main.Exchange.Procedures #BBB {
             +current() : ?Procedures.Procedure
             +delete(Procedures.Procedure $object) : void
             +push(Procedures.Procedure $object) :void
-        }
-    }
-    /' ------------------------------------------- '/
-    /' ----------------- Fields ------------------ '/
-    /' ------------------------------------------- '/
-    namespace Fields #FFF {
-        class ParticipantField {
-            +__construct(Participants.Participant $participant, Participants.Fields.Field $field)
-            +getParticipant() : Participants.Participant
-            +getField() : Participants.Fields.Field
-        }
-
-        class ProcedureField < extends Main.Data.SetData > {
-            +current() : ?ParticipantField
-            +delete(ParticipantField $object) : void
-            +push(ParticipantField $object) :void
-        }
-
-        class FieldsSet < extends Main.Data.SetData > {
-            +current() : ?ProcedureField
-            +delete(ProcedureField $object) : void
-            +push(ProcedureField $object) :void
-        }
-
-        FieldsSet       o-- ProcedureField
-        ProcedureField  o-- ParticipantField
-    }
-    /' ------------------------------------------- '/
-    /' ------------------ Rules ------------------ '/
-    /' ------------------------------------------- '/
-    namespace Rules #FFF {
-        class DataMatchingRules < extends Main.Data.MapData > {
-            +set(Fields.ParticipantField $key, Fields.FieldsSet $value) : void
-            +get(Fields.ParticipantField $key) : Fields.FieldsSet
-        }
-
-        class DataCombiningRules < extends Main.Data.MapData > {
-            +set(Participants.Fields.Field $key, int $value) : void
-            +get(Participants.Fields.Field $key) : int
         }
     }
     /' ------------------------------------------- '/

@@ -79,6 +79,10 @@ class ItemData extends MapData
             $needClass = Field::class;
             throw new InvalidArgumentException("key must be instance of \"$needClass\"");
         }
+        if ($key->getParam('required') && $this->isEmptyValue($value))
+        {
+            throw new InvalidArgumentException('value is empty while field is required');
+        }
 
         try
         {
@@ -89,6 +93,34 @@ class ItemData extends MapData
         {
             $error = $exception->getMessage();
             throw new InvalidArgumentException("value validation failed with error \"$error\"");
+        }
+    }
+    /** **********************************************************************
+     * check value is empty
+     *
+     * @param   mixed $value                value
+     * @return  bool                        value is empty
+     ************************************************************************/
+    private function isEmptyValue($value) : bool
+    {
+        switch (gettype($value))
+        {
+            case 'string':
+                return strlen($value) > 0 ? false : true;
+            case 'array':
+                foreach ($value as $arrayValue)
+                {
+                    if (!$this->isEmptyValue($arrayValue))
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            case 'NULL':
+                return true;
+            default:
+                return false;
         }
     }
 }

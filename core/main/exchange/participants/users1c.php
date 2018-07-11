@@ -10,9 +10,9 @@ use
     RecursiveDirectoryIterator,
     RecursiveIteratorIterator,
     Main\Helpers\MarkupData\XML,
-    Main\Exchange\Participants\Data\ItemData,
+    Main\Exchange\Participants\Data\Data,
     Main\Exchange\Participants\Data\ProvidedData,
-    Main\Exchange\Participants\Data\DataForDelivery,
+    Main\Exchange\Participants\Data\ItemData,
     Main\Exchange\Participants\Fields\FieldsSet;
 /** ***********************************************************************************************
  * Application participant Users1C
@@ -26,9 +26,9 @@ class Users1C extends AbstractParticipant
      * read participant provided data and get it
      *
      * @param   FieldsSet $fields           participant fields set
-     * @return  ProvidedData                data
+     * @return  Data                        data
      ************************************************************************/
-    protected function readProvidedData(FieldsSet $fields) : ProvidedData
+    protected function readProvidedData(FieldsSet $fields) : Data
     {
         $result     = new ProvidedData;
         $folder     = '/var/www/temp/bitrix1cadusersexchange/received/1c';
@@ -58,6 +58,11 @@ class Users1C extends AbstractParticipant
             return $result;
         }
         catch (RuntimeException $exception)
+        {
+            return $result;
+        }
+
+        if (is_null($needFile))
         {
             return $result;
         }
@@ -100,10 +105,11 @@ class Users1C extends AbstractParticipant
     /** **********************************************************************
      * provide delivered data to the participant
      *
-     * @param   DataForDelivery $data       data to write
+     * @param   Data $data                  data to write
      * @return  bool                        process result
+     * @throws
      ************************************************************************/
-    protected function provideDataForDelivery(DataForDelivery $data) : bool
+    protected function provideDataForDelivery(Data $data) : bool
     {
         $code = $this->getCode();
         echo"===============$code===============<br>";

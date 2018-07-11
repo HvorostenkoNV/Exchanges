@@ -6,7 +6,7 @@ namespace Main\Exchange\DataProcessors\Data;
 use
     InvalidArgumentException,
     Main\Data\MapData,
-    Main\Exchange\Procedures\Fields\ProcedureField;
+    Main\Exchange\Procedures\Fields\Field as ProcedureField;
 /** ***********************************************************************************************
  * Combined item data map
  * Display combined ONE data item

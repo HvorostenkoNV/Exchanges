@@ -6,11 +6,10 @@ namespace Main\Exchange\DataProcessors;
 use
     RuntimeException,
     UnexpectedValueException,
-    Main\Data\MapData,
     Main\Helpers\DB,
     Main\Helpers\Logger,
     Main\Exchange\Procedures\Procedure,
-    Main\Exchange\Procedures\Fields\ProcedureField;
+    Main\Exchange\Procedures\Fields\Field as ProcedureField;
 /** ***********************************************************************************************
  * Procedure data
  *
@@ -20,9 +19,8 @@ use
 class ProcedureData
 {
     private
-        $procedure              = null,
-        $data                   = [],
-        $procedureFieldsIdMap   = null;
+        $procedure  = null,
+        $data       = [];
     /** **********************************************************************
      * constructor
      *
@@ -30,9 +28,8 @@ class ProcedureData
      ************************************************************************/
     public function __construct(Procedure $procedure)
     {
-        $this->procedure            = $procedure;
-        $this->data                 = $this->getProcedureData($procedure);
-        $this->procedureFieldsIdMap = $this->getProcedureFieldIdMap($procedure);
+        $this->procedure    = $procedure;
+        $this->data         = $this->getProcedureData($procedure);
     }
     /** **********************************************************************
      * get items id array
@@ -53,8 +50,12 @@ class ProcedureData
      ************************************************************************/
     public function getData(int $commonItemId, ProcedureField $procedureField)
     {
-        $procedureFieldId = $this->procedureFieldsIdMap->get($procedureField);
+        if ($procedureField->getProcedure()->getCode() != $this->procedure->getCode())
+        {
+            throw new UnexpectedValueException('procedure field not belong to current procedure');
+        }
 
+        $procedureFieldId = $procedureField->getParam('id');
         if
         (
             array_key_exists($commonItemId, $this->data) &&
@@ -64,7 +65,7 @@ class ProcedureData
             return $this->data[$commonItemId][$procedureFieldId];
         }
 
-        throw new UnexpectedValueException;
+        throw new UnexpectedValueException("item \"$commonItemId\" was not found");
     }
     /** **********************************************************************
      * set data
@@ -76,15 +77,20 @@ class ProcedureData
      ************************************************************************/
     public function setData(int $commonItemId, ProcedureField $procedureField, $data) : void
     {
+        if ($procedureField->getProcedure()->getCode() != $this->procedure->getCode())
+        {
+            throw new RuntimeException('procedure field not belong to current procedure');
+        }
+
         try
         {
             $db                 = DB::getInstance();
             $value              = serialize($data);
-            $procedureFieldId   = $this->procedureFieldsIdMap->get($procedureField);
+            $procedureFieldId   = $procedureField->getParam('id');
+            $sqlQuery           = "SELECT `ID` FROM matched_items_data WHERE `PROCEDURE_ITEM` = ? AND `PROCEDURE_FIELD` = ?";
+            $queryResult        = $db->query($sqlQuery, [$commonItemId, $procedureFieldId]);
             $dbRecordId         = 0;
 
-            $sqlQuery       = "SELECT `ID` FROM matched_items_data WHERE `PROCEDURE_ITEM` = ? AND `PROCEDURE_FIELD` = ?";
-            $queryResult    = $db->query($sqlQuery, [$commonItemId, $procedureFieldId]);
             while ($queryResult->count() > 0)
             {
                 $dbRecordId = (int) $queryResult->pop()->get('ID');
@@ -164,122 +170,6 @@ class ProcedureData
         {
             $error = $exception->getMessage();
             Logger::getInstance()->addWarning("Procedure data container: error on query items data, \"$error\"");
-            return [];
-        }
-    }
-    /** **********************************************************************
-     * get procedure fields id map
-     *
-     * @param   Procedure $procedure            procedure
-     * @return  MapData                         procedure fields id map
-     ************************************************************************/
-    private function getProcedureFieldIdMap(Procedure $procedure) : MapData
-    {
-        $result             = new MapData;
-        $procedureFieldsSet = $procedure->getFields();
-
-        if ($procedureFieldsSet->count() <= 0)
-        {
-            Logger::getInstance()->addWarning("Procedure data container: procedure has no fields");
-            return $result;
-        }
-
-        $procedureFieldsObjectsArray    = [];
-        $procedureFieldsIdArray         = [];
-        $procedureFieldsQueryResult     = $this->queryProcedureFields($procedure);
-
-        while ($procedureFieldsSet->valid())
-        {
-            $procedureField             = $procedureFieldsSet->current();
-            $procedureFieldNameParts    = [];
-
-            $procedureField->rewind();
-            while ($procedureField->valid())
-            {
-                $participantField       = $procedureField->current();
-                $participantFieldName   = $participantField->getField()->getParam('name');
-                $participantCode        = $participantField->getParticipant()->getCode();
-                $procedureFieldNameParts[] = "$participantCode-$participantFieldName";
-                $procedureField->next();
-            }
-
-            asort($procedureFieldNameParts);
-            $procedureFieldsObjectsArray[implode('|', $procedureFieldNameParts)] = $procedureField;
-            $procedureFieldsSet->next();
-        }
-
-        foreach ($procedureFieldsQueryResult as $procedureFieldId => $procedureFieldStructure)
-        {
-            $procedureFieldNameParts = [];
-            foreach ($procedureFieldStructure as $participantCode => $participantFieldName)
-            {
-                $procedureFieldNameParts[] = "$participantCode-$participantFieldName";
-            }
-            asort($procedureFieldNameParts);
-            $procedureFieldsIdArray[implode('|', $procedureFieldNameParts)] = $procedureFieldId;
-        }
-
-        foreach ($procedureFieldsObjectsArray as $procedureFieldUniqueName => $procedureField)
-        {
-            if (array_key_exists($procedureFieldUniqueName, $procedureFieldsIdArray))
-            {
-                $procedureFieldId = $procedureFieldsIdArray[$procedureFieldUniqueName];
-                $result->set($procedureField, $procedureFieldId);
-            }
-        }
-        return $result;
-    }
-    /** **********************************************************************
-     * query procedure fields
-     *
-     * @param   Procedure $procedure            procedure
-     * @return  array                           procedure fields info
-     ************************************************************************/
-    private function queryProcedureFields(Procedure $procedure) : array
-    {
-        try
-        {
-            $result         = [];
-            $db             = DB::getInstance();
-            $queryString    = "
-                SELECT
-                    procedures_participants_fields.`PROCEDURE_FIELD`  AS PROCEDURE_FIELD_ID,
-                    participants.`CODE`                               AS PARTICIPANT_CODE,
-                    participants_fields.`NAME`                        AS PARTICIPANT_FIELD_NAME
-                FROM
-                    procedures_participants_fields
-                INNER JOIN procedures_fields
-                    ON procedures_participants_fields.`PROCEDURE_FIELD` = procedures_fields.`ID`
-                INNER JOIN procedures
-                    ON procedures_fields.`PROCEDURE` = procedures.`ID`
-                INNER JOIN participants_fields
-                    ON procedures_participants_fields.`PARTICIPANT_FIELD` = participants_fields.`ID`
-                INNER JOIN participants
-                    ON participants_fields.`PARTICIPANT` = participants.`ID`
-                WHERE
-                    procedures.`CODE` = ?";
-
-            $queryResult = $db->query($queryString, [$procedure->getCode()]);
-            while ($queryResult->count() > 0)
-            {
-                $item                   = $queryResult->pop();
-                $procedureFieldId       = (int) $item->get('PROCEDURE_FIELD_ID');
-                $participantFieldName   = $item->get('PARTICIPANT_FIELD_NAME');
-                $participantCode        = $item->get('PARTICIPANT_CODE');
-
-                if (!array_key_exists($procedureFieldId, $result))
-                {
-                    $result[$procedureFieldId] = [];
-                }
-                $result[$procedureFieldId][$participantCode] = $participantFieldName;
-            }
-
-            return $result;
-        }
-        catch (RuntimeException $exception)
-        {
-            $error = $exception->getMessage();
-            Logger::getInstance()->addWarning("Procedure data container: error on query procedure fields, \"$error\"");
             return [];
         }
     }

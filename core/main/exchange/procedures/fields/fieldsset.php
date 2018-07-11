@@ -17,7 +17,7 @@ class FieldsSet extends SetData
     /** **********************************************************************
      * get current item
      *
-     * @return  ProcedureField|null         current item or null
+     * @return Field|null                   current item or null
      ************************************************************************/
     public function current()
     {
@@ -26,7 +26,7 @@ class FieldsSet extends SetData
     /** **********************************************************************
      * drop item from set
      *
-     * @param   ProcedureField $object      item for drop
+     * @param   Field $object               item for drop
      ************************************************************************/
     public function delete($object) : void
     {
@@ -35,14 +35,14 @@ class FieldsSet extends SetData
     /** **********************************************************************
      * push item to set
      *
-     * @param   ProcedureField $object      pushed item
+     * @param   Field $object               pushed item
      * @throws  InvalidArgumentException    object is not Field
      ************************************************************************/
     public function push($object) :void
     {
-        if (!$object instanceof ProcedureField)
+        if (!$object instanceof Field)
         {
-            $needClass = ProcedureField::class;
+            $needClass = Field::class;
             throw new InvalidArgumentException("value must be instance of \"$needClass\"");
         }
 

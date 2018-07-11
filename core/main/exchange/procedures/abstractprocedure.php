@@ -9,15 +9,17 @@ use
     InvalidArgumentException,
     ReflectionException,
     ReflectionClass,
+    Main\Data\MapData,
     Main\Helpers\DB,
     Main\Helpers\Logger,
     Main\Exchange\Participants\Participant,
+    Main\Exchange\Participants\Fields\Field     as ParticipantField,
+    Main\Exchange\Participants\Fields\FieldsSet as ParticipantFieldsSet,
     Main\Exchange\Participants\Exceptions\UnknownParticipantException,
     Main\Exchange\Participants\Exceptions\UnknownParticipantFieldException,
     Main\Exchange\Procedures\Data\ParticipantsSet,
-    Main\Exchange\Procedures\Fields\ParticipantField,
-    Main\Exchange\Procedures\Fields\ProcedureField,
-    Main\Exchange\Procedures\Fields\FieldsSet,
+    Main\Exchange\Procedures\Fields\Field       as ProcedureField,
+    Main\Exchange\Procedures\Fields\FieldsSet   as ProcedureFieldsSet,
     Main\Exchange\Procedures\Rules\DataMatchingRules,
     Main\Exchange\Procedures\Rules\DataCombiningRules,
     Main\Exchange\Procedures\Exceptions\UnknownProcedureFieldException;
@@ -48,16 +50,40 @@ abstract class AbstractProcedure implements Procedure
         }
         catch (ReflectionException $exception)
         {
-
+            $this->code = static::class;
         }
 
-        $this->participantsCollection       = $this->getParticipantsCollection();
-        $this->participantsFieldsCollection = $this->getParticipantsFieldsCollection();
-        $this->procedureFieldsCollection    = $this->getProcedureFieldsCollection();
-        $this->dataMatchingRulesCollection  = $this->getDataMatchingRulesCollection();
-        $this->dataCombiningRulesCollection = $this->getDataCombiningRulesCollection();
-
         $this->addLogMessage('created', 'notice');
+
+        $this->participantsCollection = $this->constructParticipantsCollection();
+        if ($this->participantsCollection->count() <= 0)
+        {
+            $this->addLogMessage('participants collection is empty', 'warning');
+        }
+
+        $this->participantsFieldsCollection = $this->constructParticipantsFieldsCollection();
+        if ($this->participantsFieldsCollection->count() <= 0)
+        {
+            $this->addLogMessage('participants fields collection is empty', 'warning');
+        }
+
+        $this->procedureFieldsCollection = $this->constructProcedureFieldsCollection();
+        if ($this->procedureFieldsCollection->count() <= 0)
+        {
+            $this->addLogMessage('procedure fields collection is empty', 'warning');
+        }
+
+        $this->dataMatchingRulesCollection = $this->constructDataMatchingRulesCollection();
+        if ($this->dataMatchingRulesCollection->count() <= 0)
+        {
+            $this->addLogMessage('data matching rules collection is empty', 'warning');
+        }
+
+        $this->dataCombiningRulesCollection = $this->constructDataCombiningRulesCollection();
+        if ($this->dataCombiningRulesCollection->count() <= 0)
+        {
+            $this->addLogMessage('data combining rules collection is empty', 'warning');
+        }
     }
     /** **********************************************************************
      * get procedure code
@@ -75,61 +101,18 @@ abstract class AbstractProcedure implements Procedure
      ************************************************************************/
     final public function getParticipants() : ParticipantsSet
     {
-        $result = new ParticipantsSet;
-
-        if (count($this->participantsCollection) <= 0)
-        {
-            $this->addLogMessage('has no participants', 'warning');
-        }
-
-        foreach ($this->participantsCollection as $participant)
-        {
-            try
-            {
-                $result->push($participant);
-            }
-            catch (InvalidArgumentException $exception)
-            {
-                $error = $exception->getMessage();
-                $this->addLogMessage("unknown error on constructing participants set, \"$error\"", 'warning');
-            }
-        }
-
-        $this->addLogMessage('participants set constructed and returned', 'notice');
-        $result->rewind();
-        return $result;
+        $this->participantsCollection->rewind();
+        return $this->participantsCollection;
     }
     /** **********************************************************************
      * get procedure fields set
      *
-     * @return  FieldsSet                           procedure fields set
+     * @return  ProcedureFieldsSet                  procedure fields set
      ************************************************************************/
-    final public function getFields() : FieldsSet
+    final public function getFields() : ProcedureFieldsSet
     {
-        $result = new FieldsSet;
-
-        if (count($this->procedureFieldsCollection) <= 0)
-        {
-            $this->addLogMessage('has no fields', 'warning');
-        }
-
-        foreach ($this->procedureFieldsCollection as $field)
-        {
-            try
-            {
-                $field->rewind();
-                $result->push($field);
-            }
-            catch (InvalidArgumentException $exception)
-            {
-                $error = $exception->getMessage();
-                $this->addLogMessage("unknown error on constructing fields set, \"$error\"", 'warning');
-            }
-        }
-
-        $this->addLogMessage('fields set constructed and returned', 'notice');
-        $result->rewind();
-        return $result;
+        $this->procedureFieldsCollection->rewind();
+        return $this->procedureFieldsCollection;
     }
     /** **********************************************************************
      * get procedure data matching rules
@@ -138,54 +121,7 @@ abstract class AbstractProcedure implements Procedure
      ************************************************************************/
     final public function getDataMatchingRules() : DataMatchingRules
     {
-        $result = new DataMatchingRules;
-
-        if (count($this->dataMatchingRulesCollection) <= 0)
-        {
-            $this->addLogMessage('has no data matching rules', 'warning');
-        }
-
-        foreach ($this->dataMatchingRulesCollection as $rule)
-        {
-            try
-            {
-                $participantsSet    = new ParticipantsSet;
-                $fieldsSet          = new FieldsSet;
-
-                foreach ($rule['participants'] as $participantCode)
-                {
-                    $participant = $this->findParticipant($participantCode);
-                    $participantsSet->push($participant);
-                }
-                foreach ($rule['fields'] as $procedureFieldId)
-                {
-                    $procedureField = $this->findProcedureField((int) $procedureFieldId);
-                    $procedureField->rewind();
-                    $fieldsSet->push($procedureField);
-                }
-
-                $participantsSet->rewind();
-                $fieldsSet->rewind();
-                $result->set($participantsSet, $fieldsSet);
-            }
-            catch (UnknownParticipantException $exception)
-            {
-                $participantCode = $exception->getParticipantCode();
-                $this->addLogMessage("unknown participant \"$participantCode\" on constructing data matching rules set", 'warning');
-            }
-            catch (UnknownProcedureFieldException $exception)
-            {
-                $this->addLogMessage("unknown procedure field on constructing data matching rules set", 'warning');
-            }
-            catch (InvalidArgumentException $exception)
-            {
-                $error = $exception->getMessage();
-                $this->addLogMessage("unknown error on constructing data matching rules set, \"$error\"", 'warning');
-            }
-        }
-
-        $this->addLogMessage('data matching rules set constructed and returned', 'notice');
-        return $result;
+        return $this->dataMatchingRulesCollection;
     }
     /** **********************************************************************
      * get data combining rules
@@ -194,51 +130,17 @@ abstract class AbstractProcedure implements Procedure
      ************************************************************************/
     final public function getDataCombiningRules() : DataCombiningRules
     {
-        $result = new DataCombiningRules;
-
-        if (count($this->dataCombiningRulesCollection) <= 0)
-        {
-            $this->addLogMessage('has no data combining rules', 'warning');;
-        }
-
-        foreach ($this->dataCombiningRulesCollection as $participantCode => $participantFields)
-        {
-            foreach ($participantFields as $participantFieldName => $weight)
-            {
-                try
-                {
-                    $participantField = $this->findParticipantField($participantCode, $participantFieldName);
-                    $result->set($participantField, $weight);
-                }
-                catch (UnknownParticipantFieldException $exception)
-                {
-                    $this->addLogMessage("unknown participant field \"$participantFieldName\" in \"$participantCode\" on constructing data combining rules set", 'warning');
-                }
-                catch (InvalidArgumentException $exception)
-                {
-                    $error = $exception->getMessage();
-                    $this->addLogMessage("unknown error on constructing data combining rules set, \"$error\"", 'warning');
-                }
-            }
-        }
-
-        $this->addLogMessage('data combining rules set constructed and returned', 'notice');
-        return $result;
+        return $this->dataCombiningRulesCollection;
     }
     /** **********************************************************************
-     * get participants collection
+     * construct participants collection
      *
-     * @return  array                               procedure participants collection
-     * @example
-     * [
-     *      participantCode => participant,
-     *      participantCode => participant
-     * ]
+     * @return  ParticipantsSet                     participants collection
      ************************************************************************/
-    private function getParticipantsCollection() : array
+    private function constructParticipantsCollection() : ParticipantsSet
     {
-        $result         = [];
-        $queryResult    = [];
+        $result         = new ParticipantsSet;
+        $queryResult    = null;
 
         try
         {
@@ -247,227 +149,251 @@ abstract class AbstractProcedure implements Procedure
         catch (RuntimeException $exception)
         {
             $error = $exception->getMessage();
-            $this->addLogMessage("failed to query participants, \"$error\"", 'warning');
+            $this->addLogMessage("participants query failed, \"$error\"", 'warning');
+            return $result;
         }
 
         foreach ($queryResult as $item)
         {
             try
             {
-                $result[$item['CODE']] = $this->createParticipant($item['CODE']);
+                $participant = $this->createParticipant($item['CODE']);
+                $result->push($participant);
             }
             catch (UnknownParticipantException $exception)
             {
                 $participantCode = $exception->getParticipantCode();
                 $this->addLogMessage("failed to create participant \"$participantCode\"", 'warning');
             }
+            catch (InvalidArgumentException $exception)
+            {
+                $error = $exception->getMessage();
+                $this->addLogMessage("unexpected error on constructing participants collection, \"$error\"", 'warning');
+            }
         }
 
         return $result;
     }
     /** **********************************************************************
-     * get participants fields collection
+     * construct participants fields collection
      *
-     * @return  array                               participants fields collection
-     * @example
-     * [
-     *      participantCode =>
-     *      [
-     *          participantFieldName    => procedureParticipantField,
-     *          participantFieldName    => procedureParticipantField
-     *      ],
-     *      participantCode =>
-     *      [
-     *          participantFieldName    => procedureParticipantField,
-     *          participantFieldName    => procedureParticipantField
-     *      ]
-     * ]
+     * @return  MapData                             participants fields collection
      ************************************************************************/
-    private function getParticipantsFieldsCollection() : array
+    private function constructParticipantsFieldsCollection() : MapData
     {
-        $result = [];
+        $result = new MapData;
 
-        foreach ($this->participantsCollection as $participantCode => $participant)
+        $this->participantsCollection->rewind();
+        while ($this->participantsCollection->valid())
         {
-            try
-            {
-                $participant        = $this->findParticipant($participantCode);
-                $participantFields  = $participant->getFields();
+            $participant            = $this->participantsCollection->current();
+            $participantFieldsSet   = $participant->getFields();
 
-                $result[$participantCode] = [];
-                while ($participantFields->valid())
-                {
-                    $participantField           = $participantFields->current();
-                    $participantFieldName       = $participantField->getParam('name');
-                    $procedureParticipantField  = new ParticipantField($participant, $participantField);
-
-                    $result[$participantCode][$participantFieldName] = $procedureParticipantField;
-                    $participantFields->next();
-                }
-            }
-            catch (UnknownParticipantException $exception)
-            {
-
-            }
+            $result->set($participant, $participantFieldsSet);
+            $this->participantsCollection->next();
         }
 
         return $result;
     }
     /** **********************************************************************
-     * get procedure fields collection
+     * construct procedure fields collection
      *
-     * @return  array                               procedure fields collection
-     * @example
-     * [
-     *      procedureFieldId    => procedureField,
-     *      procedureFieldId    => procedureField
-     * ]
+     * @return  ProcedureFieldsSet                  procedure fields collection
      ************************************************************************/
-    private function getProcedureFieldsCollection() : array
+    private function constructProcedureFieldsCollection() : ProcedureFieldsSet
     {
-        $result         = [];
-        $queryResult    = [];
+        $result         = new ProcedureFieldsSet;
+        $queryResult    = null;
 
         try
         {
-            $participantsCodeArray  = array_keys($this->participantsCollection);
-            $queryResult            = $this->queryProcedureFields($participantsCodeArray);
+            $participantsCodeArray = [];
+
+            $this->participantsCollection->rewind();
+            while ($this->participantsCollection->valid())
+            {
+                $participantsCodeArray[] = $this->participantsCollection->current()->getCode();
+                $this->participantsCollection->next();
+            }
+
+            $queryResult = $this->queryProcedureFields($participantsCodeArray);
         }
         catch (RuntimeException $exception)
         {
             $error = $exception->getMessage();
-            $this->addLogMessage("failed to query procedure fields, \"$error\"", 'warning');
+            $this->addLogMessage("procedure fields query failed, \"$error\"", 'warning');
+            return $result;
         }
 
         foreach ($queryResult as $item)
         {
-            $procedureField     = new ProcedureField;
-            $procedureFieldId   = $item['ID'];
+            $procedureFieldParams   = new MapData;
+            $participantsFieldsSet  = new ParticipantFieldsSet;
+            $procedureFieldId       = (int) $item['ID'];
+
+            $procedureFieldParams->set('id', $procedureFieldId);
+
+            foreach ($item['PARTICIPANTS_FIELDS'] as $participantCode => $participantFieldName)
+            {
+                try
+                {
+                    $participantField = $this->findParticipantField($participantCode, $participantFieldName);
+                    $participantsFieldsSet->push($participantField);
+                }
+                catch (UnknownParticipantFieldException $exception)
+                {
+                    $this->addLogMessage("caught unknown participant field\"$participantFieldName\" of participant \"$participantCode\" in procedure field \"$procedureFieldId\"", 'warning');
+                }
+                catch (InvalidArgumentException $exception)
+                {
+                    $error = $exception->getMessage();
+                    $this->addLogMessage("unexpected error on constructing procedure fields collection, \"$error\"", 'warning');
+                }
+            }
 
             try
             {
-                foreach ($item['PARTICIPANTS_FIELDS'] as $participantCode => $participantFieldName)
-                {
-                    $participantField = $this->findParticipantField($participantCode, $participantFieldName);
-                    $procedureField->push($participantField);
-                }
-            }
-            catch (UnknownParticipantFieldException $exception)
-            {
-                $participantCode        = $exception->getParticipantCode();
-                $participantFieldName   = $exception->getParticipantFieldName();
-                $this->addLogMessage("caught unknown participant field\"$participantFieldName\" in participant \"$participantCode\" on constructing procedure field \"$procedureFieldId\"", 'warning');
+                $procedureField = new ProcedureField($this, $procedureFieldParams, $participantsFieldsSet);
+                $result->push($procedureField);
             }
             catch (InvalidArgumentException $exception)
             {
                 $error = $exception->getMessage();
-                $this->addLogMessage("caught error on constructing procedure field \"$procedureFieldId\", \"$error\"", 'warning');
-            }
-
-            if ($procedureField->count() > 0)
-            {
-                $procedureField->rewind();
-                $result[$procedureFieldId] = $procedureField;
-            }
-            else
-            {
-                $this->addLogMessage("procedure field \"$procedureFieldId\" has no participants fields", 'warning');
+                $this->addLogMessage("unexpected error on constructing procedure fields collection, \"$error\"", 'warning');
             }
         }
 
         return $result;
     }
     /** **********************************************************************
-     * get data matching rules collection
+     * construct data matching rules collection
      *
-     * @return  array                               data matching rules collection
-     * @example
-     * [
-     *      [
-     *          'participants'  => [participantCode, participantCode, participantCode],
-     *          'fields'        => [procedureFieldId, procedureFieldId, procedureFieldId]
-     *      ],
-     *      [
-     *          'participants'  => [participantCode, participantCode, participantCode],
-     *          'fields'        => [procedureFieldId, procedureFieldId, procedureFieldId]
-     *      ]
-     * ]
+     * @return  DataMatchingRules                   data matching rules collection
      ************************************************************************/
-    private function getDataMatchingRulesCollection() : array
+    private function constructDataMatchingRulesCollection() : DataMatchingRules
     {
-        $result         = [];
-        $queryResult    = [];
+        $result         = new DataMatchingRules;
+        $queryResult    = null;
 
         try
         {
-            $participantsCodeArray  = array_keys($this->participantsCollection);
-            $procedureFieldsIdArray = array_keys($this->procedureFieldsCollection);
-            $queryResult            = $this->queryProcedureDataMatchingRules($participantsCodeArray, $procedureFieldsIdArray);
+            $participantsCodeArray  = [];
+            $procedureFieldsIdArray = [];
+
+            $this->participantsCollection->rewind();
+            while ($this->participantsCollection->valid())
+            {
+                $participantsCodeArray[] = $this->participantsCollection->current()->getCode();
+                $this->participantsCollection->next();
+            }
+            $this->procedureFieldsCollection->rewind();
+            while ($this->procedureFieldsCollection->valid())
+            {
+                $procedureFieldsIdArray[] = $this->procedureFieldsCollection->current()->getParam('id');
+                $this->procedureFieldsCollection->next();
+            }
+
+            $queryResult = $this->queryProcedureDataMatchingRules($participantsCodeArray, $procedureFieldsIdArray);
         }
         catch (RuntimeException $exception)
         {
             $error = $exception->getMessage();
-            $this->addLogMessage("failed to query data matching rules, \"$error\"", 'warning');
+            $this->addLogMessage("data matching rules query failed, \"$error\"", 'warning');
+            return $result;
         }
 
         foreach ($queryResult as $item)
         {
-            $ruleId                 = $item['ID'];
-            $ruleParticipants       = $item['PARTICIPANTS'];
-            $ruleProcedureFields    = $item['PROCEDURE_FIELDS'];
+            $participantsSet    = new ParticipantsSet;
+            $procedureFieldsSet = new ProcedureFieldsSet;
+            $ruleId             = (int) $item['ID'];
 
-            if (!is_array($ruleParticipants) || count($ruleParticipants) <= 0)
+            foreach ($item['PARTICIPANTS'] as $participantCode)
             {
-                $this->addLogMessage("matching rule \"$ruleId\" has no participants", 'warning');
+                try
+                {
+                    $participant = $this->findParticipant($participantCode);
+                    $participantsSet->push($participant);
+                }
+                catch (UnknownParticipantException $exception)
+                {
+                    $this->addLogMessage("unknown participant \"$participantCode\" on constructing data matching rules collection", 'warning');
+                }
+                catch (InvalidArgumentException $exception)
+                {
+                    $error = $exception->getMessage();
+                    $this->addLogMessage("unexpected error on constructing data matching rules collection, \"$error\"", 'warning');
+                }
+            }
+            foreach ($item['PROCEDURE_FIELDS'] as $procedureFieldId)
+            {
+                try
+                {
+                    $procedureField = $this->findProcedureField((int) $procedureFieldId);
+                    $procedureFieldsSet->push($procedureField);
+                }
+                catch (UnknownProcedureFieldException $exception)
+                {
+                    $this->addLogMessage("unknown procedure field \"$procedureFieldId\" on constructing data matching rules collection", 'warning');
+                }
+                catch (InvalidArgumentException $exception)
+                {
+                    $error = $exception->getMessage();
+                    $this->addLogMessage("unexpected error on constructing data matching rules collection, \"$error\"", 'warning');
+                }
+            }
+
+            if ($participantsSet->count() <= 0)
+            {
+                $this->addLogMessage("caught data matching rule \"$ruleId\" with no participants", 'warning');
                 continue;
             }
-            if (!is_array($ruleProcedureFields) || count($ruleProcedureFields) <= 0)
+            if ($procedureFieldsSet->count() <= 0)
             {
-                $this->addLogMessage("matching rule \"$ruleId\" has no participants fields", 'warning');
+                $this->addLogMessage("caught data matching rule \"$ruleId\" with no procedure fields", 'warning');
                 continue;
             }
 
-            $result[$ruleId] =
-                [
-                    'participants'  => $ruleParticipants,
-                    'fields'        => $ruleProcedureFields
-                ];
+            try
+            {
+                $result->set($participantsSet, $procedureFieldsSet);
+            }
+            catch (InvalidArgumentException $exception)
+            {
+                $error = $exception->getMessage();
+                $this->addLogMessage("unexpected error on constructing data matching rules collection, \"$error\"", 'warning');
+            }
         }
 
         return $result;
     }
     /** **********************************************************************
-     * get data combining rules collection
+     * construct data combining rules collection
      *
-     * @return  array                               data combining rules collection
-     * @example
-     * [
-     *      participantCode =>
-     *      [
-     *          participantFieldName    => weight,
-     *          participantFieldName    => weight
-     *      ],
-     *      participantCode =>
-     *      [
-     *          participantFieldName    => weight,
-     *          participantFieldName    => weight
-     *      ]
-     * ]
+     * @return  DataCombiningRules                  data combining rules collection
      ************************************************************************/
-    private function getDataCombiningRulesCollection() : array
+    private function constructDataCombiningRulesCollection() : DataCombiningRules
     {
-        $result         = [];
-        $queryResult    = [];
+        $result         = new DataCombiningRules;
+        $queryResult    = null;
 
         try
         {
-            $participantsCodeArray  = array_keys($this->participantsCollection);
-            $queryResult            = $this->queryProcedureDataCombiningRules($participantsCodeArray);
+            $participantsCodeArray = [];
+
+            $this->participantsCollection->rewind();
+            while ($this->participantsCollection->valid())
+            {
+                $participantsCodeArray[] = $this->participantsCollection->current()->getCode();
+                $this->participantsCollection->next();
+            }
+
+            $queryResult = $this->queryProcedureDataCombiningRules($participantsCodeArray);
         }
         catch (RuntimeException $exception)
         {
             $error = $exception->getMessage();
-            $this->addLogMessage("failed to query data combining rules, \"$error\"", 'warning');
+            $this->addLogMessage("data combining rules query failed, \"$error\"", 'warning');
         }
 
         foreach ($queryResult as $item)
@@ -476,12 +402,20 @@ abstract class AbstractProcedure implements Procedure
             $participantFieldName   = $item['FIELD_NAME'];
             $weight                 = (int) $item['WEIGHT'];
 
-            if (!array_key_exists($participantCode, $result))
+            try
             {
-                $result[$participantCode] = [];
+                $participantField = $this->findParticipantField($participantCode, $participantFieldName);
+                $result->set($participantField, $weight);
             }
-
-            $result[$participantCode][$participantFieldName] = $weight;
+            catch (UnknownParticipantFieldException $exception)
+            {
+                $this->addLogMessage("unknown participant field \"$participantFieldName\" of participant \"$participantCode\" on constructing data combining rules collection", 'warning');
+            }
+            catch (InvalidArgumentException $exception)
+            {
+                $error = $exception->getMessage();
+                $this->addLogMessage("unexpected error on constructing data matching rules collection, \"$error\"", 'warning');
+            }
         }
 
         return $result;
@@ -489,20 +423,47 @@ abstract class AbstractProcedure implements Procedure
     /** **********************************************************************
      * find participant by code
      *
-     * @param   string  $participantCode            participant code
+     * @param   string $participantCode             participant code
      * @return  Participant                         participant
      * @throws  UnknownParticipantException         participant not found
      ************************************************************************/
     private function findParticipant(string $participantCode) : Participant
     {
-        if (array_key_exists($participantCode, $this->participantsCollection))
+        $this->participantsCollection->rewind();
+        while ($this->participantsCollection->valid())
         {
-            return $this->participantsCollection[$participantCode];
+            $participant = $this->participantsCollection->current();
+            if ($participant->getCode() == $participantCode)
+            {
+                return $participant;
+            }
+            $this->participantsCollection->next();
         }
 
         $exception = new UnknownParticipantException;
         $exception->setParticipantCode($participantCode);
         throw $exception;
+    }
+    /** **********************************************************************
+     * find participant field
+     *
+     * @param   string $participantCode             participant code
+     * @return  ParticipantFieldsSet                participant fields set
+     * @throws  UnknownParticipantException         participant fields set not found
+     ************************************************************************/
+    private function findParticipantFieldsSet(string $participantCode) : ParticipantFieldsSet
+    {
+        try
+        {
+            $participant = $this->findParticipant($participantCode);
+            return $this->participantsFieldsCollection->get($participant);
+        }
+        catch (UnknownParticipantException $exception)
+        {
+            $needException = new UnknownParticipantException;
+            $needException->setParticipantCode($participantCode);
+            throw $needException;
+        }
     }
     /** **********************************************************************
      * find participant field
@@ -514,19 +475,33 @@ abstract class AbstractProcedure implements Procedure
      ************************************************************************/
     private function findParticipantField(string $participantCode, string $fieldName) : ParticipantField
     {
-        if
-        (
-            array_key_exists($participantCode, $this->participantsFieldsCollection) &&
-            array_key_exists($fieldName, $this->participantsFieldsCollection[$participantCode])
-        )
+        $participantFieldsSet   = null;
+        $needException          = new UnknownParticipantFieldException;
+
+        $needException->setParticipantCode($participantCode);
+        $needException->setParticipantFieldName($fieldName);
+
+        try
         {
-            return $this->participantsFieldsCollection[$participantCode][$fieldName];
+            $participantFieldsSet = $this->findParticipantFieldsSet($participantCode);
+        }
+        catch (UnknownParticipantException $exception)
+        {
+            throw $needException;
         }
 
-        $exception = new UnknownParticipantFieldException;
-        $exception->setParticipantCode($participantCode);
-        $exception->setParticipantFieldName($fieldName);
-        throw $exception;
+        $participantFieldsSet->rewind();
+        while ($participantFieldsSet->valid())
+        {
+            $participantField = $participantFieldsSet->current();
+            if ($participantField->getParam('name') == $fieldName)
+            {
+                return $participantField;
+            }
+            $participantFieldsSet->next();
+        }
+
+        throw $needException;
     }
     /** **********************************************************************
      * find procedure field
@@ -537,14 +512,18 @@ abstract class AbstractProcedure implements Procedure
      ************************************************************************/
     private function findProcedureField(int $procedureFieldId) : ProcedureField
     {
-        if (array_key_exists($procedureFieldId, $this->procedureFieldsCollection))
+        $this->procedureFieldsCollection->rewind();
+        while ($this->procedureFieldsCollection->valid())
         {
-            return $this->procedureFieldsCollection[$procedureFieldId];
+            $procedureField = $this->procedureFieldsCollection->current();
+            if ($procedureField->getParam('id') == $procedureFieldId)
+            {
+                return $procedureField;
+            }
+            $this->procedureFieldsCollection->next();
         }
 
-        $exception = new UnknownProcedureFieldException;
-        $exception->setProcedureCode($this->getCode());
-        throw $exception;
+        throw new UnknownProcedureFieldException;
     }
     /** **********************************************************************
      * query procedure participants

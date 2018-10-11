@@ -12,6 +12,7 @@ use
     RecursiveIteratorIterator,
     RecursiveDirectoryIterator;
 /** ***********************************************************************************************
+ * //TODO
  * Application localization class
  * Provides methods for work with application localization
  *
@@ -33,9 +34,10 @@ class Localization
     public function __construct(string $lang)
     {
         $logger                     = Logger::getInstance();
-        $localizationRootFolder     = Config::getInstance()->getParam('main.localizationFolder');
+        $config                     = Config::getInstance();
+        $localizationRootFolder     = $config->getParam('structure.localizationFolder');
         $currentLocalizationFolder  = strlen($localizationRootFolder) > 0 && strlen($lang) > 0
-            ? DOCUMENT_ROOT.DS.$localizationRootFolder.DS.$lang
+            ? DOCUMENT_ROOT.DIRECTORY_SEPARATOR.$localizationRootFolder.DIRECTORY_SEPARATOR.$lang
             : '';
         $localizationFiles          = $this->getLocalizationFiles($currentLocalizationFolder);
 
@@ -144,9 +146,9 @@ class Localization
      ************************************************************************/
     private function getLibraryName(string $filePath, string $localizationRoot) : string
     {
-        $libraryName    = str_replace($localizationRoot.DS, '',     $filePath);
-        $libraryName    = str_replace('.php',               '',     $libraryName);
-        $libraryName    = str_replace(DS,                   '.',    $libraryName);
+        $libraryName    = str_replace($localizationRoot.DIRECTORY_SEPARATOR,    '',     $filePath);
+        $libraryName    = str_replace('.php',                                   '',     $libraryName);
+        $libraryName    = str_replace(DIRECTORY_SEPARATOR,                      '.',    $libraryName);
 
         return $libraryName;
     }

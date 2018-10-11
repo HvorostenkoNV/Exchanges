@@ -4,15 +4,17 @@ declare(strict_types=1);
 namespace Main\Exchange\Procedures;
 
 use
-    DomainException,
     Throwable,
     RuntimeException,
     InvalidArgumentException,
+    Main\Helpers\Database\Exceptions\ConnectionException    as DBConnectionException,
+    Main\Helpers\Database\Exceptions\QueryException         as DBQueryException,
+    Main\Exchange\Procedures\Exceptions\UnknownProcedureException,
     Main\Data\Map,
     Main\Data\MapData,
-    Main\Helpers\DB,
     Main\Helpers\Logger,
-    Main\Helpers\Data\DBQueryResult,
+    Main\Helpers\Database\DB,
+    Main\Helpers\Database\Data\DBQueryResult,
     Main\Exchange\Procedures\Data\ProceduresSet;
 /** ***********************************************************************************************
  * Application procedures manager
@@ -26,14 +28,12 @@ class Manager
     /** **********************************************************************
      * get procedures by filter
      *
-     * @param   Map|null    $filter         filter
+     * @param   Map|null $filter            filter
      * @return  ProceduresSet               queue of procedures
-     * @throws
      ************************************************************************/
     public static function getProcedures(Map $filter = null) : ProceduresSet
     {
         $result         = new ProceduresSet;
-        $db             = null;
         $logger         = Logger::getInstance();
         $filter         = self::validateFilter($filter);
         $queryResult    = null;
@@ -41,22 +41,37 @@ class Manager
         try
         {
             $queryResult = self::queryProcedures($filter);
-            while (!$queryResult->isEmpty())
+        }
+        catch (DBQueryException $exception)
+        {
+            $error = $exception->getMessage();
+            $logger->addWarning("Procedures manager: procedures query failed, \"$error\"");
+            return $result;
+        }
+
+        while (!$queryResult->isEmpty())
+        {
+            try
             {
                 $procedureCode  = $queryResult->pop()->get('CODE');
                 $procedure      = self::createProcedure($procedureCode);
                 $result->push($procedure);
             }
-        }
-        catch (RuntimeException $exception)
-        {
-            $error = $exception->getMessage();
-            $logger->addWarning("Failed to get procedures: $error");
-        }
-        catch (DomainException $exception)
-        {
-            $error = $exception->getMessage();
-            $logger->addWarning("Failed to create procedure: $error");
+            catch (RuntimeException $exception)
+            {
+                $error = $exception->getMessage();
+                $logger->addWarning("Procedures manager: unexpected error on constructing procedures queue, \"$error\"");
+            }
+            catch (InvalidArgumentException $exception)
+            {
+                $error = $exception->getMessage();
+                $logger->addWarning("Procedures manager: unexpected error on constructing procedures queue, \"$error\"");
+            }
+            catch (UnknownProcedureException $exception)
+            {
+                $error = $exception->getMessage();
+                $logger->addWarning("Procedures manager: procedure creating failed, \"$error\"");
+            }
         }
 
         $result->rewind();
@@ -101,7 +116,7 @@ class Manager
      *
      * @param   Map $filter                 filter
      * @return  DBQueryResult               query result
-     * @throws  RuntimeException            db connection error
+     * @throws  DBQueryException            db query error
      ************************************************************************/
     private static function queryProcedures(Map $filter) : DBQueryResult
     {
@@ -131,7 +146,11 @@ class Manager
         {
             return DB::getInstance()->query($sqlQuery, $sqlQueryParams);
         }
-        catch (RuntimeException $exception)
+        catch (DBConnectionException $exception)
+        {
+            throw new DBQueryException($exception->getMessage());
+        }
+        catch (DBQueryException $exception)
         {
             throw $exception;
         }
@@ -141,7 +160,7 @@ class Manager
      *
      * @param   string  $code               procedure code
      * @return  Procedure                   procedure
-     * @throws  DomainException             creating procedure error
+     * @throws  UnknownProcedureException   creating procedure error
      ************************************************************************/
     private static function createProcedure(string $code) : Procedure
     {
@@ -153,7 +172,7 @@ class Manager
         }
         catch (Throwable $exception)
         {
-            throw new DomainException("creating procedure \"$className\" error");
+            throw new UnknownProcedureException($exception->getMessage());
         }
     }
 }

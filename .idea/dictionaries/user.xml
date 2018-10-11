@@ -4,10 +4,16 @@
       <w>abcdefghijklmnopqrstuvwxyz</w>
       <w>bitrix</w>
       <w>cadusersexchange</w>
+      <w>contractingparties</w>
+      <w>contractingpartiesaddresses</w>
+      <w>contractingpartiescontacts</w>
+      <w>contractingpartiesrequisites</w>
       <w>dbname</w>
       <w>endnote</w>
       <w>enduml</w>
       <w>geted</w>
+      <w>khvorostenko</w>
+      <w>phpexcel</w>
       <w>seted</w>
       <w>seting</w>
       <w>singletone</w>
@@ -15,6 +21,8 @@
       <w>startuml</w>
       <w>unittests</w>
       <w>unseted</w>
+      <w>usersbitrix</w>
+      <w>usersexchange</w>
     </words>
   </dictionary>
 </component>

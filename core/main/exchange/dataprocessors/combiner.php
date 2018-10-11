@@ -98,35 +98,7 @@ class Combiner
         {
             $this->addLogMessage('returning empty combined data while matched data is not empty', 'warning');
         }
-echo"<br>===========COMBINER==========<br>";
-$array = [];
 
-foreach ($result->getKeys() as $commonItemId)
-{
-    $data = $result->get($commonItemId);
-    $array[$commonItemId] = [];
-
-    foreach ($data->getKeys() as $procedureField)
-    {
-        $fieldParts             = [];
-        $participantFieldsSet   = $procedureField->getParticipantsFields();
-
-        while ($participantFieldsSet->valid())
-        {
-            $participantField       = $participantFieldsSet->current();
-            $participantFieldName   = $participantField->getParam('name');
-            $participantCode        = $participantField->getParticipant()->getCode();
-
-            $fieldParts[] = "$participantCode - $participantFieldName";
-            $participantFieldsSet->next();
-        }
-
-        $array[$commonItemId][implode(', ', $fieldParts)] = $data->get($procedureField);
-    }
-}
-echo"<pre>";
-print_r($array);
-echo"</pre>";
         return $result;
     }
     /** **********************************************************************
@@ -149,17 +121,15 @@ echo"</pre>";
             $participantItemData    = $matchedItem->hasKey($participant)
                 ? $matchedItem->get($participant)
                 : null;
-            $participantFieldValue  = $participantItemData && $participantItemData->hasKey($participantField)
-                ? $participantItemData->get($participantField)
-                : null;
             $participantFieldWeight = $combiningRules->hasKey($participantField)
                 ? $combiningRules->get($participantField)
                 : 0;
 
-            if (!($participantFieldWeight == 0 && $this->checkValueIsEmpty($participantFieldValue)))
+            if ($participantItemData && $participantItemData->hasKey($participantField))
             {
-                $participantFieldValues[$participantFieldWeight] = $participantFieldValue;
+                $participantFieldValues[$participantFieldWeight] = $participantItemData->get($participantField);
             }
+
             $participantFieldsSet->next();
         }
 

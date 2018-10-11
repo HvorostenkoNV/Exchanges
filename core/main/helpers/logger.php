@@ -103,9 +103,11 @@ class Logger
      ************************************************************************/
     public function write() : void
     {
-        $date       = new DateTime;
-        $logsFolder = new SplFileInfo(LOGS_FOLDER);
-        $messages   = [];
+        $date           = new DateTime;
+        $config         = Config::getInstance();
+        $logsFolderPath = DOCUMENT_ROOT.DIRECTORY_SEPARATOR.$config->getParam('structure.logsFolder');
+        $logsFolder     = new SplFileInfo($logsFolderPath);
+        $messages       = [];
 
         if (!$logsFolder->isDir() || !$logsFolder->isWritable())
         {
@@ -133,7 +135,7 @@ class Logger
 
         while (true)
         {
-            $logFileName    = LOGS_FOLDER.DS.$date->format('Y-m-d_H-i-s').'.txt';
+            $logFileName    = $logsFolder->getPathname().DIRECTORY_SEPARATOR.$date->format('Y-m-d_H-i-s').'.txt';
             $logFile        = new SplFileInfo($logFileName);
 
             if (!$logFile->isFile())

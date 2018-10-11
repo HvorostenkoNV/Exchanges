@@ -74,12 +74,18 @@ class CombinedData extends MapData
     {
         if (!is_int($key) || $key <= 0)
         {
-            throw new InvalidArgumentException("key must be integer and not zero");
+            $getedType  = gettype($key);
+            $getedValue = $getedType == 'integer' ? $key : $getedType;
+
+            throw new InvalidArgumentException("key must be integer and not zero, caught \"$getedValue\"");
         }
         if (!$value instanceof CombinedItem)
         {
-            $needClass = CombinedItem::class;
-            throw new InvalidArgumentException("value must be instance of \"$needClass\"");
+            $needClass  = CombinedItem::class;
+            $getedType  = gettype($value);
+            $getedValue = $getedType == 'object' ? get_class($value) : $getedType;
+
+            throw new InvalidArgumentException("value must be instance of \"$needClass\", caught \"$getedValue\"");
         }
 
         parent::set($key, $value);

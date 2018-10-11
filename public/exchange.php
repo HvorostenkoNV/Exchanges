@@ -9,4 +9,9 @@ use Main\Application;
  *************************************************************************************************/
 require $_SERVER['DOCUMENT_ROOT'].DIRECTORY_SEPARATOR.'core'.DIRECTORY_SEPARATOR.'include.php';
 
-Application::getInstance()->getExchange()->run();
+$testTestTest = 1;
+while ($testTestTest > 0)
+{
+    Application::getInstance()->getExchange()->run();
+    $testTestTest--;
+}

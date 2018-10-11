@@ -74,12 +74,17 @@ class ProviderResult extends MapData
     {
         if (!$key instanceof Participant)
         {
-            $needClass = Participant::class;
-            throw new InvalidArgumentException("key must be instance of \"$needClass\"");
+            $needClass  = Participant::class;
+            $getedType  = gettype($key);
+            $getedValue = $getedType == 'object' ? get_class($key) : $getedType;
+
+            throw new InvalidArgumentException("key must be instance of \"$needClass\", caught \"$getedValue\"");
         }
         if (!is_bool($value))
         {
-            throw new InvalidArgumentException('value must be boolean');
+            $getedType = gettype($value);
+
+            throw new InvalidArgumentException("value must be boolean, caught \"$getedType\"");
         }
 
         parent::set($key, $value);

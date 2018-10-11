@@ -22,9 +22,7 @@ class Config
 {
     use Singleton;
 
-    private
-        $paramsFolder   = PARAMS_FOLDER,
-        $params         = [];
+    private $params = [];
     /** **********************************************************************
      * constructor
      ************************************************************************/
@@ -36,19 +34,20 @@ class Config
         if (count($paramsFiles) <= 0)
         {
             $logger->addError('Config object: creating error, no params files was found');
+            return;
         }
 
         foreach ($paramsFiles as $file)
         {
             $filePath       = $file->getPathname();
-            $fileContent    = include $filePath;
             $libraryName    = $this->getLibraryName($filePath);
+            $fileContent    = include $filePath;
 
             if (is_array($fileContent))
             {
                 foreach ($fileContent as $index => $value)
                 {
-                    $this->params[$libraryName.'.'.$index] = $value;
+                    $this->params[$libraryName.'.'.$index] = (string) $value;
                 }
             }
         }
@@ -61,7 +60,6 @@ class Config
      * @param   string  $paramName          full parameter name
      * @return  string                      parameter value
      * @example                             $config->getParam('main.someImportantParameter')
-     * @example                             $config->getParam('users.connectionAD.login')
      ************************************************************************/
     public function getParam(string $paramName) : string
     {
@@ -84,7 +82,7 @@ class Config
         {
             $result     = [];
             $logger     = Logger::getInstance();
-            $directory  = new RecursiveDirectoryIterator($this->paramsFolder);
+            $directory  = new RecursiveDirectoryIterator(DOCUMENT_ROOT.DIRECTORY_SEPARATOR.PARAMS_FOLDER);
             $iterator   = new RecursiveIteratorIterator($directory);
 
             while ($iterator->valid())
@@ -99,7 +97,7 @@ class Config
                     }
                     else
                     {
-                        $filePath = $file->getFilename();
+                        $filePath = $file->getPathname();
                         $logger->addWarning("Config object: caught unreadable file \"$filePath\"");
                     }
                 }
@@ -126,9 +124,9 @@ class Config
      ************************************************************************/
     private function getLibraryName(string $filePath) : string
     {
-        $libraryName    = str_replace($this->paramsFolder.DS,   '',     $filePath);
-        $libraryName    = str_replace('.php',                   '',     $libraryName);
-        $libraryName    = str_replace(DS,                       '.',    $libraryName);
+        $libraryName    = str_replace(DOCUMENT_ROOT.DIRECTORY_SEPARATOR.PARAMS_FOLDER.DIRECTORY_SEPARATOR,  '',     $filePath);
+        $libraryName    = str_replace('.php',                                                               '',     $libraryName);
+        $libraryName    = str_replace(DIRECTORY_SEPARATOR,                                                  '.',    $libraryName);
 
         return $libraryName;
     }

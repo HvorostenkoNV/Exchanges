@@ -1,5 +1,7 @@
 <?php
 declare(strict_types=1);
+
+use UnitTests\TempDataGeneration\Generator;
 /** ***********************************************************************************************
  * unit tests bootstrap file
  *
@@ -12,9 +14,11 @@ spl_autoload_register(function($className)
 {
     $classNameExplode   = explode('\\', $className);
     $classShortName     = array_pop($classNameExplode);
-    $classNameString    = strtolower(implode('\\', $classNameExplode)).'\\'.$classShortName;
-    $classNameString    = str_replace('\\', DIRECTORY_SEPARATOR, $classNameString);
-    $classFilePath      = $_SERVER['DOCUMENT_ROOT'].DIRECTORY_SEPARATOR.$classNameString.'.php';
+    $classDirectoryPath = strtolower(implode(DIRECTORY_SEPARATOR, $classNameExplode));
+    $classFilePath      =
+        $_SERVER['DOCUMENT_ROOT'].DIRECTORY_SEPARATOR.
+        $classDirectoryPath.DIRECTORY_SEPARATOR.
+        $classShortName.'.php';
     $file               = new SplFileInfo($classFilePath);
 
     if ($file->isFile() && $file->getExtension() == 'php')
@@ -22,3 +26,14 @@ spl_autoload_register(function($className)
         include $file->getPathname();
     }
 });
+
+$generator = new Generator;
+try
+{
+    $generator->generate();
+}
+catch (Throwable $exception)
+{
+    $generator->clean();
+    echo $exception->getMessage();
+}

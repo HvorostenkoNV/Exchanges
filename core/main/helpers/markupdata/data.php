@@ -3,7 +3,10 @@ declare(strict_types=1);
 
 namespace Main\Helpers\MarkupData;
 
-use SplFileInfo;
+use
+    SplFileInfo,
+    Main\Helpers\MarkupData\Exceptions\ParseDataException,
+    Main\Helpers\MarkupData\Exceptions\WriteDataException;
 /** ***********************************************************************************************
  * Abstract structure data interface
  *
@@ -13,22 +16,27 @@ use SplFileInfo;
 interface Data
 {
     /** **********************************************************************
-     * constructor
+     * read from file
      *
      * @param   SplFileInfo $file           file
-     ************************************************************************/
-    public function __construct(SplFileInfo $file);
-    /** **********************************************************************
-     * read markup data file and get data from it
-     *
      * @return  array                       data
+     * @throws  ParseDataException          parse data error
      ************************************************************************/
-    public function read() : array;
+    public function readFromFile(SplFileInfo $file) : array;
     /** **********************************************************************
-     * write data into markup data file
+     * read from string
      *
-     * @param   array       $data           data
-     * @return  bool                        writing result
+     * @param   string $content             content
+     * @return  array                       data
+     * @throws  ParseDataException          parse data error
      ************************************************************************/
-    public function write(array $data) : bool;
+    public function readFromString(string $content) : array;
+    /** **********************************************************************
+     * write to file
+     *
+     * @param   SplFileInfo $file           file
+     * @param   array       $data           data
+     * @throws  WriteDataException          write data error
+     ************************************************************************/
+    public function writeToFile(SplFileInfo $file, array $data) : void;
 }

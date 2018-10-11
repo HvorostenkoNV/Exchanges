@@ -33,7 +33,12 @@ final class XmlGenerator
 
         if (!$tempXmlFolder->isDir())
         {
-            mkdir($tempXmlFolder->getPathname());
+            @mkdir($tempXmlFolder->getPathname(), 0777, true);
+        }
+        if (!$tempXmlFolder->isDir())
+        {
+            $folderPath = $tempXmlFolder->getPathname();
+            throw new RuntimeException("creating directory \"$folderPath\" failed");
         }
 
         try
@@ -59,7 +64,7 @@ final class XmlGenerator
      ************************************************************************/
     public function clean() : void
     {
-        $tempXmlFolder = new SplFileInfo($_SERVER['DOCUMENT_ROOT'].DS.self::$tempXmlFolder);
+        $tempXmlFolder = new SplFileInfo($_SERVER['DOCUMENT_ROOT'].DIRECTORY_SEPARATOR.self::$tempXmlFolder);
 
         if ($tempXmlFolder->isDir())
         {

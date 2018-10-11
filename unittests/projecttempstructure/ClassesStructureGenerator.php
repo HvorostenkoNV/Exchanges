@@ -153,7 +153,7 @@ class ClassesStructureGenerator
 
         if (!$directory->isDir())
         {
-            mkdir($file->getPath(), 0777, true);
+            @mkdir($directory->getPathname(), 0777, true);
         }
         if (!$file->isFile())
         {

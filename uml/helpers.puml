@@ -1,72 +1,133 @@
 @startuml
 
 namespace Main.Helpers #BBB {
-    class Config << (S,#CC0000) Singleton >> {
+    class Config << (S,#4285f4) Singleton >> {
         +getParam(string $param) : string
     }
-
-    class DB << (S,#CC0000) Singleton >> {
-        +query(string $sqlQuery, array $params = []) : Data.DBQueryResult
-        +hasLastError() : bool
-        +getLastError() : string
-        +getLastInsertId() : int
-    }
-
-    class Logger << (S,#CC0000) Singleton >> {
-        +addNotice(string $message) : void
-        +addWarning(string $message) : void
-        +addError(string $message) : void
-    }
-
-    class Localization {
-        +__construct(string $lang)
-        +getMessage(string $message) : string
-    }
     /' ------------------------------------------- '/
-    /' ------------------ Data ------------------- '/
+    /' ---------------- Database ----------------- '/
     /' ------------------------------------------- '/
-    namespace Data #FFF {
-        class DBRow < extends Main.Data.MapData > {
-            +get(string $key) : mixed
-            +set(string $key, mixed $value) : void
+    namespace Database #FFF {
+        class DB << (S,#4285f4) Singleton >> {
+            +__construct() : throws Exceptions.ConnectionException
+            +query(string $sqlQuery, array $params = []) : Data.DBQueryResult : throws Exceptions.QueryException
+            +getLastInsertId() : int
         }
+        /' ---------------------------- '/
+        /' ----------- Data ----------- '/
+        /' ---------------------------- '/
+        namespace Data #EEE {
+            class DBRow <extends Main.Data.MapData> {
+                +get(string $key) : mixed
+                +set(string $key, mixed $value) : void
+            }
 
-        class DBQueryResult < extends Main.Data.QueueData > {
-            +pop() : DBRow
-            +push(DBRow $data) : void
+            class DBQueryResult <extends Main.Data.QueueData> {
+                +pop() : DBRow, throws Main.Data.Exceptions.EmptyQueueException
+                +push(DBRow $data) : void, throws InvalidArgumentException
+            }
         }
+        /' ---------------------------- '/
+        /' -------- Exceptions -------- '/
+        /' ---------------------------- '/
+        namespace Exceptions #EEE {
+            class ConnectionException << (E, #CC0000) Exception >> {
 
-        DBQueryResult *-- DBRow
+            }
+
+            class QueryException << (E, #CC0000) Exception >> {
+
+            }
+
+            class InvalidArgumentException << (E, #CC0000) Exception >> {
+
+            }
+        }
     }
     /' ------------------------------------------- '/
-    /' --------------- MarkupData ---------------- '/
+    /' -------------- Localization --------------- '/
     /' ------------------------------------------- '/
-    namespace MarkupData #FFF {
+    namespace Localization #FFF {
+        class Localization {
+            +__construct(string $lang) : throws Exceptions.LocalizationException
+            +getMessage(string $message) : string
+        }
+        /' ---------------------------- '/
+        /' -------- Exceptions -------- '/
+        /' ---------------------------- '/
+        namespace Exceptions #EEE {
+            class LocalizationException <extends RuntimeException> << (E, #CC0000) Exception >> {
+
+            }
+        }
+    }
+    /' ------------------------------------------- '/
+    /' --------------- DataFormats --------------- '/
+    /' ------------------------------------------- '/
+    namespace DataFormats #FFF {
         interface Data {
-            +__construct(SplFileInfo $file)
-            +read() : array
-            +write(array $data) : bool
+            +setData(array $data) : void
+            +getData() : array
+            +setStringData(string $data) : void, throws Exceptions.ParseDataException
+            +getStringData() : string
+            +readFile(SplFileInfo $file) : void, throws Exceptions.ReadFileException
+            +writeToFile(SplFileInfo $file) : void, throws Exceptions.WriteFileException
         }
 
         abstract AbstractData {
-            +__construct(SplFileInfo $file)
-            +read() : array
-            +write(array $data) : bool
-            -{abstract}parseData(string $content) : array
-            -{abstract}prepareDataForWriting(array $data) : string
+            -{abstract}parseDataFromString(string $data) : array
+            -{abstract}convertDataToString(array $data) : string
         }
 
         class XML {
 
         }
 
-        Data            <|--    AbstractData
-        AbstractData    <|--    XML
+        class CSV {
+
+        }
+
+        class JSON {
+
+        }
+
+        class Excel {
+
+        }
+        /' ---------------------------- '/
+        /' -------- Exceptions -------- '/
+        /' ---------------------------- '/
+        namespace Exceptions #EEE {
+            class ParseDataException <extends ParseError> << (E, #CC0000) Exception >> {
+
+            }
+
+            class ReadFileException <extends RuntimeException> << (E, #CC0000) Exception >> {
+
+            }
+
+            class WriteFileException <extends RuntimeException> << (E, #CC0000) Exception >> {
+
+            }
+        }
     }
     /' ------------------------------------------- '/
     /' ---------------- Relations ---------------- '/
     /' ------------------------------------------- '/
-    DB o-- Main.Helpers.Data.DBQueryResult
+    Main.Helpers.Database.DB                    o-- Main.Helpers.Database.Data.DBQueryResult
+    Main.Helpers.Database.Data.DBQueryResult    *-- Main.Helpers.Database.Data.DBRow
+
+    Main.Helpers.DataFormats.Data           <|--    Main.Helpers.DataFormats.AbstractData
+    Main.Helpers.DataFormats.AbstractData   <|--    Main.Helpers.DataFormats.XML
+    Main.Helpers.DataFormats.AbstractData   <|--    Main.Helpers.DataFormats.CSV
+    Main.Helpers.DataFormats.AbstractData   <|--    Main.Helpers.DataFormats.JSON
+    Main.Helpers.DataFormats.AbstractData   <|--    Main.Helpers.DataFormats.Excel
+
+    Main.Helpers.DataFormats.Exceptions.ParseDataException  --[hidden]    Main.Helpers.DataFormats.Exceptions.ReadFileException
+    Main.Helpers.DataFormats.Exceptions.ReadFileException   --[hidden]    Main.Helpers.DataFormats.Exceptions.WriteFileException
+
+    Main.Helpers.Database.Data.DBRow                        --[hidden]  Main.Helpers.Localization.Localization
+    Main.Helpers.Database.Exceptions.ConnectionException    --[hidden]  Main.Helpers.DataFormats.Data
 }
 
 @enduml

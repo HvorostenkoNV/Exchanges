@@ -7,8 +7,10 @@ use
     Throwable,
     InvalidArgumentException,
     RuntimeException,
-    Main\Helpers\DB,
-    Main\Helpers\Logger;
+    Main\Helpers\Logger,
+    Main\Helpers\Database\Exceptions\ConnectionException    as DBConnectionException,
+    Main\Helpers\Database\Exceptions\QueryException         as DBQueryException,
+    Main\Helpers\Database\DB;
 /** ***********************************************************************************************
  * Participant fields types manager
  *
@@ -17,6 +19,8 @@ use
  *************************************************************************************************/
 class Manager
 {
+    public const
+        ID_FIELD_TYPE                   = 'item-id';
     private static
         $availableFieldsTypes           = [],
         $availableFieldsTypesQueried    = false;
@@ -93,19 +97,32 @@ class Manager
      ************************************************************************/
     private static function queryAvailableFieldsTypes() : array
     {
-        $result = [];
+        $result         = [];
+        $queryResult    = null;
 
         try
         {
-            $queryResult = DB::getInstance()->query("SELECT CODE FROM fields_types");
-            while (!$queryResult->isEmpty())
+            $queryResult = DB::getInstance()->query("SELECT `CODE` FROM fields_types");
+        }
+        catch (DBConnectionException $exception)
+        {
+            return $result;
+        }
+        catch (DBQueryException $exception)
+        {
+            return $result;
+        }
+
+        while (!$queryResult->isEmpty())
+        {
+            try
             {
                 $result[] = $queryResult->pop()->get('CODE');
             }
-        }
-        catch (RuntimeException $exception)
-        {
+            catch (RuntimeException $exception)
+            {
 
+            }
         }
 
         return $result;

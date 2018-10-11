@@ -75,12 +75,18 @@ class MatchedData extends MapData
     {
         if (!is_int($key) || $key <= 0)
         {
-            throw new InvalidArgumentException("key must be integer and not zero");
+            $getedType  = gettype($key);
+            $getedValue = $getedType == 'integer' ? 0 : $getedType;
+
+            throw new InvalidArgumentException("key must be integer and not zero, caught \"$getedValue\"");
         }
         if (!$value instanceof MatchedItem)
         {
-            $needClass = MatchedItem::class;
-            throw new InvalidArgumentException("value must be instance of \"$needClass\"");
+            $needClass  = MatchedItem::class;
+            $getedType  = gettype($value);
+            $getedValue = $getedType == 'object' ? get_class($value) : $getedType;
+
+            throw new InvalidArgumentException("value must be instance of \"$needClass\", caught \"$getedValue\"");
         }
 
         parent::set($key, $value);

@@ -9,10 +9,11 @@ use
     Main\Data\MapData,
     Main\Helpers\Logger,
     Main\Exchange\Participants\Participant,
-    Main\Exchange\Participants\Fields\Field     as ParticipantField,
-    Main\Exchange\Participants\Fields\FieldsSet as ParticipantFieldsSet,
+    Main\Exchange\Participants\FieldsTypes\Manager  as FieldsTypesManager,
+    Main\Exchange\Participants\Fields\Field         as ParticipantField,
+    Main\Exchange\Participants\Fields\FieldsSet     as ParticipantFieldsSet,
+    Main\Exchange\Participants\Data\ItemData        as ParticipantItemData,
     Main\Exchange\Participants\Data\DataForDelivery,
-    Main\Exchange\Participants\Data\ItemData    as ParticipantItemData,
     Main\Exchange\Participants\Exceptions\UnknownParticipantException,
     Main\Exchange\Participants\Exceptions\UnknownParticipantFieldException,
     Main\Exchange\Procedures\Procedure,
@@ -28,8 +29,6 @@ use
  *************************************************************************************************/
 class Provider
 {
-    private static
-        $participantIdFieldType = 'item-id';
     private
         $procedure                      = null,
         $procedureItemsMap              = null,
@@ -208,7 +207,7 @@ class Provider
         while ($participantFieldsSet->valid())
         {
             $participantField = $participantFieldsSet->current();
-            if ($participantField->getParam('type') == self::$participantIdFieldType)
+            if ($participantField->getParam('type') == FieldsTypesManager::ID_FIELD_TYPE)
             {
                 return $participantField;
             }

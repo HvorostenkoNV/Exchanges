@@ -34,6 +34,7 @@ class BooleanField extends AbstractField
         }
         if
         (
+            is_null($value)     ||
             $value  === false   ||
             $value  === 0       ||
             $value  === '0'     ||

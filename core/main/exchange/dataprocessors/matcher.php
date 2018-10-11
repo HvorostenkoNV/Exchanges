@@ -10,9 +10,10 @@ use
     Main\Data\MapData,
     Main\Helpers\Logger,
     Main\Exchange\Participants\Participant,
-    Main\Exchange\Participants\Fields\Field     as ParticipantField,
-    Main\Exchange\Participants\Fields\FieldsSet as ParticipantFieldsSet,
-    Main\Exchange\Participants\Data\ItemData    as ParticipantItemData,
+    Main\Exchange\Participants\FieldsTypes\Manager  as FieldsTypesManager,
+    Main\Exchange\Participants\Fields\Field         as ParticipantField,
+    Main\Exchange\Participants\Fields\FieldsSet     as ParticipantFieldsSet,
+    Main\Exchange\Participants\Data\ItemData        as ParticipantItemData,
     Main\Exchange\Participants\Exceptions\UnknownParticipantException,
     Main\Exchange\Participants\Exceptions\UnknownParticipantFieldException,
     Main\Exchange\Procedures\Procedure,
@@ -28,8 +29,6 @@ use
  *************************************************************************************************/
 class Matcher
 {
-    private static
-        $participantIdFieldType         = 'item-id';
     private
         $procedure                      = null,
         $procedureItemsMap              = null,
@@ -69,20 +68,21 @@ class Matcher
      ************************************************************************/
     public function matchItems(CollectedData $collectedData) : MatchedData
     {
-        $result = new MatchedData;
-
         $this->addLogMessage('start matching data', 'notice');
-        if ($collectedData->count() <= 0)
-        {
-            $this->addLogMessage('caught empty collected data', 'notice');
-            return $result;
-        }
 
-        $matchedData = $this->getMatchedItems($collectedData);
+        $result             = new MatchedData;
+        $collectedDataEmpty = true;
+        $matchedData        = $this->getMatchedItems($collectedData);
+
         foreach ($collectedData->getKeys() as $participant)
         {
             $participantCode    = $participant->getCode();
             $participantData    = $collectedData->get($participant);
+
+            if ($participantData->count() > 0)
+            {
+                $collectedDataEmpty = false;
+            }
 
             try
             {
@@ -94,7 +94,7 @@ class Matcher
                 continue;
             }
 
-            while ($participantData->count() > 0)
+            while (!$participantData->isEmpty())
             {
                 $participantItemData    = null;
                 $commonItemId           = null;
@@ -133,35 +133,15 @@ class Matcher
             }
         }
 
-        if ($result->count() <= 0)
+        if ($collectedDataEmpty)
+        {
+            $this->addLogMessage('caught empty collected data', 'notice');
+        }
+        elseif ($result->count() <= 0)
         {
             $this->addLogMessage('returning empty matched data while collected data is not empty', 'warning');
         }
-echo"<br>===========MATCHER==========<br>";
-$array = [];
 
-foreach ($result->getKeys() as $commonItemId)
-{
-    $data = $result->get($commonItemId);
-
-    $array[$commonItemId] = [];
-    foreach ($data->getKeys() as $participant)
-    {
-        $item               = $data->get($participant);
-        $participantCode    = $participant->getCode();
-        $itemArray          = [];
-
-        foreach ($item->getKeys() as $field)
-        {
-            $itemArray[$field->getParam('name')] = $item->get($field);
-        }
-
-        $array[$commonItemId][$participantCode] = $itemArray;
-    }
-}
-echo'<pre>';
-print_r($array);
-echo'</pre>';
         return $result;
     }
     /** **********************************************************************
@@ -364,12 +344,7 @@ echo'</pre>';
                 try
                 {
                     $participantItemData    = $participantData->pop();
-                    $participantItemId      = $participantItemData->get($participantIdField);
-
-                    if (is_null($participantItemId))
-                    {
-                        throw new RuntimeException;
-                    }
+                    $participantItemId      = (string) $participantItemData->get($participantIdField);
                 }
                 catch (RuntimeException $exception)
                 {
@@ -389,6 +364,7 @@ echo'</pre>';
                     {
                         $result[$participantCode][$participantFieldName] = [];
                     }
+
                     $result[$participantCode][$participantFieldName][$participantItemId] = $value;
                 }
 
@@ -656,7 +632,7 @@ echo'</pre>';
         while ($participantFieldsSet->valid())
         {
             $participantField = $participantFieldsSet->current();
-            if ($participantField->getParam('type') == self::$participantIdFieldType)
+            if ($participantField->getParam('type') == FieldsTypesManager::ID_FIELD_TYPE)
             {
                 return $participantField;
             }
@@ -693,19 +669,11 @@ echo'</pre>';
         try
         {
             $participantIdField = $this->findParticipantIdField($participantCode);
-
             if (!$data->hasKey($participantIdField))
             {
                 throw new RuntimeException;
             }
-
             $participantItemId  = (string) $data->get($participantIdField);
-            $commonItemId       = $this->procedureItemsMap->getItemCommonId($participant, $participantItemId);
-            return $commonItemId;
-        }
-        catch (UnexpectedValueException $exception)
-        {
-
         }
         catch (UnknownParticipantFieldException $exception)
         {
@@ -723,30 +691,45 @@ echo'</pre>';
                 unset($matchedGroup[$participantCode]);
                 foreach ($matchedGroup as $otherParticipantCode => $otherParticipantItems)
                 {
+                    $otherParticipant = null;
+
                     try
                     {
                         $otherParticipant = $this->findParticipant($otherParticipantCode);
-                        foreach ($otherParticipantItems as $otherParticipantItemId)
-                        {
-                            $commonItemId = $this->procedureItemsMap->getItemCommonId($otherParticipant, $otherParticipantItemId);
-                            $this->procedureItemsMap->setParticipantItem($commonItemId, $participant, $participantItemId);
-                            return $commonItemId;
-                        }
                     }
                     catch (UnknownParticipantException $exception)
                     {
-
+                        continue;
                     }
-                    catch (UnexpectedValueException $exception)
-                    {
 
-                    }
-                    catch (RuntimeException $exception)
+                    foreach ($otherParticipantItems as $otherParticipantItemId)
                     {
-                        throw new UnexpectedValueException($exception->getMessage());
+                        try
+                        {
+                            $commonItemId = $this->procedureItemsMap->getItemCommonId($otherParticipant, (string) $otherParticipantItemId);
+                            $this->procedureItemsMap->setParticipantItem($commonItemId, $participant, $participantItemId);
+                            return $commonItemId;
+                        }
+                        catch (UnexpectedValueException $exception)
+                        {
+                            continue;
+                        }
+                        catch (RuntimeException $exception)
+                        {
+                            throw new UnexpectedValueException($exception->getMessage());
+                        }
                     }
                 }
             }
+        }
+
+        try
+        {
+            return $this->procedureItemsMap->getItemCommonId($participant, $participantItemId);
+        }
+        catch (UnexpectedValueException $exception)
+        {
+
         }
 
         try

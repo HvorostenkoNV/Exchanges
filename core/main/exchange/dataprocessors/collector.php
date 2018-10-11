@@ -54,33 +54,7 @@ class Collector
 
             $participants->next();
         }
-echo"<br>===========COLLECTOR==========<br>";
-$array = [];
 
-foreach ($result->getKeys() as $participant)
-{
-    $data               = $result->get($participant);
-    $count              = $data->count();
-    $participantCode    = $participant->getCode();
-
-    $array[$participantCode] = [];
-    for ($index = $count; $index > 0; $index--)
-    {
-        $item       = $data->pop();
-        $itemArray  = [];
-
-        foreach ($item->getKeys() as $field)
-        {
-            $itemArray[$field->getParam('name')] = $item->get($field);
-        }
-
-        $array[$participantCode][] = $itemArray;
-        $data->push($item);
-    }
-}
-echo'<pre>';
-print_r($array);
-echo'</pre>';
         return $result;
     }
     /** **********************************************************************

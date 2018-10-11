@@ -97,9 +97,16 @@ namespace Main.Exchange.DataProcessors #BBB {
 
         note bottom of CombinedData
         [
-            commonItemId => commonItemData,
-            commonItemId => commonItemData,
-            commonItemId => commonItemData
+            [
+                procedureField => value,
+                procedureField => value,
+                procedureField => value
+            ],
+            [
+                procedureField => value,
+                procedureField => value,
+                procedureField => value
+            ]
         ]
         endnote
         /' ---------------------------- '/

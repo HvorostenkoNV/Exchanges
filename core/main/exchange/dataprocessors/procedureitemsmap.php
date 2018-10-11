@@ -6,8 +6,10 @@ namespace Main\Exchange\DataProcessors;
 use
     RuntimeException,
     UnexpectedValueException,
-    Main\Helpers\DB,
+    Main\Helpers\Database\Exceptions\ConnectionException    as DBConnectionException,
+    Main\Helpers\Database\Exceptions\QueryException         as DBQueryException,
     Main\Helpers\Logger,
+    Main\Helpers\Database\DB,
     Main\Exchange\Participants\Participant,
     Main\Exchange\Procedures\Procedure;
 /** ***********************************************************************************************
@@ -119,20 +121,38 @@ class ProcedureItemsMap
 
         try
         {
-            $db = DB::getInstance();
-
-            $queryString = "INSERT INTO matched_items_participants (`PROCEDURE_ITEM`, `PARTICIPANT`, `PARTICIPANT_ITEM_ID`) VALUES (?, ?, ?)";
-            $db->query($queryString, [$commonItemId, $participantId, $participantItemId]);
-            if ($db->getLastInsertId() <= 0)
+            $oldCommonItemId = $this->getItemCommonId($participant, $participantItemId);
+            if ($oldCommonItemId === $commonItemId)
             {
-                $error = $db->getLastError();
-                throw new RuntimeException("DB write operation error, \"$error\"");
+                return;
             }
+            else
+            {
+                $this->unbindParticipantItem($oldCommonItemId, $participant, $participantItemId);
+            }
+        }
+        catch (UnexpectedValueException $exception)
+        {
+
+        }
+
+        try
+        {
+            DB::getInstance()->query
+            (
+                "INSERT INTO matched_items_participants (`PROCEDURE_ITEM`, `PARTICIPANT`, `PARTICIPANT_ITEM_ID`) VALUES (?, ?, ?)",
+                [$commonItemId, $participantId, $participantItemId]
+            );
+
             $this->itemsMap[$commonItemId][$participantCode] = $participantItemId;
         }
-        catch (RuntimeException $exception)
+        catch (DBConnectionException $exception)
         {
-            throw $exception;
+            throw new RuntimeException($exception->getMessage());
+        }
+        catch (DBQueryException $exception)
+        {
+            throw new RuntimeException($exception->getMessage());
         }
     }
     /** **********************************************************************
@@ -159,28 +179,28 @@ class ProcedureItemsMap
         {
             $db = DB::getInstance();
 
-            $db->query("INSERT INTO matched_items (`PROCEDURE`) VALUES (?)", [$this->procedureId]);
+            $db->query
+            (
+                "INSERT INTO matched_items (`PROCEDURE`) VALUES (?)",
+                [$this->procedureId]
+            );
             $newCommonItemId = $db->getLastInsertId();
-            if ($newCommonItemId <= 0)
-            {
-                $error = $db->getLastError();
-                throw new RuntimeException("DB write operation error, \"$error\"");
-            }
-
-            $queryString = "INSERT INTO matched_items_participants (`PROCEDURE_ITEM`, `PARTICIPANT`, `PARTICIPANT_ITEM_ID`) VALUES (?, ?, ?)";
-            $db->query($queryString, [$newCommonItemId, $participantId, $participantItemId]);
-            if ($db->getLastInsertId() <= 0)
-            {
-                $error = $db->getLastError();
-                throw new RuntimeException("DB write operation error, \"$error\"");
-            }
+            $db->query
+            (
+                "INSERT INTO matched_items_participants (`PROCEDURE_ITEM`, `PARTICIPANT`, `PARTICIPANT_ITEM_ID`) VALUES (?, ?, ?)",
+                [$newCommonItemId, $participantId, $participantItemId]
+            );
 
             $this->itemsMap[$newCommonItemId] = [$participantCode => $participantItemId];
             return $newCommonItemId;
         }
-        catch (RuntimeException $exception)
+        catch (DBConnectionException $exception)
         {
-            throw $exception;
+            throw new RuntimeException($exception->getMessage());
+        }
+        catch (DBQueryException $exception)
+        {
+            throw new RuntimeException($exception->getMessage());
         }
     }
     /** **********************************************************************
@@ -191,28 +211,40 @@ class ProcedureItemsMap
      ************************************************************************/
     private function getItemsMap(Procedure $procedure) : array
     {
+        $result         = [];
+        $queryString    = "
+            SELECT
+                matched_items_participants.`PROCEDURE_ITEM`       AS COMMON_ITEM_ID,
+                participants.`CODE`                               AS PARTICIPANT_CODE,
+                matched_items_participants.`PARTICIPANT_ITEM_ID`  AS PARTICIPANT_ITEM_ID
+            FROM
+                matched_items_participants
+            INNER JOIN matched_items
+                ON matched_items_participants.`PROCEDURE_ITEM` = matched_items.`ID`
+            INNER JOIN procedures
+                ON matched_items.`PROCEDURE` = procedures.`ID`
+            INNER JOIN participants
+                ON matched_items_participants.`PARTICIPANT` = participants.`ID`
+            WHERE
+                procedures.`CODE` = ?";
+        $queryResult    = null;
+
         try
         {
-            $result         = [];
-            $db             = DB::getInstance();
-            $queryString    = "
-                SELECT
-                    matched_items_participants.`PROCEDURE_ITEM`       AS COMMON_ITEM_ID,
-                    participants.`CODE`                               AS PARTICIPANT_CODE,
-                    matched_items_participants.`PARTICIPANT_ITEM_ID`  AS PARTICIPANT_ITEM_ID
-                FROM
-                    matched_items_participants
-                INNER JOIN matched_items
-                    ON matched_items_participants.`PROCEDURE_ITEM` = matched_items.`ID`
-                INNER JOIN procedures
-                    ON matched_items.`PROCEDURE` = procedures.`ID`
-                INNER JOIN participants
-                    ON matched_items_participants.`PARTICIPANT` = participants.`ID`
-                WHERE
-                    procedures.`CODE` = ?";
+            $queryResult = DB::getInstance()->query($queryString, [$procedure->getCode()]);
+        }
+        catch (DBConnectionException $exception)
+        {
+            return $result;
+        }
+        catch (DBQueryException $exception)
+        {
+            return $result;
+        }
 
-            $queryResult = $db->query($queryString, [$procedure->getCode()]);
-            while ($queryResult->count() > 0)
+        while (!$queryResult->isEmpty())
+        {
+            try
             {
                 $item               = $queryResult->pop();
                 $commonItemId       = (int) $item->get('COMMON_ITEM_ID');
@@ -225,15 +257,13 @@ class ProcedureItemsMap
                 }
                 $result[$commonItemId][$participantCode] = $participantItemId;
             }
+            catch (RuntimeException $exception)
+            {
 
-            return $result;
+            }
         }
-        catch (RuntimeException $exception)
-        {
-            $error = $exception->getMessage();
-            Logger::getInstance()->addWarning("Procedure items map container: error on query items map, \"$error\"");
-            return [];
-        }
+
+        return $result;
     }
     /** **********************************************************************
      * get participants id map
@@ -243,30 +273,29 @@ class ProcedureItemsMap
      ************************************************************************/
     private function getParticipantsIdMap(Procedure $procedure) : array
     {
-        $participantsSet        = $procedure->getParticipants();
-        $participantsCodeArray  = [];
-
-        while ($participantsSet->valid())
-        {
-            $participantsCodeArray[] = $participantsSet->current()->getCode();
-            $participantsSet->next();
-        }
-
-        if (count($participantsCodeArray) <= 0)
-        {
-            Logger::getInstance()->addWarning("Procedure items map container: error on query participants id map, procedure has no participants");
-            return [];
-        }
-
         try
         {
-            $result                     = [];
-            $db                         = DB::getInstance();
+            $result                 = [];
+            $participantsSet        = $procedure->getParticipants();
+            $participantsCodeArray  = [];
+
+            while ($participantsSet->valid())
+            {
+                $participantsCodeArray[] = $participantsSet->current()->getCode();
+                $participantsSet->next();
+            }
+
+            if (count($participantsCodeArray) <= 0)
+            {
+                Logger::getInstance()->addWarning("Procedure items map container: error on query participants id map, procedure has no participants");
+                return [];
+            }
+
             $participantsPlaceholder    = rtrim(str_repeat('?, ', count($participantsCodeArray)), ', ');
             $queryString                = "SELECT participants.`ID`, participants.`CODE` FROM participants WHERE participants.`CODE` IN ($participantsPlaceholder)";
-            $queryResult                = $db->query($queryString, $participantsCodeArray);
+            $queryResult                = DB::getInstance()->query($queryString, $participantsCodeArray);
 
-            while ($queryResult->count() > 0)
+            while (!$queryResult->isEmpty())
             {
                 $item                       = $queryResult->pop();
                 $participantId              = (int) $item->get('ID');
@@ -276,10 +305,16 @@ class ProcedureItemsMap
 
             return $result;
         }
+        catch (DBConnectionException $exception)
+        {
+            return [];
+        }
+        catch (DBQueryException $exception)
+        {
+            return [];
+        }
         catch (RuntimeException $exception)
         {
-            $error = $exception->getMessage();
-            Logger::getInstance()->addWarning("Procedure items map container: error on query participants id map, \"$error\"");
             return [];
         }
     }
@@ -293,22 +328,100 @@ class ProcedureItemsMap
     {
         try
         {
-            $db             = DB::getInstance();
             $queryString    = "SELECT procedures.`ID` FROM procedures WHERE procedures.`CODE` = ?";
-            $queryResult    = $db->query($queryString, [$procedure->getCode()]);
+            $queryResult    = DB::getInstance()->query($queryString, [$procedure->getCode()]);
 
-            while ($queryResult->count() > 0)
+            while (!$queryResult->isEmpty())
             {
                 return (int) $queryResult->pop()->get('ID');
             }
 
             return 0;
         }
+        catch (DBConnectionException $exception)
+        {
+            return 0;
+        }
+        catch (DBQueryException $exception)
+        {
+            return 0;
+        }
         catch (RuntimeException $exception)
         {
-            $error = $exception->getMessage();
-            Logger::getInstance()->addWarning("Procedure items map container: error on query procedure id, \"$error\"");
             return 0;
+        }
+    }
+    /** **********************************************************************
+     * unbind participant item
+     *
+     * @param   int         $commonItemId       common item id
+     * @param   Participant $participant        participant
+     * @param   string      $participantItemId  participant item id
+     ************************************************************************/
+    private function unbindParticipantItem(int $commonItemId, Participant $participant, string $participantItemId) : void
+    {
+        $participantCode    = $participant->getCode();
+        $participantId      = array_key_exists($participantCode, $this->participantsIdMap)
+            ? $this->participantsIdMap[$participantCode]
+            : 0;
+        $queryString        = "
+            SELECT
+                matched_items_participants.`ID`,
+                matched_items_participants.`PROCEDURE_ITEM`,
+                matched_items_participants.`PARTICIPANT_ITEM_ID`
+            FROM
+                matched_items_participants
+            INNER JOIN matched_items
+                ON matched_items_participants.`PROCEDURE_ITEM` = matched_items.`ID`
+            WHERE
+                matched_items.`ID` = ? AND
+                matched_items_participants.`PARTICIPANT_ITEM_ID` = ?";
+
+        if
+        (
+            !array_key_exists($commonItemId, $this->itemsMap)                   ||
+            !array_key_exists($participantCode, $this->itemsMap[$commonItemId]) ||
+            $participantId <= 0
+        )
+        {
+            return;
+        }
+
+        try
+        {
+            $db             = DB::getInstance();
+            $queryResult    = $db->query($queryString, [$commonItemId, $participantItemId]);
+
+            if ($queryResult->count() == 1)
+            {
+                $db->query("DELETE FROM matched_items WHERE `ID` = ?", [$commonItemId]);
+                unset($this->itemsMap[$commonItemId]);
+            }
+            else
+            {
+                while (!$queryResult->isEmpty())
+                {
+                    $item = $queryResult->pop();
+                    if ($item->get('PARTICIPANT_ITEM_ID') == $commonItemId)
+                    {
+                        $db->query("DELETE FROM matched_items_participants WHERE `ID` = ?", [$item->get('ID')]);
+                        unset($this->itemsMap[$commonItemId][$participantCode]);
+                        break;
+                    }
+                }
+            }
+        }
+        catch (DBConnectionException $exception)
+        {
+
+        }
+        catch (DBQueryException $exception)
+        {
+
+        }
+        catch (RuntimeException $exception)
+        {
+
         }
     }
 }

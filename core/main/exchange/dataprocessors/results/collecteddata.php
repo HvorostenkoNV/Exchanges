@@ -7,7 +7,7 @@ use
     InvalidArgumentException,
     Main\Data\MapData,
     Main\Exchange\Participants\Participant,
-    Main\Exchange\Participants\Data\ProvidedData;
+    Main\Exchange\Participants\Data\Data;
 /** ***********************************************************************************************
  * Collected participants data
  *
@@ -29,7 +29,7 @@ class CollectedData extends MapData
      * get value by key
      *
      * @param   Participant $key            value key
-     * @return  ProvidedData                value
+     * @return  Data                        value
      ************************************************************************/
     public function get($key)
     {
@@ -57,7 +57,7 @@ class CollectedData extends MapData
     /** **********************************************************************
      * check map has value
      *
-     * @param   ProvidedData $value         value
+     * @param   Data $value                 value
      * @return  bool                        map has value
      ************************************************************************/
     public function hasValue($value) : bool
@@ -67,21 +67,27 @@ class CollectedData extends MapData
     /** **********************************************************************
      * attach value to key
      *
-     * @param   Participant     $key        value key
-     * @param   ProvidedData    $value      value
+     * @param   Participant $key            value key
+     * @param   Data        $value          value
      * @throws  InvalidArgumentException    incorrect key or value
      ************************************************************************/
     public function set($key, $value) : void
     {
         if (!$key instanceof Participant)
         {
-            $needClass = Participant::class;
-            throw new InvalidArgumentException("key must be instance of \"$needClass\"");
+            $needClass  = Participant::class;
+            $getedType  = gettype($key);
+            $getedValue = $getedType == 'object' ? get_class($key) : $getedType;
+
+            throw new InvalidArgumentException("key must be instance of \"$needClass\", caught \"$getedValue\"");
         }
-        if (!$value instanceof ProvidedData)
+        if (!$value instanceof Data)
         {
-            $needClass = ProvidedData::class;
-            throw new InvalidArgumentException("value must be instance of \"$needClass\"");
+            $needClass  = Data::class;
+            $getedType  = gettype($value);
+            $getedValue = $getedType == 'object' ? get_class($value) : $getedType;
+
+            throw new InvalidArgumentException("value must be instance of \"$needClass\", caught \"$getedValue\"");
         }
 
         parent::set($key, $value);

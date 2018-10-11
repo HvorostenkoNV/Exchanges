@@ -5,15 +5,8 @@ namespace Main\Exchange\Participants;
 
 use
     RuntimeException,
-    UnexpectedValueException,
-    InvalidArgumentException,
-    RecursiveDirectoryIterator,
-    RecursiveIteratorIterator,
-    Main\Helpers\MarkupData\XML,
-    Main\Exchange\Participants\Data\ItemData,
-    Main\Exchange\Participants\Data\ProvidedData,
-    Main\Exchange\Participants\Data\Data,
-    Main\Exchange\Participants\Fields\FieldsSet;
+    Main\Helpers\Logger,
+    Main\Helpers\Config;
 /** ***********************************************************************************************
  * Application participant UsersBitrix
  *
@@ -25,111 +18,176 @@ class UsersBitrix extends AbstractParticipant
     /** **********************************************************************
      * read participant provided data and get it
      *
-     * @param   FieldsSet $fields           participant fields set
-     * @return  Data                        data
+     * @return  array                       data
      ************************************************************************/
-    protected function readProvidedData(FieldsSet $fields) : Data
+    protected function readProvidedData() : array
     {
-        $result     = new ProvidedData;
-        $folder     = '/var/www/temp/bitrix1cadusersexchange/received/bitrix';
-        $needFile   = null;
-        $data       = null;
-
         try
         {
-            $directory  = new RecursiveDirectoryIterator($folder);
-            $iterator   = new RecursiveIteratorIterator($directory);
+            $config         = Config::getInstance();
+            $requestUrl     = $config->getParam('participants.usersbitrix.exchangeFileUrl');
+            $queryParams    =
+                [
+                    'login'     => $config->getParam('participants.usersbitrix.userLogin'),
+                    'password'  => $config->getParam('participants.usersbitrix.userLogin'),
+                    'type'      => 'usersExport'
+                ];
+            $requestFullUrl = $requestUrl.'?'.http_build_query($queryParams);
+            $data           = $this->getBitrixProvidedData($requestFullUrl);
 
-            while ($iterator->valid())
+            foreach ($data as $index => $item)
             {
-                $file = $iterator->current();
-
-                if ($file->isFile() && $file->getExtension() == 'xml' && $file->isReadable())
-                {
-                    $needFile = $file;
-                    break;
-                }
-
-                $iterator->next();
+                $data[$index] = $this->convertProvidedItemData($item);
             }
-        }
-        catch (UnexpectedValueException $exception)
-        {
-            return $result;
+
+            return $data;
         }
         catch (RuntimeException $exception)
         {
-            return $result;
+            $error = $exception->getMessage();
+            Logger::getInstance()->addWarning("Bitrix provided data reading: $error");
+            return [];
         }
-
-        if (is_null($needFile))
-        {
-            return $result;
-        }
-
-        try
-        {
-            $xml    = new XML($needFile);
-            $data   = $xml->read();
-        }
-        catch (RuntimeException $exception)
-        {
-            return $result;
-        }
-
-        foreach ($data as $item)
-        {
-            if (!is_array($item))
-            {
-                continue;
-            }
-
-            try
-            {
-                $map = new ItemData;
-                foreach ($item as $key => $value)
-                {
-                    $field = $fields->findField($key);
-                    $map->set($field, $value);
-                }
-                $result->push($map);
-            }
-            catch (InvalidArgumentException $exception)
-            {
-
-            }
-        }
-
-        return $result;
     }
     /** **********************************************************************
      * provide delivered data to the participant
      *
-     * @param   Data $data                  data to write
+     * @param   array $data                 data to write
      * @return  bool                        process result
-     * @throws
      ************************************************************************/
-    protected function provideDataForDelivery(Data $data) : bool
+    protected function provideDataForDelivery(array $data) : bool
     {
-        $code = $this->getCode();
-        echo"===============$code===============<br>";
-
-        while ($data->count() > 0)
+        try
         {
-            $item   = $data->pop();
-            $array  = [];
-            echo"------item------<br>";
-            foreach ($item->getKeys() as $field)
+            foreach ($data as $index => $item)
             {
-                $value      = $item->get($field);
-                $fieldName  = $field->getParam('name');
-                $array[$fieldName] = $value;
+                $data[$index] = $this->convertItemDataForDelivery($item);
             }
-            echo'<pre>';
-            print_r($array);
-            echo'</pre>';
+
+            $config         = Config::getInstance();
+            $requestUrl     = $config->getParam('participants.usersbitrix.exchangeFileUrl');
+            $queryParams    =
+                [
+                    'login'     => $config->getParam('participants.usersbitrix.userLogin'),
+                    'password'  => $config->getParam('participants.usersbitrix.userLogin'),
+                    'type'      => 'usersImport',
+                    'data'      => $data
+                ];
+            $streamContext  = stream_context_create
+            ([
+                'http' =>
+                    [
+                        'header'    => "Content-type: application/x-www-form-urlencoded\r\n",
+                        'method'    => 'POST',
+                        'content'   => http_build_query($queryParams)
+                    ]
+            ]);
+
+            $this->postBitrixDataForDelivery($requestUrl, $streamContext);
+            return true;
+        }
+        catch (RuntimeException $exception)
+        {
+            $error = $exception->getMessage();
+            Logger::getInstance()->addWarning("Bitrix data for delivery writing: $error");
+            return false;
+        }
+    }
+    /** **********************************************************************
+     * get bitrix provided data
+     *
+     * @param   string $requestUrl          url request
+     * @return  array                       provided data
+     * @throws  RuntimeException            reading data error
+     ************************************************************************/
+    private function getBitrixProvidedData(string $requestUrl) : array
+    {
+        $response = file_get_contents($requestUrl);
+        if ($response === false)
+        {
+            throw new RuntimeException('cannot read page content');
         }
 
-        return true;
+        $jsonAnswer = json_decode($response, true);
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($jsonAnswer))
+        {
+            throw new RuntimeException('incorrect geted data format');
+        }
+
+        if (!array_key_exists('result', $jsonAnswer) || $jsonAnswer['result'] != 'ok')
+        {
+            $errorMessage = array_key_exists('message', $jsonAnswer)
+                ? 'caught error answer, "'.$jsonAnswer['message'].'"'
+                : 'caught error answer with no explains';
+
+            throw new RuntimeException($errorMessage);
+        }
+
+        return array_key_exists('data', $jsonAnswer) && is_array($jsonAnswer['data'])
+            ? $jsonAnswer['data']
+            : [];
+    }
+    /** **********************************************************************
+     * post bitrix data for delivery
+     *
+     * @param   string      $requestUrl     url response
+     * @param   resource    $streamContext  stream context
+     * @throws  RuntimeException            post data error
+     ************************************************************************/
+    private function postBitrixDataForDelivery(string $requestUrl, $streamContext) : void
+    {
+        if (!is_resource($streamContext))
+        {
+            throw new RuntimeException('no stream context geted');
+        }
+
+        $response = file_get_contents($requestUrl, false, $streamContext);
+        if ($response === false)
+        {
+            throw new RuntimeException('no answer caught');
+        }
+
+        $jsonAnswer = json_decode($response, true);
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($jsonAnswer))
+        {
+            throw new RuntimeException('incorrect answer format');
+        }
+
+        if (!array_key_exists('result', $jsonAnswer) || $jsonAnswer['result'] != 'ok')
+        {
+            $errorMessage = array_key_exists('message', $jsonAnswer)
+                ? 'caught error answer, "'.$jsonAnswer['message'].'"'
+                : 'caught error answer with no explains';
+
+            throw new RuntimeException($errorMessage);
+        }
+    }
+    /** **********************************************************************
+     * convert provided item data
+     *
+     * @param   array $itemData             provided item data
+     * @return  array                       converted provided item data
+     ************************************************************************/
+    private function convertProvidedItemData(array $itemData) : array
+    {
+        $itemData['ACTIVE'] = array_key_exists('ACTIVE', $itemData) && $itemData['ACTIVE'] == 'Y';
+
+        return $itemData;
+    }
+    /** **********************************************************************
+     * convert item data for delivery
+     *
+     * @param   array $itemData             item data for delivery
+     * @return  array                       converted item data for delivery
+     ************************************************************************/
+    private function convertItemDataForDelivery(array $itemData) : array
+    {
+        $itemData['ACTIVE'] =
+            array_key_exists('ACTIVE', $itemData) &&
+            $itemData['ACTIVE'] === true
+                ? 'Y'
+                : 'N';
+
+        return $itemData;
     }
 }

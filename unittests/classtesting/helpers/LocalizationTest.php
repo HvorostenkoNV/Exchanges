@@ -35,7 +35,7 @@ final class LocalizationTest extends AbstractTestCase
      ************************************************************************/
     public function locFolderParamExist() : string
     {
-        $locFolderParam = Config::getInstance()->getParam('main.localizationFolder');
+        $locFolderParam = Config::getInstance()->getParam('structure.localizationFolder');
 
         self::assertNotEmpty
         (
@@ -75,7 +75,7 @@ final class LocalizationTest extends AbstractTestCase
      ************************************************************************/
     public function locFolderFullCheck(string $locFolderParam) : SplFileInfo
     {
-        $locFolder = new SplFileInfo(DOCUMENT_ROOT.DS.$locFolderParam);
+        $locFolder = new SplFileInfo(DOCUMENT_ROOT.DIRECTORY_SEPARATOR.$locFolderParam);
 
         self::assertDirectoryIsReadable
         (
@@ -127,7 +127,7 @@ final class LocalizationTest extends AbstractTestCase
      ************************************************************************/
     public function defaultLocFolderFullCheck(string $locFolder, string $defaultLangParam) : SplFileInfo
     {
-        $defaultLangFolder = new SplFileInfo($locFolder.DS.$defaultLangParam);
+        $defaultLangFolder = new SplFileInfo($locFolder.DIRECTORY_SEPARATOR.$defaultLangParam);
 
         self::assertDirectoryIsReadable
         (
@@ -166,7 +166,7 @@ final class LocalizationTest extends AbstractTestCase
      ************************************************************************/
     public function exceptionWithFolderNotExist(SplFileInfo $locFolder) : void
     {
-        $wrongLocFolder = new SplFileInfo($locFolder->getPathname().DS.'test');
+        $wrongLocFolder = new SplFileInfo($locFolder->getPathname().DIRECTORY_SEPARATOR.'test');
         while ($wrongLocFolder->isDir())
         {
             $wrongLocFolder = new SplFileInfo($wrongLocFolder->getPathname().'1');
@@ -227,12 +227,12 @@ final class LocalizationTest extends AbstractTestCase
      ************************************************************************/
     private function createTempLocParams(SplFileInfo $locFolder) : bool
     {
-        $locTestFolder  = new SplFileInfo($locFolder->getPathname().DS.$this->locTestFolder);
-        $locTestFile    = new SplFileInfo($locTestFolder->getPathname().DS.$this->locTestFile.'.php');
+        $locTestFolder  = new SplFileInfo($locFolder->getPathname().DIRECTORY_SEPARATOR.$this->locTestFolder);
+        $locTestFile    = new SplFileInfo($locTestFolder->getPathname().DIRECTORY_SEPARATOR.$this->locTestFile.'.php');
 
         if (!$locTestFolder->isDir() && $locFolder->isWritable())
         {
-            if (mkdir($locTestFolder->getPathname()))
+            if (@mkdir($locTestFolder->getPathname()))
             {
                 if (!$locTestFile->isFile())
                 {
@@ -263,8 +263,8 @@ final class LocalizationTest extends AbstractTestCase
      ************************************************************************/
     private function dropTempLocParams(SplFileInfo $locFolder) : void
     {
-        $locTestFolder  = new SplFileInfo($locFolder->getPathname().DS.$this->locTestFolder);
-        $locTestFile    = new SplFileInfo($locTestFolder->getPathname().DS.$this->locTestFile.'.php');
+        $locTestFolder  = new SplFileInfo($locFolder->getPathname().DIRECTORY_SEPARATOR.$this->locTestFolder);
+        $locTestFile    = new SplFileInfo($locTestFolder->getPathname().DIRECTORY_SEPARATOR.$this->locTestFile.'.php');
 
         if ($locTestFile->isFile())
         {

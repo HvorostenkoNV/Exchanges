@@ -77,13 +77,19 @@ class MatchedItem extends MapData
     {
         if (!$key instanceof Participant)
         {
-            $needClass = Participant::class;
-            throw new InvalidArgumentException("key must be instance of \"$needClass\"");
+            $needClass  = Participant::class;
+            $getedType  = gettype($key);
+            $getedValue = $getedType == 'object' ? get_class($key) : $getedType;
+
+            throw new InvalidArgumentException("key must be instance of \"$needClass\", caught \"$getedValue\"");
         }
         if (!$value instanceof ItemData)
         {
-            $needClass = ItemData::class;
-            throw new InvalidArgumentException("value must be instance of \"$needClass\"");
+            $needClass  = ItemData::class;
+            $getedType  = gettype($value);
+            $getedValue = $getedType == 'object' ? get_class($value) : $getedType;
+
+            throw new InvalidArgumentException("value must be instance of \"$needClass\", caught \"$getedValue\"");
         }
 
         parent::set($key, $value);

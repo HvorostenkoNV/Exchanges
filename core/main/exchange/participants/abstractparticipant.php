@@ -5,15 +5,28 @@ namespace Main\Exchange\Participants;
 
 use
     RuntimeException,
+    UnexpectedValueException,
     InvalidArgumentException,
     ReflectionException,
+    Main\Helpers\Database\Exceptions\ConnectionException    as DBConnectionException,
+    Main\Helpers\Database\Exceptions\QueryException         as DBQueryException,
+    Main\Helpers\MarkupData\Exceptions\ParseDataException,
+    Main\Helpers\MarkupData\Exceptions\WriteDataException,
     ReflectionClass,
+    SplFileInfo,
+    FilesystemIterator,
+    RecursiveDirectoryIterator,
     Main\Data\MapData,
-    Main\Helpers\DB,
+    Main\Helpers\Database\DB,
     Main\Helpers\Logger,
+    Main\Helpers\Config,
+    Main\Helpers\MarkupData\XML,
+    Main\Exchange\Participants\FieldsTypes\Manager as FieldsTypesManager,
     Main\Exchange\Participants\Fields\Field,
     Main\Exchange\Participants\Fields\FieldsSet,
-    Main\Exchange\Participants\Data\Data;
+    Main\Exchange\Participants\Data\Data,
+    Main\Exchange\Participants\Data\ProvidedData,
+    Main\Exchange\Participants\Data\ItemData;
 /** ***********************************************************************************************
  * Application participant abstract class
  *
@@ -22,12 +35,11 @@ use
  *************************************************************************************************/
 abstract class AbstractParticipant implements Participant
 {
-    private static
-        $idFieldType        = 'item-id';
     private
-        $code               = '',
-        $fieldsCollection   = null,
-        $idField            = null;
+        $code                   = '',
+        $fieldsCollection       = null,
+        $idField                = null,
+        $currentProcessDataFile = '';
     /** **********************************************************************
      * construct
      ************************************************************************/
@@ -45,17 +57,31 @@ abstract class AbstractParticipant implements Participant
 
         $this->addLogMessage('created', 'notice');
 
-        $this->fieldsCollection = $this->constructFieldsCollection();
-        if ($this->fieldsCollection->count() <= 0)
+        try
         {
-            $this->addLogMessage('fields collection is empty', 'warning');
+            $this->addLogMessage('fields collection constructing start', 'notice');
+
+            $this->fieldsCollection = $this->constructFieldsCollection($this->code);
+
+            $this->addLogMessage('fields collection constructed', 'notice');
+            if ($this->fieldsCollection->count() <= 0)
+            {
+                $this->addLogMessage('fields collection is empty', 'warning');
+            }
+        }
+        catch (RuntimeException $exception)
+        {
+            $this->fieldsCollection = new FieldsSet;
+
+            $error = $exception->getMessage();
+            $this->addLogMessage("fields collection constructing error, \"$error\"", 'warning');
         }
 
         $this->fieldsCollection->rewind();
         while ($this->fieldsCollection->valid())
         {
             $field = $this->fieldsCollection->current();
-            if ($field->getParam('type') == self::$idFieldType)
+            if ($field->getParam('type') == FieldsTypesManager::ID_FIELD_TYPE)
             {
                 $this->idField = $field;
                 break;
@@ -93,17 +119,58 @@ abstract class AbstractParticipant implements Participant
      ************************************************************************/
     final public function getProvidedData() : Data
     {
-        $fields = $this->getFields();
-        $data   = $this->readProvidedData($fields);
-        $data   = $this->validateData($data);
+        $code               = $this->getCode();
+        $fields             = $this->getFields();
+        $preparedDataFile   = $this->getPreparedDataFile($code);
 
-        if ($data->count() <= 0)
+        $this->addLogMessage('provided data constructing start', 'notice');
+
+        if ($preparedDataFile)
         {
-            $this->addLogMessage('geted provided data is empty', 'notice');
+            try
+            {
+                $this->addLogMessage('prepared data file found', 'notice');
+                $this->addLogMessage('prepared data file extracting start', 'notice');
+
+                $dataArray  = (new XML)->readFromFile($preparedDataFile);
+                $data       = $this->constructData($dataArray, $fields);
+                $data       = $this->validateData($data);
+
+                $this->addLogMessage('prepared data collected', 'notice');
+                if ($data->count() <= 0)
+                {
+                    $this->addLogMessage('prepared data is empty', 'warning');
+                }
+
+                $this->currentProcessDataFile = $preparedDataFile->getPathname();
+                return $data;
+            }
+            catch (ParseDataException $exception)
+            {
+                $error = $exception->getMessage();
+                $this->addLogMessage("prepared data extracting error, $error", 'warning');
+            }
+        }
+        else
+        {
+            try
+            {
+                $this->addLogMessage('provided data collecting start', 'notice');
+
+                $dataArray = $this->readProvidedData();
+
+                $this->addLogMessage('provided data preparing start', 'notice');
+
+                $this->saveProvidedData($code, $dataArray);
+            }
+            catch (RuntimeException $exception)
+            {
+                $error = $exception->getMessage();
+                $this->addLogMessage("gathered provided data saving error, $error", 'warning');
+            }
         }
 
-        $this->addLogMessage('provided data gathered and returned', 'notice');
-        return $data;
+        return new ProvidedData;
     }
     /** **********************************************************************
      * delivery data to the participant
@@ -113,33 +180,66 @@ abstract class AbstractParticipant implements Participant
      ************************************************************************/
     final public function deliveryData(Data $data) : bool
     {
+        $dataArray = [];
+
         if ($data->count() <= 0)
         {
             $this->addLogMessage('data for delivery is empty', 'notice');
         }
-
         $this->addLogMessage('data delivering process run', 'notice');
-        return $this->provideDataForDelivery($data);
+
+        while (!$data->isEmpty())
+        {
+            try
+            {
+                $item       = $data->pop();
+                $itemArray  = [];
+
+                foreach ($item->getKeys() as $field)
+                {
+                    $value      = $item->get($field);
+                    $fieldName  = $field->getParam('name');
+                    $itemArray[$fieldName] = $value;
+                }
+
+                $dataArray[] = $itemArray;
+            }
+            catch (RuntimeException $exception)
+            {
+
+            }
+        }
+
+        if (strlen($this->currentProcessDataFile) > 0)
+        {
+            unlink($this->currentProcessDataFile);
+        }
+
+        return $this->provideDataForDelivery($dataArray);
     }
     /** **********************************************************************
      * construct participant fields collection
      *
-     * @return  FieldsSet                   fields collection
+     * @param   string $code                participant code
+     * @return  FieldsSet                   participant fields collection
+     * @throws  RuntimeException            participant fields collection constructing error
      ************************************************************************/
-    private function constructFieldsCollection() : FieldsSet
+    private function constructFieldsCollection(string $code) : FieldsSet
     {
         $result         = new FieldsSet;
         $queryResult    = null;
 
         try
         {
-            $queryResult = $this->queryFieldsInfo();
+            $queryResult = $this->queryFieldsInfo($code);
         }
-        catch (RuntimeException $exception)
+        catch (DBConnectionException $exception)
         {
-            $error = $exception->getMessage();
-            $this->addLogMessage("fields query failed, \"$error\"", 'warning');
-            return $result;
+            throw new RuntimeException($exception->getMessage());
+        }
+        catch (DBQueryException $exception)
+        {
+            throw new RuntimeException($exception->getMessage());
         }
 
         foreach ($queryResult as $item)
@@ -163,6 +263,167 @@ abstract class AbstractParticipant implements Participant
         }
 
         return $result;
+    }
+    /** **********************************************************************
+     * get prepared data file
+     *
+     * @param   string $code                participant code
+     * @return  SplFileInfo|null            prepared data file
+     ************************************************************************/
+    private function getPreparedDataFile(string $code) : ?SplFileInfo
+    {
+        $config                     = Config::getInstance();
+        $tempFolderParam            = $config->getParam('structure.tempFolder');
+        $preparedDataFolderParam    = $config->getParam('exchange.preparedDataFolder');
+        $dataFilesFolderPath        =
+            DOCUMENT_ROOT.DIRECTORY_SEPARATOR.
+            $tempFolderParam.DIRECTORY_SEPARATOR.
+            $preparedDataFolderParam.DIRECTORY_SEPARATOR.
+            $code;
+
+        try
+        {
+            $directoryIterator = new RecursiveDirectoryIterator
+            (
+                $dataFilesFolderPath,
+                FilesystemIterator::SKIP_DOTS
+            );
+
+            while ($directoryIterator->valid())
+            {
+                $file = $directoryIterator->current();
+
+                if ($file->isFile() && $file->isReadable() && $file->getExtension() == 'xml')
+                {
+                    return $file;
+                }
+
+                $directoryIterator->next();
+            }
+        }
+        catch (UnexpectedValueException $exception)
+        {
+
+        }
+
+        return null;
+    }
+    /** **********************************************************************
+     * construct data from data array
+     *
+     * @param   array       $dataArray      data array
+     * @param   FieldsSet   $fields         participant fields collection
+     * @return  Data                        extracted data
+     ************************************************************************/
+    private function constructData(array $dataArray, FieldsSet $fields) : Data
+    {
+        $result = new ProvidedData;
+
+        foreach ($dataArray as $item)
+        {
+            if (is_array($item))
+            {
+                $map = new ItemData;
+
+                foreach ($item as $key => $value)
+                {
+                    try
+                    {
+                        $field = $fields->findField($key);
+                        $map->set($field, $value);
+                    }
+                    catch (InvalidArgumentException $exception)
+                    {
+
+                    }
+                }
+
+                try
+                {
+                    $result->push($map);
+                }
+                catch (InvalidArgumentException $exception)
+                {
+
+                }
+            }
+        }
+
+        return $result;
+    }
+    /** **********************************************************************
+     * save provided data
+     *
+     * @param   string  $code               participant code
+     * @param   array   $data               provided data
+     * @throws  RuntimeException            provided data saving error
+     ************************************************************************/
+    private function saveProvidedData(string $code, array $data) : void
+    {
+        $config                     = Config::getInstance();
+        $tempFolderParam            = $config->getParam('structure.tempFolder');
+        $dataChunkSizeParam         = (int) $config->getParam('exchange.providedDataChunkSize');
+        $preparedDataFolderParam    = $config->getParam('exchange.preparedDataFolder');
+        $dataFilesFolderPath        =
+            DOCUMENT_ROOT.DIRECTORY_SEPARATOR.
+            $tempFolderParam.DIRECTORY_SEPARATOR.
+            $preparedDataFolderParam.DIRECTORY_SEPARATOR.
+            $code;
+        $dataFilesFolder            = new SplFileInfo($dataFilesFolderPath);
+        $dataChunkSize              = $dataChunkSizeParam > 0 ? $dataChunkSizeParam : 10;
+        $partedData                 = array_chunk($data, $dataChunkSize);
+        $dataFileNameTemplate       = 'prepared_data_{FILE_NUMBER}';
+        $dataFileIndex              = 1;
+
+        if (!$dataFilesFolder->isDir())
+        {
+            @mkdir($dataFilesFolder->getPathname(), 0777, true);
+        }
+        if (!$dataFilesFolder->isDir())
+        {
+            throw new RuntimeException("\"$dataFilesFolderPath\" folder not exist and cannot be created");
+        }
+
+        try
+        {
+            $filesIterator  = new FilesystemIterator
+            (
+                $dataFilesFolder->getPathname(),
+                FilesystemIterator::SKIP_DOTS
+            );
+            $dataFileIndex += iterator_count($filesIterator);
+        }
+        catch (UnexpectedValueException $exception)
+        {
+
+        }
+
+        foreach ($partedData as $partData)
+        {
+            $dataFile = null;
+
+            while (!$dataFile)
+            {
+                $dataFileName   = str_replace('{FILE_NUMBER}', $dataFileIndex, $dataFileNameTemplate);
+                $dataFilePath   = $dataFilesFolder->getPathname().DIRECTORY_SEPARATOR.$dataFileName.'.xml';
+                $dataFile       = new SplFileInfo($dataFilePath);
+
+                if ($dataFile->isFile())
+                {
+                    $dataFile = null;
+                    $dataFileIndex++;
+                }
+            }
+
+            try
+            {
+                (new XML())->writeToFile($dataFile, $partData);
+            }
+            catch (WriteDataException $exception)
+            {
+                throw new RuntimeException($exception->getMessage());
+            }
+        }
     }
     /** **********************************************************************
      * validate data
@@ -201,50 +462,62 @@ abstract class AbstractParticipant implements Participant
     /** **********************************************************************
      * query participant fields info from database
      *
+     * @param   string $code                participant code
      * @return  array                       query result
-     * @throws  RuntimeException            query error
+     * @throws  DBConnectionException       db connection error
+     * @throws  DBQueryException            db query error
      ************************************************************************/
-    private function queryFieldsInfo() : array
+    private function queryFieldsInfo(string $code) : array
     {
+        $result         = [];
+        $sqlQuery       = '
+            SELECT
+                participants_fields.`ID`,
+                participants_fields.`NAME`,
+                participants_fields.`IS_REQUIRED`,
+                fields_types.`CODE` AS TYPE
+            FROM
+                participants_fields
+            INNER JOIN participants
+                ON participants_fields.`PARTICIPANT` = participants.`ID`
+            INNER JOIN fields_types
+                ON participants_fields.`TYPE` = fields_types.`ID`
+            WHERE
+                participants.`CODE` = ?';
+        $queryResult    = null;
+
         try
         {
-            $result     = [];
-            $db         = DB::getInstance();
-            $sqlQuery   = '
-                SELECT
-                    participants_fields.`ID`,
-                    participants_fields.`NAME`,
-                    participants_fields.`IS_REQUIRED`,
-                    fields_types.`CODE` AS TYPE
-                FROM
-                    participants_fields
-                INNER JOIN participants
-                    ON participants_fields.`PARTICIPANT` = participants.`ID`
-                INNER JOIN fields_types
-                    ON participants_fields.`TYPE` = fields_types.`ID`
-                WHERE
-                    participants.`CODE` = ?';
+            $queryResult = DB::getInstance()->query($sqlQuery, [$code]);
+        }
+        catch (DBConnectionException $exception)
+        {
+            throw $exception;
+        }
+        catch (DBQueryException $exception)
+        {
+            throw $exception;
+        }
 
-            $queryResult = $db->query($sqlQuery, [$this->getCode()]);
-            while (!$queryResult->isEmpty())
+        while (!$queryResult->isEmpty())
+        {
+            try
             {
                 $item       = $queryResult->pop();
                 $itemArray  = [];
-
                 foreach ($item->getKeys() as $key)
                 {
                     $itemArray[$key] = $item->get($key);
                 }
-
                 $result[] = $itemArray;
             }
+            catch (RuntimeException $exception)
+            {
 
-            return $result;
+            }
         }
-        catch (RuntimeException $exception)
-        {
-            throw $exception;
-        }
+
+        return $result;
     }
     /** **********************************************************************
      * add message to log
@@ -272,15 +545,14 @@ abstract class AbstractParticipant implements Participant
     /** **********************************************************************
      * read participant provided data and get it
      *
-     * @param   FieldsSet $fields           participant fields set
-     * @return  Data                        data
+     * @return  array                       data
      ************************************************************************/
-    abstract protected function readProvidedData(FieldsSet $fields) : Data;
+    abstract protected function readProvidedData() : array;
     /** **********************************************************************
      * provide delivered data to the participant
      *
-     * @param   Data $data                  data to write
+     * @param   array $data                 data to write
      * @return  bool                        process result
      ************************************************************************/
-    abstract protected function provideDataForDelivery(Data $data) : bool;
+    abstract protected function provideDataForDelivery(array $data) : bool;
 }

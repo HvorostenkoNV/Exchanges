@@ -1,0 +1,64 @@
+@startuml
+
+namespace Main.Data #BBB {
+    interface Data {
+        +clear() : void
+        +count() : int
+        +isEmpty() : bool
+    }
+
+    interface Map {
+        +delete($key) : void
+        +get($key) : mixed
+        +getKeys() : array
+        +hasKey($key) : bool
+        +hasValue($value) : bool
+        +set($key, $value) : void
+    }
+
+    interface Queue {
+        +pop() : mixed, throws Exceptions.EmptyQueueException
+        +push($data) : void
+    }
+
+    interface Set {
+        +current() : object|null
+        +delete(object $object) : void
+        +next() : void
+        +key() : int
+        +push(object $object) :void
+        +rewind() : void
+        +valid() : bool
+    }
+
+    class MapData {
+
+    }
+
+    class QueueData {
+
+    }
+
+    class SetData {
+
+    }
+    /' ------------------------------------------- '/
+    /' --------------- Exceptions ---------------- '/
+    /' ------------------------------------------- '/
+    namespace Exceptions #FFF {
+        class EmptyQueueException <extends UnderflowException> << (E, #CC0000) Exception >> {
+
+        }
+    }
+    /' ------------------------------------------- '/
+    /' ---------------- Relations ---------------- '/
+    /' ------------------------------------------- '/
+    Main.Data.Data  <|--    Main.Data.Map
+    Main.Data.Data  <|--    Main.Data.Queue
+    Main.Data.Data  <|--    Main.Data.Set
+    Main.Data.Map   <|--    Main.Data.MapData
+    Main.Data.Queue <|--    Main.Data.QueueData
+    Main.Data.Set   <|--    Main.Data.SetData
+}
+
+@enduml

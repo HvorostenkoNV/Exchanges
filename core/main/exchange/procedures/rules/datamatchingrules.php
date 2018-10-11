@@ -78,13 +78,19 @@ class DataMatchingRules extends MapData
     {
         if (!$key instanceof ParticipantsSet)
         {
-            $needClass = ParticipantsSet::class;
-            throw new InvalidArgumentException("key must be instance of \"$needClass\"");
+            $needClass  = ParticipantsSet::class;
+            $getedType  = gettype($key);
+            $getedValue = $getedType == 'object' ? get_class($key) : $getedType;
+
+            throw new InvalidArgumentException("key must be instance of \"$needClass\", caught \"$getedValue\"");
         }
         if (!$value instanceof ProcedureFieldsSet)
         {
-            $needClass = ProcedureFieldsSet::class;
-            throw new InvalidArgumentException("value must be instance of \"$needClass\"");
+            $needClass  = ProcedureFieldsSet::class;
+            $getedType  = gettype($value);
+            $getedValue = $getedType == 'object' ? get_class($value) : $getedType;
+
+            throw new InvalidArgumentException("value must be instance of \"$needClass\", caught \"$getedValue\"");
         }
 
         parent::set($key, $value);

@@ -76,8 +76,11 @@ class CombinedItem extends MapData
     {
         if (!$key instanceof ProcedureField)
         {
-            $needClass = ProcedureField::class;
-            throw new InvalidArgumentException("key must be instance of \"$needClass\"");
+            $needClass  = ProcedureField::class;
+            $getedType  = gettype($key);
+            $getedValue = $getedType == 'object' ? get_class($key) : $getedType;
+
+            throw new InvalidArgumentException("key must be instance of \"$needClass\", caught \"$getedValue\"");
         }
 
         parent::set($key, $value);

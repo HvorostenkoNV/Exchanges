@@ -6,7 +6,9 @@ namespace Main\Exchange\DataProcessors;
 use
     RuntimeException,
     UnexpectedValueException,
-    Main\Helpers\DB,
+    Main\Helpers\Database\Exceptions\ConnectionException    as DBConnectionException,
+    Main\Helpers\Database\Exceptions\QueryException         as DBQueryException,
+    Main\Helpers\Database\DB,
     Main\Helpers\Logger,
     Main\Exchange\Procedures\Procedure,
     Main\Exchange\Procedures\Fields\Field as ProcedureField;
@@ -28,8 +30,22 @@ class ProcedureData
      ************************************************************************/
     public function __construct(Procedure $procedure)
     {
-        $this->procedure    = $procedure;
-        $this->data         = $this->getProcedureData($procedure);
+        $this->procedure = $procedure;
+
+        try
+        {
+            $this->data = $this->getProcedureData($procedure);
+        }
+        catch (DBConnectionException $exception)
+        {
+            $error = $exception->getMessage();
+            Logger::getInstance()->addWarning("Procedure data container: error on query items data, \"$error\"");
+        }
+        catch (DBQueryException $exception)
+        {
+            $error = $exception->getMessage();
+            Logger::getInstance()->addWarning("Procedure data container: error on query items data, \"$error\"");
+        }
     }
     /** **********************************************************************
      * get items id array
@@ -77,21 +93,21 @@ class ProcedureData
      ************************************************************************/
     public function setData(int $commonItemId, ProcedureField $procedureField, $data) : void
     {
-        if ($procedureField->getProcedure()->getCode() != $this->procedure->getCode())
-        {
-            throw new RuntimeException('procedure field not belong to current procedure');
-        }
-
         try
         {
-            $db                 = DB::getInstance();
             $value              = serialize($data);
             $procedureFieldId   = $procedureField->getParam('id');
             $sqlQuery           = "SELECT `ID` FROM matched_items_data WHERE `PROCEDURE_ITEM` = ? AND `PROCEDURE_FIELD` = ?";
-            $queryResult        = $db->query($sqlQuery, [$commonItemId, $procedureFieldId]);
             $dbRecordId         = 0;
+            $db                 = DB::getInstance();
+            $queryResult        = $db->query($sqlQuery, [$commonItemId, $procedureFieldId]);
 
-            while ($queryResult->count() > 0)
+            if ($procedureField->getProcedure()->getCode() != $this->procedure->getCode())
+            {
+                throw new RuntimeException('procedure field not belong to current procedure');
+            }
+
+            while (!$queryResult->isEmpty())
             {
                 $dbRecordId = (int) $queryResult->pop()->get('ID');
             }
@@ -112,11 +128,14 @@ class ProcedureData
                     [$commonItemId, $procedureFieldId, $value]
                 );
             }
-
-            if ($db->hasLastError())
-            {
-                throw new RuntimeException($db->getLastError());
-            }
+        }
+        catch (DBConnectionException $exception)
+        {
+            throw new RuntimeException($exception->getMessage());
+        }
+        catch (DBQueryException $exception)
+        {
+            throw new RuntimeException($exception->getMessage());
         }
         catch (RuntimeException $exception)
         {
@@ -128,29 +147,43 @@ class ProcedureData
      *
      * @param   Procedure $procedure            procedure
      * @return  array                           procedure data
+     * @throws  DBConnectionException           db connection error
+     * @throws  DBQueryException                db query error
      ************************************************************************/
     private function getProcedureData(Procedure $procedure) : array
     {
+        $result         = [];
+        $queryString    = "
+            SELECT
+                matched_items_data.`PROCEDURE_ITEM`,
+                matched_items_data.`PROCEDURE_FIELD`,
+                matched_items_data.`DATA`
+            FROM
+                matched_items_data
+            INNER JOIN matched_items
+                ON matched_items_data.`PROCEDURE_ITEM` = matched_items.`ID`
+            INNER JOIN procedures
+                ON matched_items.`PROCEDURE` = procedures.`ID`
+            WHERE
+                procedures.`CODE` = ?";
+        $queryResult    = null;
+
         try
         {
-            $result         = [];
-            $db             = DB::getInstance();
-            $queryString    = "
-                SELECT
-                    matched_items_data.`PROCEDURE_ITEM`,
-                    matched_items_data.`PROCEDURE_FIELD`,
-                    matched_items_data.`DATA`
-                FROM
-                    matched_items_data
-                INNER JOIN matched_items
-                    ON matched_items_data.`PROCEDURE_ITEM` = matched_items.`ID`
-                INNER JOIN procedures
-                    ON matched_items.`PROCEDURE` = procedures.`ID`
-                WHERE
-                    procedures.`CODE` = ?";
+            $queryResult = DB::getInstance()->query($queryString, [$procedure->getCode()]);
+        }
+        catch (DBConnectionException $exception)
+        {
+            throw $exception;
+        }
+        catch (DBQueryException $exception)
+        {
+            throw $exception;
+        }
 
-            $queryResult = $db->query($queryString, [$procedure->getCode()]);
-            while ($queryResult->count() > 0)
+        while (!$queryResult->isEmpty())
+        {
+            try
             {
                 $item               = $queryResult->pop();
                 $commonItemId       = (int) $item->get('PROCEDURE_ITEM');
@@ -163,14 +196,12 @@ class ProcedureData
                 }
                 $result[$commonItemId][$procedureFieldId] = $data;
             }
+            catch (RuntimeException $exception)
+            {
 
-            return $result;
+            }
         }
-        catch (RuntimeException $exception)
-        {
-            $error = $exception->getMessage();
-            Logger::getInstance()->addWarning("Procedure data container: error on query items data, \"$error\"");
-            return [];
-        }
+
+        return $result;
     }
 }

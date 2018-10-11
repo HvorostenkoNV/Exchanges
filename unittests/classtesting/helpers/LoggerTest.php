@@ -118,7 +118,7 @@ final class LoggerTest extends AbstractTestCase
 
         foreach (scandir($logsFolder->getPathname(), SCANDIR_SORT_DESCENDING) as $fileName)
         {
-            $file = new SplFileInfo($logsFolder->getPathname().DS.$fileName);
+            $file = new SplFileInfo($logsFolder->getPathname().DIRECTORY_SEPARATOR.$fileName);
             $logContent  = $file->openFile('r')->fread($file->getSize());
             break;
         }

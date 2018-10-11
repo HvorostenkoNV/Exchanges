@@ -76,8 +76,11 @@ class ItemData extends MapData
     {
         if (!$key instanceof Field)
         {
-            $needClass = Field::class;
-            throw new InvalidArgumentException("key must be instance of \"$needClass\"");
+            $needClass  = Field::class;
+            $getedType  = gettype($key);
+            $getedValue = $getedType == 'object' ? get_class($key) : $getedType;
+
+            throw new InvalidArgumentException("key must be instance of \"$needClass\", caught \"$getedValue\"");
         }
         if ($key->getParam('required') && $this->isEmptyValue($value))
         {

@@ -6,7 +6,7 @@ namespace UnitTests\ClassTesting\Exchange\Participants\FieldsTypes;
 use
     InvalidArgumentException,
     UnitTests\AbstractTestCase,
-    Main\Helpers\DB,
+    Main\Helpers\Database\DB,
     Main\Exchange\Participants\FieldsTypes\Manager;
 /** ***********************************************************************************************
  * Test Main\Exchange\Participants\FieldsTypes\Manager classes

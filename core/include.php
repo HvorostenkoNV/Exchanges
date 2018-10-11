@@ -9,34 +9,30 @@ use Main\Helpers\Logger;
  * @author  Hvorostenko
  *************************************************************************************************/
 define('DOCUMENT_ROOT',     $_SERVER['DOCUMENT_ROOT']);
-define('DS',                DIRECTORY_SEPARATOR);
-define('PARAMS_FOLDER',     DOCUMENT_ROOT.DS.'params');
-define('LOGS_FOLDER',       DOCUMENT_ROOT.DS.'logs');
-define('CLASSES_FOLDER',    DOCUMENT_ROOT.DS.'core');
+define('PARAMS_FOLDER',     'params');
+define('CLASSES_FOLDER',    'core');
 
 spl_autoload_register(function($className)
 {
     $classNameString    = strtolower($className);
-    $classNameString    = str_replace('\\', DS, $classNameString);
-    $classFilePath      = CLASSES_FOLDER.DS.$classNameString.'.php';
+    $classNameString    = str_replace('\\', DIRECTORY_SEPARATOR, $classNameString);
+    $classesFolderPath  = DOCUMENT_ROOT.DIRECTORY_SEPARATOR.CLASSES_FOLDER;
+    $classFilePath      = $classesFolderPath.DIRECTORY_SEPARATOR.$classNameString.'.php';
     $file               = new SplFileInfo($classFilePath);
-    $logger             = null;
-
-    try
-    {
-        $logger = Logger::getInstance();
-    }
-    catch (Error $exception)
-    {
-
-    }
 
     if ($file->isFile() && $file->getExtension() == 'php')
     {
         include $file->getPathname();
     }
-    elseif ($logger)
+    else
     {
-        $logger->addWarning("Trying to load unfounded class \"$className\"");
+        try
+        {
+            Logger::getInstance()->addWarning("Trying to load unfounded class \"$className\"");
+        }
+        catch (Error $exception)
+        {
+
+        }
     }
 });

@@ -5,7 +5,9 @@ namespace UnitTests\ClassTesting\Helpers;
 
 use
     UnitTests\AbstractTestCase,
-    Main\Helpers\DB;
+    Main\Helpers\Database\DB,
+    Main\Helpers\Database\Exceptions\ConnectionException    as DBConnectionException,
+    Main\Helpers\Database\Exceptions\QueryException         as DBQueryException;
 /** ***********************************************************************************************
  * Test Main\Helpers\DB class
  *
@@ -63,7 +65,7 @@ final class DBTest extends AbstractTestCase
 
         $db->query($createTableSqlQuery);
         $tableQuery = $db->query('SHOW TABLES');
-        while ($tableQuery->count() > 0)
+        while (!$tableQuery->isEmpty())
         {
             $row    = $tableQuery->pop();
             $value  = $row->get($row->getKeys()[0]);
@@ -109,7 +111,7 @@ final class DBTest extends AbstractTestCase
         }
 
         $queryResult = $db->query("SELECT $nameColumn, $codeColumn FROM $table");
-        while ($queryResult->count() > 0)
+        while (!$queryResult->isEmpty())
         {
             $item = $queryResult->pop();
             $createdItems[] =
@@ -222,7 +224,7 @@ final class DBTest extends AbstractTestCase
         $tableItems = [];
 
         $queryResult = $db->query("SELECT $idColumn FROM $table");
-        while ($queryResult->count() > 0)
+        while (!$queryResult->isEmpty())
         {
             $tableItems[] = $queryResult->pop()->get($idColumn);
         }
@@ -256,7 +258,7 @@ final class DBTest extends AbstractTestCase
 
         $db->query("DROP TABLE $table");
         $tableQuery = $db->query('SHOW TABLES');
-        while ($tableQuery->count() > 0)
+        while (!$tableQuery->isEmpty())
         {
             $row    = $tableQuery->pop();
             $value  = $row->get($row->getKeys()[0]);

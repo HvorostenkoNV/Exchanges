@@ -120,7 +120,7 @@ final class ConfigTest extends AbstractTestCase
 
         if (!$paramsTestFolder->isDir() && $paramsFolder->isWritable())
         {
-            if (mkdir($paramsTestFolder->getPathname()))
+            if (@mkdir($paramsTestFolder->getPathname()))
             {
                 if (!$paramsTestFile->isFile())
                 {

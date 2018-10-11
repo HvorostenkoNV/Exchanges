@@ -16,7 +16,7 @@ interface Queue extends Data
      * extract queue data from the start
      *
      * @return  mixed                       data
-     * @throws  RuntimeException            if no data for extract
+     * @throws  RuntimeException            no data for extract
      ************************************************************************/
     public function pop();
     /** **********************************************************************

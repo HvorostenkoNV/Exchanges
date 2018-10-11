@@ -75,12 +75,17 @@ class DataCombiningRules extends MapData
     {
         if (!$key instanceof ParticipantField)
         {
-            $needClass = ParticipantField::class;
-            throw new InvalidArgumentException("key must be instance of \"$needClass\"");
+            $needClass  = ParticipantField::class;
+            $getedType  = gettype($key);
+            $getedValue = $getedType == 'object' ? get_class($key) : $getedType;
+
+            throw new InvalidArgumentException("key must be instance of \"$needClass\", caught \"$getedValue\"");
         }
         if (!is_int($value))
         {
-            throw new InvalidArgumentException("value must be integer");
+            $getedType = gettype($value);
+
+            throw new InvalidArgumentException("value must be integer, caught \"$getedType\"");
         }
 
         parent::set($key, $value);

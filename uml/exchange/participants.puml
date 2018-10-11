@@ -9,63 +9,51 @@ namespace Main.Exchange.Participants #BBB {
     }
 
     abstract AbstractParticipant {
-        +getCode() : string
-        +getFields() : Fields.FieldsSet
-        +getProvidedData() : Data.ProvidedData
-        +deliveryData(Data.DataForDelivery $data) : bool
-
-        -{abstract}readProvidedData(Fields.FieldsSet $fields) : Data.ProvidedData
+        -{abstract}readProvidedData() : array
         -{abstract}provideDataForDelivery(Data.DataForDelivery $data) : bool
     }
 
     class Users1C {
-        -{abstract}readProvidedData(Fields.FieldsSet $fields) : Data.ProvidedData
-        -{abstract}provideDataForDelivery(Data.DataForDelivery $data) : bool
+
     }
 
     class UsersAD {
-        -{abstract}readProvidedData(Fields.FieldsSet $fields) : Data.ProvidedData
-        -{abstract}provideDataForDelivery(Data.DataForDelivery $data) : bool
+
     }
 
     class UsersBitrix {
-        -{abstract}readProvidedData(Fields.FieldsSet $fields) : Data.ProvidedData
-        -{abstract}provideDataForDelivery(Data.DataForDelivery $data) : bool
+
     }
     /' ------------------------------------------- '/
     /' ----------------- Fields ------------------ '/
     /' ------------------------------------------- '/
     namespace Fields #FFF {
-        class Field {
-            +__construct(Participant $participant, Main.Data.Map $params)
-            +getParticipant() : Participant
-            +getFieldType() : FieldsTypes.Field
-            +getParam(string $param) : mixed
-        }
-
-        class FieldsSet < extends Main.Data.SetData > {
-            +current() : ?Field
+        class FieldsSet <extends Main.Data.SetData> {
+            +current() : Field|null
             +delete(Field $object) : void
-            +push(Field $object) :void
+            +push(Field $object) :void, throws InvalidArgumentException
             +findField(string $fieldName) : Field
         }
 
-        FieldsSet o-- Field
+        class Field {
+            +__construct(Main.Exchange.Participants.Participant $participant, Main.Data.Map $params) : throws InvalidArgumentException
+            +getParticipant() : Main.Exchange.Participants.Participant
+            +getFieldType() : Main.Exchange.Participants.FieldsTypes.Field
+            +getParam(string $param) : mixed
+        }
     }
     /' ------------------------------------------- '/
     /' --------------- FieldsTypes --------------- '/
     /' ------------------------------------------- '/
     namespace FieldsTypes #FFF {
         interface Field {
-            +validateValue(mixed $value) : mixed
-            +convertValueForPrint(mixed $value) : mixed
+            +validateValue(mixed $value) : mixed, throws Exceptions.InvalidValueException
+            +convertValueForPrint(mixed $value) : mixed, throws Exceptions.InvalidValueException
             +getRandomValue() : mixed
         }
 
         abstract AbstractField {
-            +validateValue(mixed $value) : mixed
-            +convertValueForPrint(mixed $value) : mixed
-            +getRandomValue() : mixed
+
         }
 
         class String {
@@ -75,39 +63,48 @@ namespace Main.Exchange.Participants #BBB {
         class Number {
 
         }
+        /' ---------------------------- '/
+        /' -------- Exceptions -------- '/
+        /' ---------------------------- '/
+        namespace Exceptions #EEE {
+            class InvalidValueException <extends InvalidArgumentException> << (E, #CC0000) Exception >> {
 
-        Field           <|--    AbstractField
-        AbstractField   <|--    String
-        AbstractField   <|--    Number
+            }
+        }
     }
     /' ------------------------------------------- '/
     /' ------------------ Data ------------------- '/
     /' ------------------------------------------- '/
     namespace Data #FFF {
-        interface Data {
+        interface Data <extends Main.Data.Queue> {
+            +pop() : ItemData, throws Main.Data.Exceptions.EmptyQueueException
+            +push(ItemData $data) : void, throws InvalidArgumentException
+        }
+
+        class ProvidedData {
 
         }
 
-        class ProvidedData < extends Main.Data.QueueData > {
-            +pop() : ItemData
-            +push(ItemData $data) : void
-        }
+        class DataForDelivery {
 
-        class DataForDelivery < extends Main.Data.QueueData > {
-            +pop() : ItemData
-            +push(ItemData $data) : void
         }
 
         class ItemData < extends Main.Data.MapData > {
-            +get(Fields.Field $key) : mixed
-            +set(Fields.Field $key, mixed $value) : void
+            +get(Main.Exchange.Participants.Fields.Field $key) : mixed
+            +set(Main.Exchange.Participants.Fields.Field $key, mixed $value) : void, throws InvalidArgumentException
+        }
+    }
+    /' ------------------------------------------- '/
+    /' ---------------- Exceptions --------------- '/
+    /' ------------------------------------------- '/
+    namespace Exceptions #EEE {
+        class UnknownParticipantException <extends Exception> << (E, #CC0000) Exception >> {
+
         }
 
-        Data    <|--    ProvidedData
-        Data    <|--    DataForDelivery
+        class UnknownParticipantFieldException <extends Exception> << (E, #CC0000) Exception >> {
 
-        ProvidedData    o-- ItemData
-        DataForDelivery o-- ItemData
+        }
     }
     /' ------------------------------------------- '/
     /' ---------------- Relations ---------------- '/
@@ -117,11 +114,26 @@ namespace Main.Exchange.Participants #BBB {
     AbstractParticipant <|--    UsersAD
     AbstractParticipant <|--    UsersBitrix
 
-    Participant o-- Main.Exchange.Participants.Data.Data
-    Participant o-- Main.Exchange.Participants.Fields.FieldsSet
+    Main.Exchange.Participants.Participant  o-- Main.Exchange.Participants.Data.Data
+    Main.Exchange.Participants.Participant  o-- Main.Exchange.Participants.Fields.FieldsSet
 
-    Main.Exchange.Participants.Fields.Field     o-- Main.Exchange.Participants.FieldsTypes.Field
-    Main.Exchange.Participants.Data.ItemData    o-- Main.Exchange.Participants.Fields.Field
+    Main.Exchange.Participants.Fields.FieldsSet             o--     Main.Exchange.Participants.Fields.Field
+    Main.Exchange.Participants.Fields.Field                 o--     Main.Exchange.Participants.FieldsTypes.Field
+    Main.Exchange.Participants.FieldsTypes.Field            <|--    Main.Exchange.Participants.FieldsTypes.AbstractField
+    Main.Exchange.Participants.FieldsTypes.AbstractField    <|--    Main.Exchange.Participants.FieldsTypes.String
+    Main.Exchange.Participants.FieldsTypes.AbstractField    <|--    Main.Exchange.Participants.FieldsTypes.Number
+
+    Main.Exchange.Participants.Data.Data        o--     Main.Exchange.Participants.Data.ItemData
+    Main.Exchange.Participants.Data.Data        <|--    Main.Exchange.Participants.Data.ProvidedData
+    Main.Exchange.Participants.Data.Data        <|--    Main.Exchange.Participants.Data.DataForDelivery
+    Main.Exchange.Participants.Data.ItemData    o--     Main.Exchange.Participants.Fields.Field
+
+    Main.Exchange.Participants.AbstractParticipant                      -[hidden]   Main.Exchange.Participants.Fields.FieldsSet
+    Main.Exchange.Participants.Fields.FieldsSet                         -[hidden]   Main.Exchange.Participants.Data.Data
+    Main.Exchange.Participants.Data.ItemData                            -[hidden]   Main.Exchange.Participants.Data.ProvidedData
+    Main.Exchange.Participants.Data.ProvidedData                        -[hidden]   Main.Exchange.Participants.Data.DataForDelivery
+    Main.Exchange.Participants.Exceptions.UnknownParticipantException   --[hidden]  Main.Exchange.Participants.Exceptions.UnknownParticipantFieldException
+    Main.Exchange.Participants.Exceptions.UnknownParticipantException   --[hidden]  Main.Exchange.Participants.Data.Data
 }
 
 @enduml

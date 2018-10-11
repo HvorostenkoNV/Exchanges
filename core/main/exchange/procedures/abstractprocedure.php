@@ -8,9 +8,11 @@ use
     RuntimeException,
     InvalidArgumentException,
     ReflectionException,
+    Main\Helpers\Database\Exceptions\ConnectionException    as DBConnectionException,
+    Main\Helpers\Database\Exceptions\QueryException         as DBQueryException,
     ReflectionClass,
     Main\Data\MapData,
-    Main\Helpers\DB,
+    Main\Helpers\Database\DB,
     Main\Helpers\Logger,
     Main\Exchange\Participants\Participant,
     Main\Exchange\Participants\Fields\Field     as ParticipantField,
@@ -146,7 +148,7 @@ abstract class AbstractProcedure implements Procedure
         {
             $queryResult = $this->queryParticipants();
         }
-        catch (RuntimeException $exception)
+        catch (DBQueryException $exception)
         {
             $error = $exception->getMessage();
             $this->addLogMessage("participants query failed, \"$error\"", 'warning');
@@ -218,7 +220,7 @@ abstract class AbstractProcedure implements Procedure
 
             $queryResult = $this->queryProcedureFields($participantsCodeArray);
         }
-        catch (RuntimeException $exception)
+        catch (DBQueryException $exception)
         {
             $error = $exception->getMessage();
             $this->addLogMessage("procedure fields query failed, \"$error\"", 'warning');
@@ -295,7 +297,7 @@ abstract class AbstractProcedure implements Procedure
 
             $queryResult = $this->queryProcedureDataMatchingRules($participantsCodeArray, $procedureFieldsIdArray);
         }
-        catch (RuntimeException $exception)
+        catch (DBQueryException $exception)
         {
             $error = $exception->getMessage();
             $this->addLogMessage("data matching rules query failed, \"$error\"", 'warning');
@@ -390,7 +392,7 @@ abstract class AbstractProcedure implements Procedure
 
             $queryResult = $this->queryProcedureDataCombiningRules($participantsCodeArray);
         }
-        catch (RuntimeException $exception)
+        catch (DBQueryException $exception)
         {
             $error = $exception->getMessage();
             $this->addLogMessage("data combining rules query failed, \"$error\"", 'warning');
@@ -534,7 +536,7 @@ abstract class AbstractProcedure implements Procedure
      *      ['CODE'  => participantCode],
      *      ['CODE'  => participantCode]
      * ]
-     * @throws  RuntimeException                    query process error
+     * @throws  DBQueryException                    query process error
      ************************************************************************/
     private function queryParticipants() : array
     {
@@ -554,7 +556,7 @@ abstract class AbstractProcedure implements Procedure
 
             return $this->getQueryResult($sqlQuery, [$this->getCode()]);
         }
-        catch (RuntimeException $exception)
+        catch (DBQueryException $exception)
         {
             throw $exception;
         }
@@ -583,7 +585,7 @@ abstract class AbstractProcedure implements Procedure
      *          ]
      *      ]
      * ]
-     * @throws  RuntimeException                    query process error
+     * @throws  DBQueryException                    query process error
      ************************************************************************/
     private function queryProcedureFields(array $participantsCodeArray) : array
     {
@@ -619,7 +621,7 @@ abstract class AbstractProcedure implements Procedure
 
             return array_values($result);
         }
-        catch (RuntimeException $exception)
+        catch (DBQueryException $exception)
         {
             throw $exception;
         }
@@ -633,7 +635,7 @@ abstract class AbstractProcedure implements Procedure
      *      ['ID' => procedureFieldId],
      *      ['ID' => procedureFieldId]
      * ]
-     * @throws  RuntimeException                    query process error
+     * @throws  DBQueryException                    query process error
      ************************************************************************/
     private function queryProcedureFieldsId() : array
     {
@@ -651,7 +653,7 @@ abstract class AbstractProcedure implements Procedure
 
             return $this->getQueryResult($sqlQuery, [$this->getCode()]);
         }
-        catch (RuntimeException $exception)
+        catch (DBQueryException $exception)
         {
             throw $exception;
         }
@@ -675,7 +677,7 @@ abstract class AbstractProcedure implements Procedure
      *          'PARTICIPANT_FIELD_NAME'    => participantFieldName
      *      ]
      * ]
-     * @throws  RuntimeException                    query process error
+     * @throws  DBQueryException                    query process error
      ************************************************************************/
     private function queryProcedureParticipantsFields(array $participantsCodeArray, array $procedureFieldsIdArray) : array
     {
@@ -706,7 +708,7 @@ abstract class AbstractProcedure implements Procedure
 
             return $this->getQueryResult($sqlQuery, $queryParams);
         }
-        catch (RuntimeException $exception)
+        catch (DBQueryException $exception)
         {
             throw $exception;
         }
@@ -725,7 +727,7 @@ abstract class AbstractProcedure implements Procedure
      *          'PROCEDURE_FIELDS'  => [procedureFieldId, procedureFieldId]
      *      ]
      * ]
-     * @throws  RuntimeException                    query process error
+     * @throws  DBQueryException                    query process error
      ************************************************************************/
     private function queryProcedureDataMatchingRules(array $participantsCodeArray, array $procedureFieldsIdArray) : array
     {
@@ -761,7 +763,7 @@ abstract class AbstractProcedure implements Procedure
 
             return array_values($result);
         }
-        catch (RuntimeException $exception)
+        catch (DBQueryException $exception)
         {
             throw $exception;
         }
@@ -775,7 +777,7 @@ abstract class AbstractProcedure implements Procedure
      *      ['ID' => dataMatchingRuleId],
      *      ['ID' => dataMatchingRuleId]
      * ]
-     * @throws  RuntimeException                    query process error
+     * @throws  DBQueryException                    query process error
      ************************************************************************/
     private function queryProcedureDataMatchingRulesId() : array
     {
@@ -793,7 +795,7 @@ abstract class AbstractProcedure implements Procedure
 
             return $this->getQueryResult($sqlQuery, [$this->getCode()]);
         }
-        catch (RuntimeException $exception)
+        catch (DBQueryException $exception)
         {
             throw $exception;
         }
@@ -815,7 +817,7 @@ abstract class AbstractProcedure implements Procedure
      *          'PARTICIPANT_CODE'  => participantCode
      *      ]
      * ]
-     * @throws  RuntimeException                    query process error
+     * @throws  DBQueryException                    query process error
      ************************************************************************/
     private function queryProcedureDataMatchingRulesParticipants(array $procedureRulesIdArray, array $participantsCodeArray) : array
     {
@@ -843,7 +845,7 @@ abstract class AbstractProcedure implements Procedure
 
             return $this->getQueryResult($sqlQuery, $queryParams);
         }
-        catch (RuntimeException $exception)
+        catch (DBQueryException $exception)
         {
             throw $exception;
         }
@@ -865,7 +867,7 @@ abstract class AbstractProcedure implements Procedure
      *          'PROCEDURE_FIELD'   => procedureFieldId
      *      ]
      * ]
-     * @throws  RuntimeException                    query process error
+     * @throws  DBQueryException                    query process error
      ************************************************************************/
     private function queryProcedureDataMatchingRulesProcedureFields(array $procedureRulesIdArray, array $procedureFieldsIdArray) : array
     {
@@ -891,7 +893,7 @@ abstract class AbstractProcedure implements Procedure
 
             return $this->getQueryResult($sqlQuery, $queryParams);
         }
-        catch (RuntimeException $exception)
+        catch (DBQueryException $exception)
         {
             throw $exception;
         }
@@ -914,7 +916,7 @@ abstract class AbstractProcedure implements Procedure
      *          'WEIGHT'            => participantFieldWeight
      *      ]
      * ]
-     * @throws  RuntimeException                    query process error
+     * @throws  DBQueryException                    query process error
      ************************************************************************/
     private function queryProcedureDataCombiningRules(array $participantsCodeArray) : array
     {
@@ -946,7 +948,7 @@ abstract class AbstractProcedure implements Procedure
 
             return $this->getQueryResult($sqlQuery, $queryParams);
         }
-        catch (RuntimeException $exception)
+        catch (DBQueryException $exception)
         {
             throw $exception;
         }
@@ -957,34 +959,45 @@ abstract class AbstractProcedure implements Procedure
      * @param   string  $sqlQuery                   SQL query
      * @param   array   $params                     query params
      * @return  array                               query result as array
-     * @throws  RuntimeException                    query process error
+     * @throws  DBQueryException                    query process error
      ************************************************************************/
     private function getQueryResult(string $sqlQuery, array $params = []) : array
     {
+        $result         = [];
+        $queryResult    = null;
+
         try
         {
-            $result         = [];
-            $queryResult    = DB::getInstance()->query($sqlQuery, $params);
+            $queryResult = DB::getInstance()->query($sqlQuery, $params);
+        }
+        catch (DBConnectionException $exception)
+        {
+            throw new DBQueryException($exception->getMessage());
+        }
+        catch (DBQueryException $exception)
+        {
+            throw $exception;
+        }
 
-            while (!$queryResult->isEmpty())
+        while (!$queryResult->isEmpty())
+        {
+            try
             {
                 $item       = $queryResult->pop();
                 $itemArray  = [];
-
                 foreach ($item->getKeys() as $key)
                 {
                     $itemArray[$key] = $item->get($key);
                 }
-
                 $result[] = $itemArray;
             }
+            catch (RuntimeException $exception)
+            {
 
-            return $result;
+            }
         }
-        catch (RuntimeException $exception)
-        {
-            throw $exception;
-        }
+
+        return $result;
     }
     /** **********************************************************************
      * create participant by code

@@ -101,6 +101,7 @@ class ProcedureItemsMap
      * @param   int         $commonItemId       common item id
      * @param   Participant $participant        participant
      * @param   string      $participantItemId  participant item id
+     * @return  void
      * @throws  RuntimeException                adding participant item error
      ************************************************************************/
     public function setParticipantItem(int $commonItemId, Participant $participant, string $participantItemId) : void
@@ -357,6 +358,7 @@ class ProcedureItemsMap
      * @param   int         $commonItemId       common item id
      * @param   Participant $participant        participant
      * @param   string      $participantItemId  participant item id
+     * @return  void
      ************************************************************************/
     private function unbindParticipantItem(int $commonItemId, Participant $participant, string $participantItemId) : void
     {

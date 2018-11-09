@@ -21,6 +21,7 @@ class ItemData extends MapData
      * delete value by key
      *
      * @param   Field $key                  value key
+     * @return  void
      ************************************************************************/
     public function delete($key) : void
     {
@@ -70,6 +71,7 @@ class ItemData extends MapData
      *
      * @param   Field   $key                value key
      * @param   mixed   $value              value
+     * @return  void
      * @throws  InvalidArgumentException    incorrect key or value
      ************************************************************************/
     public function set($key, $value) : void

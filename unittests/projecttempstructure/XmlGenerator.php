@@ -61,6 +61,8 @@ final class XmlGenerator
     }
     /** **********************************************************************
      * drop created temp XML files
+     *
+     * @return void
      ************************************************************************/
     public function clean() : void
     {
@@ -146,6 +148,7 @@ final class XmlGenerator
      * @param   DOMDocument $document           xml document
      * @param   DOMNode     $node               xml node
      * @param   array       $data               data
+     * @return  void
      ************************************************************************/
     private function buildXmlStructure(DOMDocument $document, DOMNode $node, array $data) : void
     {

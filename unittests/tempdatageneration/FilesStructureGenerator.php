@@ -45,6 +45,7 @@ class FilesStructureGenerator
     /** **********************************************************************
      * generate project temp files structure
      *
+     * @return  void
      * @throws  ClassesGenerationException                  generation error
      ************************************************************************/
     public function generate() : void
@@ -128,6 +129,8 @@ class FilesStructureGenerator
     }
     /** **********************************************************************
      * clear temp files structure
+     *
+     * @return void
      ************************************************************************/
     public function clear() : void
     {
@@ -248,6 +251,7 @@ class FilesStructureGenerator
      *
      * @param   string  $classFullName                      class full name
      * @param   string  $classContent                       class content
+     * @return  void
      * @throws  ClassesGenerationException                  new temp class generating error
      ************************************************************************/
     private function saveNewClass(string $classFullName, string $classContent) : void

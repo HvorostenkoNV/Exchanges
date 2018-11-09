@@ -43,6 +43,7 @@ abstract class MapDataAbstractTest extends AbstractTestCase
      * check read/write value operations
      *
      * @test
+     * @return void
      * @throws
      ************************************************************************/
     public function readWriteValue() : void
@@ -90,6 +91,7 @@ abstract class MapDataAbstractTest extends AbstractTestCase
      *
      * @test
      * @depends readWriteValue
+     * @return  void
      * @throws
      ************************************************************************/
     public function counting() : void
@@ -135,6 +137,7 @@ abstract class MapDataAbstractTest extends AbstractTestCase
      *
      * @test
      * @depends readWriteValue
+     * @return  void
      * @throws
      ************************************************************************/
     public function gettingKeys() : void
@@ -163,6 +166,7 @@ abstract class MapDataAbstractTest extends AbstractTestCase
      *
      * @test
      * @depends readWriteValue
+     * @return  void
      * @throws
      ************************************************************************/
     public function usingIncorrectKeys() : void
@@ -199,6 +203,7 @@ abstract class MapDataAbstractTest extends AbstractTestCase
      *
      * @test
      * @depends readWriteValue
+     * @return  void
      * @throws
      ************************************************************************/
     public function usingIncorrectValues() : void
@@ -236,6 +241,7 @@ abstract class MapDataAbstractTest extends AbstractTestCase
      * @test
      * @depends readWriteValue
      * @depends counting
+     * @return  void
      * @throws
      ************************************************************************/
     public function clearingOperations() : void

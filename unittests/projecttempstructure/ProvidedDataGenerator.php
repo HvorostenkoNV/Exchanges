@@ -31,6 +31,7 @@ class ProvidedDataGenerator
      *
      * @param   array   $structure              generated logic structure
      * @param   array   $dbStructure            generated DB structure
+     * @return  void
      * @throws  RuntimeException                DB writing error
      ************************************************************************/
     public function generate(array $structure, array $dbStructure) : void
@@ -94,6 +95,8 @@ class ProvidedDataGenerator
     }
     /** **********************************************************************
      * clean temp data
+     *
+     * @return void
      ************************************************************************/
     public function clean() : void
     {
@@ -346,6 +349,7 @@ class ProvidedDataGenerator
      *
      * @param   array   $procedureDbStructure        procedure DB structure
      * @param   array   $matchedItems           matched items
+     * @return  void
      * @throws  RuntimeException                DB writing error
      ************************************************************************/
     private function writeMatchedItemsIntoDb(array $procedureDbStructure, array $matchedItems) : void

@@ -19,6 +19,9 @@ final class ProceduresTest extends AbstractTestCase
     private static $structureGenerator = null;
     /** **********************************************************************
      * construct
+     *
+     * @return void
+     * @throws
      ************************************************************************/
     public static function setUpBeforeClass() : void
     {
@@ -29,6 +32,8 @@ final class ProceduresTest extends AbstractTestCase
     }
     /** **********************************************************************
      * destruct
+     *
+     * @return void
      ************************************************************************/
     public static function tearDownAfterClass() : void
     {
@@ -40,6 +45,7 @@ final class ProceduresTest extends AbstractTestCase
      * check getting procedure code
      *
      * @test
+     * @return void
      * @throws
      ************************************************************************/
     public function gettingCode() : void
@@ -64,6 +70,7 @@ final class ProceduresTest extends AbstractTestCase
      * check getting procedures participants
      *
      * @test
+     * @return void
      * @throws
      ************************************************************************/
     public function gettingParticipants() : void
@@ -98,6 +105,7 @@ final class ProceduresTest extends AbstractTestCase
      * check getting procedure fields
      *
      * @test
+     * @return void
      * @throws
      ************************************************************************/
     public function gettingFields() : void
@@ -145,6 +153,7 @@ final class ProceduresTest extends AbstractTestCase
      * check getting procedures data matching rules
      *
      * @test
+     * @return void
      * @throws
      ************************************************************************/
     public function gettingDataMatchingRules() : void
@@ -220,6 +229,7 @@ final class ProceduresTest extends AbstractTestCase
      * check getting procedures data combining rules
      *
      * @test
+     * @return void
      * @throws
      ************************************************************************/
     public function gettingDataCombiningRules() : void

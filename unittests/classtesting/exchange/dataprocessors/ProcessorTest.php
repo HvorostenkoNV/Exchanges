@@ -20,6 +20,9 @@ final class ProcessorTest extends AbstractTestCase
     private static $structureGenerator = null;
     /** **********************************************************************
      * construct
+     *
+     * @return void
+     * @throws
      ************************************************************************/
     public static function setUpBeforeClass() : void
     {
@@ -30,6 +33,8 @@ final class ProcessorTest extends AbstractTestCase
     }
     /** **********************************************************************
      * destruct
+     *
+     * @return void
      ************************************************************************/
     public static function tearDownAfterClass() : void
     {
@@ -41,6 +46,7 @@ final class ProcessorTest extends AbstractTestCase
      * check constructing object process
      *
      * @test
+     * @return void
      * @throws
      ************************************************************************/
     public function constructing() : void

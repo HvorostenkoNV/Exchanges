@@ -34,50 +34,31 @@ class Collector
      ************************************************************************/
     public function collectData() : CollectedData
     {
-        $result         = new CollectedData;
-        $participants   = $this->procedure->getParticipants();
+        $logger             = Logger::getInstance();
+        $procedureCode      = $this->procedure->getCode();
+        $logMessagePrefix   = "Collector for procedure \"$procedureCode\"";
+        $participants       = $this->procedure->getParticipants();
+        $result             = new CollectedData;
 
-        $this->addLogMessage('collecting data start', 'notice');
+        $logger->addNotice("$logMessagePrefix: collecting data start");
         while ($participants->valid())
         {
+            $participant        = $participants->current();
+            $participantData    = $participant->getProvidedData();
+
             try
             {
-                $participant        = $participants->current();
-                $participantData    = $participant->getProvidedData();
                 $result->set($participant, $participantData);
             }
             catch (InvalidArgumentException $exception)
             {
                 $error = $exception->getMessage();
-                $this->addLogMessage("unexpected error on constructing collected data item, \"$error\"", 'warning');
+                $logger->addWarning("$logMessagePrefix: unexpected error on constructing collected data item, \"$error\"");
             }
 
             $participants->next();
         }
 
         return $result;
-    }
-    /** **********************************************************************
-     * add message to log
-     *
-     * @param   string  $message            message
-     * @param   string  $type               message type
-     ************************************************************************/
-    private function addLogMessage(string $message, string $type) : void
-    {
-        $logger         = Logger::getInstance();
-        $procedureCode  = $this->procedure->getCode();
-        $fullMessage    = "Collector for procedure \"$procedureCode\": $message";
-
-        switch ($type)
-        {
-            case 'warning':
-                $logger->addWarning($fullMessage);
-                break;
-            case 'notice':
-            default:
-                $logger->addNotice($fullMessage);
-                break;
-        }
     }
 }

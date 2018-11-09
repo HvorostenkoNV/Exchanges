@@ -38,6 +38,7 @@ abstract class QueueDataAbstractTest extends AbstractTestCase
      * check empty object
      *
      * @test
+     * @return void
      * @throws
      ************************************************************************/
     public function emptyObject() : void
@@ -62,6 +63,7 @@ abstract class QueueDataAbstractTest extends AbstractTestCase
      *
      * @test
      * @depends emptyObject
+     * @return  void
      * @throws
      ************************************************************************/
     public function readWriteOperations() : void
@@ -114,6 +116,7 @@ abstract class QueueDataAbstractTest extends AbstractTestCase
      *
      * @test
      * @depends readWriteOperations
+     * @return  void
      * @throws
      ************************************************************************/
     public function incorrectReadWriteOperations() : void
@@ -160,6 +163,7 @@ abstract class QueueDataAbstractTest extends AbstractTestCase
      *
      * @test
      * @depends readWriteOperations
+     * @return  void
      * @throws
      ************************************************************************/
     public function clearingOperations() : void

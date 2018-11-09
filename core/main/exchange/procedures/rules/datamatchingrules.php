@@ -23,6 +23,7 @@ class DataMatchingRules extends MapData
      * delete value by key
      *
      * @param   ParticipantsSet $key        value key
+     * @return  void
      ************************************************************************/
     public function delete($key) : void
     {
@@ -72,6 +73,7 @@ class DataMatchingRules extends MapData
      *
      * @param   ParticipantsSet     $key    value key
      * @param   ProcedureFieldsSet  $value  value
+     * @return  void
      * @throws  InvalidArgumentException    incorrect key or value
      ************************************************************************/
     public function set($key, $value) : void

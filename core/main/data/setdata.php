@@ -22,6 +22,8 @@ class SetData implements Set
     }
     /** **********************************************************************
      * clear set
+     *
+     * @return void
      ************************************************************************/
     public function clear() : void
     {
@@ -49,6 +51,7 @@ class SetData implements Set
      * drop item from set
      *
      * @param   object  $object             item for drop
+     * @return  void
      ************************************************************************/
     public function delete($object) : void
     {
@@ -65,6 +68,8 @@ class SetData implements Set
     }
     /** **********************************************************************
      * move forward to next item
+     *
+     * @return void
      ************************************************************************/
     public function next() : void
     {
@@ -83,6 +88,7 @@ class SetData implements Set
      * push item to set
      *
      * @param   object  $object             pushed item
+     * @return  void
      ************************************************************************/
     public function push($object) :void
     {
@@ -90,6 +96,8 @@ class SetData implements Set
     }
     /** **********************************************************************
      * rewind iterator to the first item
+     *
+     * @return void
      ************************************************************************/
     public function rewind() : void
     {

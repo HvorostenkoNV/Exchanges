@@ -80,6 +80,8 @@ class DBRecordsGenerator
     }
     /** **********************************************************************
      * clean temp DB records
+     *
+     * @return void
      ************************************************************************/
     public function clean() : void
     {

@@ -15,6 +15,29 @@ use
  *************************************************************************************************/
 class ContractingPartiesBitrix extends AbstractParticipant
 {
+    private static
+        $companiesTypes         =
+            [
+                'CUSTOMER'      => 'CUSTOMER',
+                'SUPPLIER'      => 'SUPPLIER',
+                'COMPETITOR'    => 'COMPETITOR',
+                'PARTNER'       => 'PARTNER',
+                'OTHER'         => 'OTHER'
+            ],
+        $companiesScopes        =
+            [
+                'IT'            => 'IT',
+                'TELECOM'       => 'TELECOM',
+                'MANUFACTURING' => 'MANUFACTURING',
+                'BANKING'       => 'BANKING',
+                'CONSULTING'    => 'CONSULTING',
+                'FINANCE'       => 'FINANCE',
+                'GOVERNMENT'    => 'GOVERNMENT',
+                'DELIVERY'      => 'DELIVERY',
+                'ENTERTAINMENT' => 'ENTERTAINMENT',
+                'NOTPROFIT'     => 'NOTPROFIT',
+                'OTHER'         => 'OTHER'
+            ];
     /** **********************************************************************
      * read participant provided data and get it
      *
@@ -100,41 +123,51 @@ class ContractingPartiesBitrix extends AbstractParticipant
      ************************************************************************/
     private function getBitrixProvidedData(string $requestUrl) : array
     {
-        $response = file_get_contents($requestUrl);
-        if ($response === false)
+        $response               = file_get_contents($requestUrl);
+        $responseError          = $response === false;
+        $jsonAnswer             = !$responseError ? json_decode($response, true) : [];
+        $jsonAnswerIncorrect    = json_last_error() !== JSON_ERROR_NONE || !is_array($jsonAnswer);
+        $jsonAnswerResult       = (string)  ($jsonAnswer['result']  ?? '');
+        $jsonAnswerErrors       = (array)   ($jsonAnswer['errors']  ?? []);
+        $jsonAnswerData         = (array)   ($jsonAnswer['data']    ?? []);
+
+        if ($responseError)
         {
             throw new RuntimeException('cannot read page content');
         }
-
-        $jsonAnswer = json_decode($response, true);
-        if (json_last_error() !== JSON_ERROR_NONE || !is_array($jsonAnswer))
+        if ($jsonAnswerIncorrect)
         {
             throw new RuntimeException('incorrect geted data format');
         }
-
-        if (!array_key_exists('result', $jsonAnswer) || $jsonAnswer['result'] != 'ok')
+        if ($jsonAnswerResult != 'ok')
         {
-            $errorMessage = array_key_exists('message', $jsonAnswer)
-                ? $jsonAnswer['message']
+            $errorMessage = count($jsonAnswerErrors) > 0
+                ? implode(', ', $jsonAnswerErrors)
                 : 'caught error answer with no explains';
-
             throw new RuntimeException($errorMessage);
         }
 
-        return array_key_exists('data', $jsonAnswer) && is_array($jsonAnswer['data'])
-            ? $jsonAnswer['data']
-            : [];
+        foreach ($jsonAnswerData as $key => $value)
+        {
+            if (!is_array($value))
+            {
+                unset($jsonAnswerData[$key]);
+            }
+        }
+
+        return $jsonAnswerData;
     }
     /** **********************************************************************
      * post bitrix data for delivery
      *
      * @param   string      $requestUrl     url response
      * @param   array       $data           data
+     * @return  void
      * @throws  RuntimeException            post data error
      ************************************************************************/
     private function postBitrixDataForDelivery(string $requestUrl, array $data) : void
     {
-        $streamContext = stream_context_create
+        $streamContext          = stream_context_create
         ([
             'http' =>
                 [
@@ -143,25 +176,26 @@ class ContractingPartiesBitrix extends AbstractParticipant
                     'content'   => http_build_query(['data' => $data])
                 ]
         ]);
+        $response               = file_get_contents($requestUrl, false, $streamContext);
+        $responseError          = $response === false;
+        $jsonAnswer             = !$responseError ? json_decode($response, true) : [];
+        $jsonAnswerIncorrect    = json_last_error() !== JSON_ERROR_NONE || !is_array($jsonAnswer);
+        $jsonAnswerResult       = (string)  ($jsonAnswer['result']  ?? '');
+        $jsonAnswerErrors       = (array)   ($jsonAnswer['errors']  ?? []);
 
-        $response = file_get_contents($requestUrl, false, $streamContext);
-        if ($response === false)
+        if ($responseError)
         {
             throw new RuntimeException('no answer caught');
         }
-
-        $jsonAnswer = json_decode($response, true);
-        if (json_last_error() !== JSON_ERROR_NONE || !is_array($jsonAnswer))
+        if ($jsonAnswerIncorrect)
         {
             throw new RuntimeException('incorrect answer format');
         }
-
-        if (!array_key_exists('result', $jsonAnswer) || $jsonAnswer['result'] != 'ok')
+        if ($jsonAnswerResult != 'ok')
         {
-            $errorMessage = array_key_exists('message', $jsonAnswer)
-                ? $jsonAnswer['message']
+            $errorMessage = count($jsonAnswerErrors) > 0
+                ? implode(', ', $jsonAnswerErrors)
                 : 'caught error answer with no explains';
-
             throw new RuntimeException($errorMessage);
         }
     }
@@ -173,6 +207,44 @@ class ContractingPartiesBitrix extends AbstractParticipant
      ************************************************************************/
     private function convertProvidedItemData(array $itemData) : array
     {
+        $phonesRaw  = $this->filterNotEmptyArrays((array) $itemData['PHONE']);
+        $emailsRaw  = $this->filterNotEmptyArrays((array) $itemData['EMAIL']);
+        $sitesRaw   = $this->filterNotEmptyArrays((array) $itemData['SITE']);
+        $phones     = [];
+        $emails     = [];
+        $sites      = [];
+        $type       = array_search($itemData['TYPE'],   self::$companiesTypes);
+        $scope      = array_search($itemData['SCOPE'],  self::$companiesScopes);
+        $type       = $type     !== false   ? $type  : '';
+        $scope      = $scope    !== false   ? $scope : '';
+
+        foreach ($phonesRaw as $index => $values)
+        {
+            $phonePostfix   = is_string($index) && strlen($index) > 0 ? $index : 'OTHER';
+            $values         = $this->filterNotEmptyStrings($values);
+
+            foreach ($values as $phone)
+            {
+                $phones[] = "$phone|$phonePostfix";
+            }
+        }
+        foreach ($emailsRaw as $index => $values)
+        {
+            $values = $this->filterNotEmptyStrings($values);
+            $emails = array_merge($emails, $values);
+        }
+        foreach ($sitesRaw as $index => $values)
+        {
+            $values = $this->filterNotEmptyStrings($values);
+            $sites  = array_merge($sites, $values);
+        }
+
+        $itemData['PHONE']  = $phones;
+        $itemData['EMAIL']  = $emails;
+        $itemData['SITE']   = $sites;
+        $itemData['TYPE']   = $type;
+        $itemData['SCOPE']  = $scope;
+
         return $itemData;
     }
     /** **********************************************************************
@@ -183,6 +255,64 @@ class ContractingPartiesBitrix extends AbstractParticipant
      ************************************************************************/
     private function convertItemDataForDelivery(array $itemData) : array
     {
+        $phonesRaw  = $this->filterNotEmptyStrings((array) $itemData['PHONE']);
+        $phones     = [];
+        $type       = self::$companiesTypes[$itemData['TYPE']]      ??  '';
+        $scope      = self::$companiesScopes[$itemData['SCOPE']]    ??  '';
+
+        foreach ($phonesRaw as $phone)
+        {
+            $phoneExplode   = explode('|', $phone);
+            $phoneValue     = $phoneExplode[0] ?? '';
+            $phoneType      = isset($phoneExplode[1]) && strlen($phoneExplode[1]) > 0
+                ? $phoneExplode[1]
+                : 'OTHER';
+
+            if (strlen($phoneValue) > 0)
+            {
+                $phones[$phoneType]     = $phones[$phoneType] ?? [];
+                $phones[$phoneType][]   = $phoneValue;
+            }
+        }
+
+        $itemData['PHONE']  = $phones;
+        $itemData['TYPE']   = $type;
+        $itemData['SCOPE']  = $scope;
+
         return $itemData;
+    }
+    /** **********************************************************************
+     * filter array and leave only not empty string
+     *
+     * @param   array $values               values
+     * @return  array                       filtered values
+     ************************************************************************/
+    private function filterNotEmptyStrings(array $values) : array
+    {
+        return array_filter
+        (
+            $values,
+            function($value)
+            {
+                return is_string($value) && strlen($value) > 0;
+            }
+        );
+    }
+    /** **********************************************************************
+     * filter array and leave only not empty arrays
+     *
+     * @param   array $values               values
+     * @return  array                       filtered values
+     ************************************************************************/
+    private function filterNotEmptyArrays(array $values) : array
+    {
+        return array_filter
+        (
+            $values,
+            function($value)
+            {
+                return is_array($value) && count($value) > 0;
+            }
+        );
     }
 }

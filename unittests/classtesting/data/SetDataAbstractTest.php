@@ -37,6 +37,7 @@ abstract class SetDataAbstractTest extends AbstractTestCase
      * check read/write value operations
      *
      * @test
+     * @return void
      * @throws
      ************************************************************************/
     public function readWriteValue() : void
@@ -87,6 +88,7 @@ abstract class SetDataAbstractTest extends AbstractTestCase
      *
      * @test
      * @depends readWriteValue
+     * @return  void
      * @throws
      ************************************************************************/
     public function counting() : void
@@ -129,6 +131,7 @@ abstract class SetDataAbstractTest extends AbstractTestCase
      *
      * @test
      * @depends readWriteValue
+     * @return  void
      * @throws
      ************************************************************************/
     public function usingIncorrectValues() : void
@@ -169,6 +172,7 @@ abstract class SetDataAbstractTest extends AbstractTestCase
      *
      * @test
      * @depends readWriteValue
+     * @return  void
      * @throws
      ************************************************************************/
     public function clearingOperations() : void

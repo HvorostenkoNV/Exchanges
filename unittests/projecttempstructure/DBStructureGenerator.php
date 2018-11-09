@@ -64,6 +64,8 @@ class DBStructureGenerator
     }
     /** **********************************************************************
      * clean temp DB records
+     *
+     * @return void
      ************************************************************************/
     public function clean() : void
     {
@@ -268,6 +270,7 @@ class DBStructureGenerator
      *
      * @param   array   $procedureGeneratedStructure    generated procedure DB structure
      * @param   array   $procedureLogicInfo             generated procedure logic structure
+     * @return  void
      * @throws  RuntimeException                        generating error
      ************************************************************************/
     private function generateCombiningRules(array $procedureGeneratedStructure, array $procedureLogicInfo) : void

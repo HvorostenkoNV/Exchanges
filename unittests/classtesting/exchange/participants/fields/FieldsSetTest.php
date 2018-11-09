@@ -53,6 +53,7 @@ final class FieldsSetTest extends SetDataAbstractTest
      * check find field operation
      *
      * @test
+     * @return void
      * @throws
      ************************************************************************/
     public function findField() : void
@@ -95,6 +96,7 @@ final class FieldsSetTest extends SetDataAbstractTest
      * check find field operation by unknown field name
      *
      * @test
+     * @return void
      * @throws
      ************************************************************************/
     public function findFieldByUnknownKey() : void

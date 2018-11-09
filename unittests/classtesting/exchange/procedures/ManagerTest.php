@@ -20,6 +20,9 @@ final class ManagerTest extends AbstractTestCase
     private static $structureGenerator = null;
     /** **********************************************************************
      * construct
+     *
+     * @return void
+     * @throws
      ************************************************************************/
     public static function setUpBeforeClass() : void
     {
@@ -30,6 +33,8 @@ final class ManagerTest extends AbstractTestCase
     }
     /** **********************************************************************
      * destruct
+     *
+     * @return void
      ************************************************************************/
     public static function tearDownAfterClass() : void
     {
@@ -41,6 +46,7 @@ final class ManagerTest extends AbstractTestCase
      * check getting procedures by code
      *
      * @test
+     * @return void
      * @throws
      ************************************************************************/
     public function gettingProceduresByCode() : void
@@ -76,6 +82,7 @@ final class ManagerTest extends AbstractTestCase
      * check getting procedures by activity
      *
      * @test
+     * @return void
      * @throws
      ************************************************************************/
     public function gettingProceduresByActivity() : void
@@ -115,6 +122,7 @@ final class ManagerTest extends AbstractTestCase
      * check getting one procedure by code
      *
      * @test
+     * @return void
      * @throws
      ************************************************************************/
     public function gettingOneProcedureByCode() : void

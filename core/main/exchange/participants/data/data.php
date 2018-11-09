@@ -26,6 +26,7 @@ interface Data extends Queue
      * push data to the end
      *
      * @param   ItemData $data              data
+     * @return  void
      * @throws  InvalidArgumentException    incorrect pushed data
      ************************************************************************/
     public function push($data) : void;

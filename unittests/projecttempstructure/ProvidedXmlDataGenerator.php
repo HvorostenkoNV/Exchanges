@@ -44,6 +44,8 @@ class ProvidedXmlDataGenerator
     }
     /** **********************************************************************
      * clean temp provided XML data files
+     *
+     * @return void
      ************************************************************************/
     public function clean() : void
     {

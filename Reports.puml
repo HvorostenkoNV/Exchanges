@@ -1,0 +1,25 @@
+@startuml
+
+ReportsModule *-- ReportComponent_1
+ReportsModule *-- ReportComponent_2
+ReportsModule *-- ReportComponent_3
+ReportsModule *-- ReportComponent_4
+
+ReportsModule .. ExternalDataBase
+
+interface ReportsModule{
+}
+interface ReportComponent_1{
+}
+interface ReportComponent_2{
+}
+interface ReportComponent_3{
+}
+interface ReportComponent_4{
+}
+
+interface ExternalDataBase{
+}
+
+
+@enduml

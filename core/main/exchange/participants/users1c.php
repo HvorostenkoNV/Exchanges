@@ -210,6 +210,7 @@ class Users1C extends AbstractParticipant
      * mark provided data file as processed
      *
      * @param   SplFileInfo $file           provided data file
+     * @return  void
      * @throws  RuntimeException            marking provided data file error
      ************************************************************************/
     private function markProvidedDataFileAsProcessed(SplFileInfo $file) : void
@@ -229,11 +230,8 @@ class Users1C extends AbstractParticipant
             throw new RuntimeException("creating directory \"$folderPath\" failed");
         }
 
-        try
-        {
-            rename($file->getPathname(), $processedDataFile->getPathname());
-        }
-        catch (Throwable $exception)
+        $renameResult = @rename($file->getPathname(), $processedDataFile->getPathname());
+        if (!$renameResult)
         {
             $movingFrom = $file->getPathname();
             $movingTo   = $processedDataFile->getPathname();

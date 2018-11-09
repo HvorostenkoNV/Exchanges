@@ -19,6 +19,7 @@ class UnknownParticipantException extends Exception implements Throwable
      * set participant code
      *
      * @param   string $participantCode     participant code
+     * @return  void
      ************************************************************************/
     public function setParticipantCode(string $participantCode) : void
     {

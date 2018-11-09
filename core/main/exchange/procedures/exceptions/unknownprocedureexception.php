@@ -19,6 +19,7 @@ class UnknownProcedureException extends Exception implements Throwable
      * set procedure code
      *
      * @param   string $procedureCode       procedure code
+     * @return  void
      ************************************************************************/
     public function setProcedureCode(string $procedureCode) : void
     {

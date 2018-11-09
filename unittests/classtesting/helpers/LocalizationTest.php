@@ -141,6 +141,7 @@ final class LocalizationTest extends AbstractTestCase
      * check throwing exception while construct with incorrect params
      *
      * @test
+     * @return void
      * @throws
      ************************************************************************/
     public function exceptionWithIncorrectParams() : void
@@ -162,6 +163,7 @@ final class LocalizationTest extends AbstractTestCase
      * @test
      * @depends locFolderFullCheck
      * @param   SplFileInfo $locFolder          loc folder
+     * @return  void
      * @throws
      ************************************************************************/
     public function exceptionWithFolderNotExist(SplFileInfo $locFolder) : void
@@ -189,6 +191,7 @@ final class LocalizationTest extends AbstractTestCase
      * @test
      * @depends locFolderFullCheck
      * @param   SplFileInfo $locFolder          loc folder
+     * @return  void
      * @throws
      ************************************************************************/
     public function canReadParams(SplFileInfo $locFolder) : void
@@ -260,6 +263,7 @@ final class LocalizationTest extends AbstractTestCase
      * delete temp application loc params
      *
      * @param   SplFileInfo $locFolder          loc folder
+     * @return  void
      ************************************************************************/
     private function dropTempLocParams(SplFileInfo $locFolder) : void
     {

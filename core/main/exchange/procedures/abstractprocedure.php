@@ -1028,6 +1028,7 @@ abstract class AbstractProcedure implements Procedure
      *
      * @param   string  $message                    message
      * @param   string  $type                       message type
+     * @return  void
      ************************************************************************/
     private function addLogMessage(string $message, string $type) : void
     {

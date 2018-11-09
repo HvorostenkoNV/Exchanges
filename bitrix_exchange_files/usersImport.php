@@ -45,9 +45,7 @@ foreach ($data as $item)
 
     foreach ($fieldsMatching as $bitrixField => $exchangeField)
     {
-        $userData[$bitrixField] = array_key_exists($exchangeField, $item)
-            ? $item[$exchangeField]
-            : null;
+        $userData[$bitrixField] = $item[$exchangeField] ?? null;
     }
     $userData['TIMESTAMP_X'] = (new DateTime)->format('d.m.Y H:i:s');
 

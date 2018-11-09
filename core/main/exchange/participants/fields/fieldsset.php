@@ -27,6 +27,7 @@ class FieldsSet extends SetData
      * drop item from set
      *
      * @param   Field $object               item for drop
+     * @return  void
      ************************************************************************/
     public function delete($object) : void
     {
@@ -36,6 +37,7 @@ class FieldsSet extends SetData
      * push item to set
      *
      * @param   Field $object               pushed item
+     * @return  void
      * @throws  InvalidArgumentException    object is not Field
      ************************************************************************/
     public function push($object) :void

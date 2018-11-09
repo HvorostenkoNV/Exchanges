@@ -20,6 +20,7 @@ final class LoggerTest extends AbstractTestCase
      * check Logger is singleton
      *
      * @test
+     * @return void
      * @throws
      ************************************************************************/
     public function isSingleton() : void
@@ -79,6 +80,7 @@ final class LoggerTest extends AbstractTestCase
      * @depends logsFolderFullCheck
      * @depends isSingleton
      * @param   SplFileInfo $logsFolder     logs folder
+     * @return  void
      * @throws
      ************************************************************************/
     public function creatingLogFile(SplFileInfo $logsFolder) : void
@@ -103,6 +105,7 @@ final class LoggerTest extends AbstractTestCase
      * @depends logsFolderFullCheck
      * @depends isSingleton
      * @param   SplFileInfo $logsFolder         logs folder
+     * @return  void
      * @throws
      ************************************************************************/
     public function setedMessagesExistsInLogFile(SplFileInfo $logsFolder) : void
@@ -137,6 +140,7 @@ final class LoggerTest extends AbstractTestCase
      *
      * @test
      * @depends isSingleton
+     * @return  void
      * @throws
      ************************************************************************/
     public function setingErrorStopsExecuting() : void

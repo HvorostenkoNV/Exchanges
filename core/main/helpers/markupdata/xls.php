@@ -105,9 +105,22 @@ class XLS implements Data
      *
      * @param   SplFileInfo $file           file
      * @param   array       $data           data
+     * @return  void
      * @throws  WriteDataException          write data error
      ************************************************************************/
     public function writeToFile(SplFileInfo $file, array $data) : void
+    {
+        // TODO
+        throw new WriteDataException('NOT IMPLEMENTED YET');
+    }
+    /** **********************************************************************
+     * write to string
+     *
+     * @param   array $data                 data
+     * @return  string                      string data
+     * @throws  WriteDataException          write data error
+     ************************************************************************/
+    public function writeToString(array $data) : string
     {
         // TODO
         throw new WriteDataException('NOT IMPLEMENTED YET');

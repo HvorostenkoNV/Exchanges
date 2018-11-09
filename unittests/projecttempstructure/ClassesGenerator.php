@@ -25,6 +25,7 @@ final class ClassesGenerator
      *
      * @param   string      $name                   full class name
      * @param   string|null $parent                 parent class for extend
+     * @return  void
      * @throws  RuntimeException                    creating error
      ************************************************************************/
     public function create(string $name, ?string $parent) : void
@@ -58,6 +59,8 @@ final class ClassesGenerator
     }
     /** **********************************************************************
      * drop created temp classes
+     *
+     * @return void
      ************************************************************************/
     public function clean() : void
     {

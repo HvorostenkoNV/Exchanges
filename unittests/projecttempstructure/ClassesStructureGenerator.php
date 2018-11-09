@@ -73,6 +73,8 @@ class ClassesStructureGenerator
     }
     /** **********************************************************************
      * clean temp classes
+     *
+     * @return void
      ************************************************************************/
     public function clean() : void
     {
@@ -88,6 +90,7 @@ class ClassesStructureGenerator
      * set procedure parent class
      *
      * @param   string $className                   procedure parent class
+     * @return  void
      ************************************************************************/
     public function setProcedureParentClass(string $className) : void
     {
@@ -100,6 +103,7 @@ class ClassesStructureGenerator
      * set participant parent class
      *
      * @param   string $className                   participant parent class
+     * @return  void
      ************************************************************************/
     public function setParticipantParentClass(string $className) : void
     {

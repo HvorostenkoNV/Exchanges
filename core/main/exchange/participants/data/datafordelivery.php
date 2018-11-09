@@ -31,6 +31,7 @@ class DataForDelivery extends QueueData implements Data
      * push data to the end
      *
      * @param   ItemData $data              data
+     * @return  void
      * @throws  InvalidArgumentException    incorrect pushed data
      ************************************************************************/
     public function push($data) : void

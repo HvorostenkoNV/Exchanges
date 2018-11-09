@@ -10,14 +10,14 @@ header('Content-Type:application/json;charset=utf-8');
  * variables
  ************************************************************************/
 $exchangeGroupCode  = 'exchange';
-$operationType      = array_key_exists('type', $_REQUEST)       ? $_REQUEST['type']         : '';
-$getedLogin         = array_key_exists('login', $_REQUEST)      ? $_REQUEST['login']        : '';
-$getedPassword      = array_key_exists('password', $_REQUEST)   ? $_REQUEST['password']     : '';
-$getedData          = array_key_exists('data', $_REQUEST)       ? (array) $_REQUEST['data'] : [];
+$operationType      = (string)  ($_REQUEST['type']      ?? '');
+$getedLogin         = (string)  ($_REQUEST['login']     ?? '');
+$getedPassword      = (string)  ($_REQUEST['password']  ?? '');
+$getedData          = (array)   ($_REQUEST['data']      ?? []);
 $answer             =
     [
         'result'    => '',
-        'message'   => '',
+        'errors'    => [],
         'data'      => []
     ];
 $throwAnswer        = function(array $answerData)
@@ -33,32 +33,30 @@ if (!$USER->IsAuthorized())
     if ($loginSuccess !== true)
     {
         $answer['result']   = 'error';
-        $answer['message']  = 'Authentication failed';
+        $answer['errors'][] = 'authentication failed';
         $throwAnswer($answer);
     }
 }
 /** **********************************************************************
  * authorization
  ************************************************************************/
-$userGroups = CUser::GetUserGroupArray();
-$queryList  = CGroup::GetList
-(
-    $by     = 'ID',
-    $sort   = 'ASC',
-    [
-        'ID'        => $userGroups,
-        'STRING_ID' => $exchangeGroupCode
-    ]
-);
+$exchangeGroupId    = 0;
+$userGroups         = CUser::GetUserGroupArray();
 
-if (!$USER->IsAdmin() && $queryList->SelectedRowsCount() <= 0)
+$queryList = CGroup::GetList($by = 'ID', $sort = 'ASC', ['STRING_ID' => $exchangeGroupCode]);
+while ($queryItem = $queryList->GetNext())
+{
+    $exchangeGroupId = (int) $queryItem['ID'];
+}
+
+if (!$USER->IsAdmin() && !in_array($exchangeGroupId, $userGroups))
 {
     $answer['result']   = 'error';
-    $answer['message']  = 'Authorization failed';
+    $answer['errors'][] = 'authorization failed';
     $throwAnswer($answer);
 }
 /** **********************************************************************
- * operation run
+ * operation type calc
  ************************************************************************/
 $operationFileName  = '';
 $isExport           = false;
@@ -82,13 +80,39 @@ switch ($operationType)
         $operationFileName  = 'contractingpartiesImport';
         $isImport           = true;
         break;
+    case 'contractingpartiesContactsExport':
+        $operationFileName  = 'contractingpartiesContactsExport';
+        $isExport           = true;
+        break;
+    case 'contractingpartiesContactsImport':
+        $operationFileName  = 'contractingpartiesContactsImport';
+        $isImport           = true;
+        break;
+    case 'contractingpartiesRequisitesExport':
+        $operationFileName  = 'contractingpartiesRequisitesExport';
+        $isExport           = true;
+        break;
+    case 'contractingpartiesRequisitesImport':
+        $operationFileName  = 'contractingpartiesRequisitesImport';
+        $isExport           = true;
+        break;
+    case 'contractingpartiesAddressesExport':
+        $operationFileName  = 'contractingpartiesAddressesExport';
+        $isExport           = true;
+        break;
+    case 'contractingpartiesAddressesImport':
+        $operationFileName  = 'contractingpartiesAddressesImport';
+        $isExport           = true;
+        break;
     default:
 }
-
+/** **********************************************************************
+ * output
+ ************************************************************************/
 if (strlen($operationFileName) <= 0 || !($isExport || $isImport))
 {
     $answer['result']   = 'error';
-    $answer['message']  = 'Unknown operation type';
+    $answer['errors'][] = 'unknown operation type';
     $throwAnswer($answer);
 }
 
@@ -96,12 +120,14 @@ try
 {
     if ($isExport)
     {
-        $data = [];
+        $data   = [];
+        $errors = [];
 
         include "$operationFileName.php";
 
         $answer['result']   = 'ok';
-        $answer['data']     = is_array($data) ? $data : [];
+        $answer['errors']   = (array) $errors;
+        $answer['data']     = (array) $data;
     }
     elseif ($isImport)
     {
@@ -110,8 +136,8 @@ try
 
         include "$operationFileName.php";
 
-        $answer['result']   = count($errors) > 0 ? 'error' : 'ok';
-        $answer['message']  = implode(', ', $errors);
+        $answer['result']   = 'ok';
+        $answer['errors']   = (array) $errors;
     }
 
     $throwAnswer($answer);
@@ -119,5 +145,7 @@ try
 catch (Throwable $exception)
 {
     $answer['result']   = 'error';
-    $answer['message']  = $exception->getMessage();
+    $answer['errors'][] = $exception->getMessage();
+
+    $throwAnswer($answer);
 }

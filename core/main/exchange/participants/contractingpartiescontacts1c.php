@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace Main\Exchange\Participants;
 
 use
-    Throwable,
     UnderflowException,
     RuntimeException,
     UnexpectedValueException,
@@ -44,8 +43,7 @@ class ContractingPartiesContacts1C extends AbstractParticipant
                 $data[$index] = $this->convertProvidedItemData($item);
             }
 
-            $this->markProvidedDataFileAsProcessed($providedDataFile);
-
+            $this->removeProvidedDataFile($providedDataFile);
             return $data;
         }
         catch (UnderflowException $exception)
@@ -62,7 +60,7 @@ class ContractingPartiesContacts1C extends AbstractParticipant
         catch (RuntimeException $exception)
         {
             $error = $exception->getMessage();
-            $logger->addWarning("$logMessagePrefix: marking processed file failed, $error");
+            $logger->addWarning("$logMessagePrefix: removing provided data file error, $error");
             return [];
         }
     }
@@ -76,9 +74,7 @@ class ContractingPartiesContacts1C extends AbstractParticipant
     {
         $logger             = Logger::getInstance();
         $logMessagePrefix   = '1C contractingparties contacts providing data for delivery';
-echo '<pre>';
-print_r($data);
-echo '</pre>';
+
         try
         {
             $answerFile = $this->getAnswerDataFile();
@@ -211,44 +207,17 @@ echo '</pre>';
         throw new UnderflowException;
     }
     /** **********************************************************************
-     * mark provided data file as processed
+     * remove provided data file
      *
      * @param   SplFileInfo $file           provided data file
-     * @throws  RuntimeException            marking provided data file error
+     * @return  void
+     * @throws  RuntimeException            removing provided data file error
      ************************************************************************/
-    private function markProvidedDataFileAsProcessed(SplFileInfo $file) : void
+    private function removeProvidedDataFile(SplFileInfo $file) : void
     {
-        $config                     = Config::getInstance();
-        $tempFolderParam            = $config->getParam('structure.tempFolder');
-        $processedDataFolderParam   = $config->getParam('participants.contractingparties.contacts.1c.processedDataPath');
-        $processedDataFolderPath    =
-            DOCUMENT_ROOT.DIRECTORY_SEPARATOR.
-            $tempFolderParam.DIRECTORY_SEPARATOR.
-            $processedDataFolderParam;
-        $processedDataFolder        = new SplFileInfo($processedDataFolderPath);
-        $processedDataFilePath      = $processedDataFolder->getPathname().DIRECTORY_SEPARATOR.$file->getFilename();
-        $processedDataFile          = new SplFileInfo($processedDataFilePath);
-
-        if (!$processedDataFolder->isDir())
+        if (!@unlink($file->getPathname()))
         {
-            @mkdir($processedDataFolder->getPathname(), 0777, true);
-        }
-        if (!$processedDataFolder->isDir())
-        {
-            $folderPath = $processedDataFolder->getPathname();
-            throw new RuntimeException("unable to create folder \"$folderPath\"");
-        }
-
-        try
-        {
-            rename($file->getPathname(), $processedDataFile->getPathname());
-        }
-        catch (Throwable $exception)
-        {
-            $movingFrom = $file->getPathname();
-            $movingTo   = $processedDataFile->getPathname();
-
-            throw new RuntimeException("moving file from \"$movingFrom\" to \"$movingTo\" failed");
+            throw new RuntimeException;
         }
     }
     /** **********************************************************************
@@ -259,6 +228,8 @@ echo '</pre>';
      ************************************************************************/
     private function convertProvidedItemData(array $itemData) : array
     {
+        $itemData['ИдКонтактаКонтрагента1С'] = (string) $itemData['Ид'] ?? '';
+
         return $itemData;
     }
     /** **********************************************************************

@@ -20,6 +20,7 @@ class DataCombiningRules extends MapData
      * delete value by key
      *
      * @param   ParticipantField $key       value key
+     * @return  void
      ************************************************************************/
     public function delete($key) : void
     {
@@ -69,6 +70,7 @@ class DataCombiningRules extends MapData
      *
      * @param   ParticipantField    $key    value key
      * @param   int                 $value  value
+     * @return  void
      * @throws  InvalidArgumentException    incorrect key or value
      ************************************************************************/
     public function set($key, $value) : void

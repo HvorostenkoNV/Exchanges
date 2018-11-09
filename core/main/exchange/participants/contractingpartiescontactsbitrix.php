@@ -100,41 +100,51 @@ class ContractingPartiesContactsBitrix extends AbstractParticipant
      ************************************************************************/
     private function getBitrixProvidedData(string $requestUrl) : array
     {
-        $response = file_get_contents($requestUrl);
-        if ($response === false)
+        $response               = file_get_contents($requestUrl);
+        $responseError          = $response === false;
+        $jsonAnswer             = !$responseError ? json_decode($response, true) : [];
+        $jsonAnswerIncorrect    = json_last_error() !== JSON_ERROR_NONE || !is_array($jsonAnswer);
+        $jsonAnswerResult       = (string)  ($jsonAnswer['result']  ?? '');
+        $jsonAnswerErrors       = (array)   ($jsonAnswer['errors']  ?? []);
+        $jsonAnswerData         = (array)   ($jsonAnswer['data']    ?? []);
+
+        if ($responseError)
         {
             throw new RuntimeException('cannot read page content');
         }
-
-        $jsonAnswer = json_decode($response, true);
-        if (json_last_error() !== JSON_ERROR_NONE || !is_array($jsonAnswer))
+        if ($jsonAnswerIncorrect)
         {
             throw new RuntimeException('incorrect geted data format');
         }
-
-        if (!array_key_exists('result', $jsonAnswer) || $jsonAnswer['result'] != 'ok')
+        if ($jsonAnswerResult != 'ok')
         {
-            $errorMessage = array_key_exists('message', $jsonAnswer)
-                ? $jsonAnswer['message']
+            $errorMessage = count($jsonAnswerErrors) > 0
+                ? implode(', ', $jsonAnswerErrors)
                 : 'caught error answer with no explains';
-
             throw new RuntimeException($errorMessage);
         }
 
-        return array_key_exists('data', $jsonAnswer) && is_array($jsonAnswer['data'])
-            ? $jsonAnswer['data']
-            : [];
+        foreach ($jsonAnswerData as $key => $value)
+        {
+            if (!is_array($value))
+            {
+                unset($jsonAnswerData[$key]);
+            }
+        }
+
+        return $jsonAnswerData;
     }
     /** **********************************************************************
      * post bitrix data for delivery
      *
      * @param   string      $requestUrl     url response
      * @param   array       $data           data
+     * @return  void
      * @throws  RuntimeException            post data error
      ************************************************************************/
     private function postBitrixDataForDelivery(string $requestUrl, array $data) : void
     {
-        $streamContext = stream_context_create
+        $streamContext          = stream_context_create
         ([
             'http' =>
                 [
@@ -143,25 +153,26 @@ class ContractingPartiesContactsBitrix extends AbstractParticipant
                     'content'   => http_build_query(['data' => $data])
                 ]
         ]);
+        $response               = file_get_contents($requestUrl, false, $streamContext);
+        $responseError          = $response === false;
+        $jsonAnswer             = !$responseError ? json_decode($response, true) : [];
+        $jsonAnswerIncorrect    = json_last_error() !== JSON_ERROR_NONE || !is_array($jsonAnswer);
+        $jsonAnswerResult       = (string)  ($jsonAnswer['result']  ?? '');
+        $jsonAnswerErrors       = (array)   ($jsonAnswer['errors']  ?? []);
 
-        $response = file_get_contents($requestUrl, false, $streamContext);
-        if ($response === false)
+        if ($responseError)
         {
             throw new RuntimeException('no answer caught');
         }
-
-        $jsonAnswer = json_decode($response, true);
-        if (json_last_error() !== JSON_ERROR_NONE || !is_array($jsonAnswer))
+        if ($jsonAnswerIncorrect)
         {
             throw new RuntimeException('incorrect answer format');
         }
-
-        if (!array_key_exists('result', $jsonAnswer) || $jsonAnswer['result'] != 'ok')
+        if ($jsonAnswerResult != 'ok')
         {
-            $errorMessage = array_key_exists('message', $jsonAnswer)
-                ? $jsonAnswer['message']
+            $errorMessage = count($jsonAnswerErrors) > 0
+                ? implode(', ', $jsonAnswerErrors)
                 : 'caught error answer with no explains';
-
             throw new RuntimeException($errorMessage);
         }
     }

@@ -16,6 +16,8 @@ class MapData implements Map
         $relations      = [];
     /** **********************************************************************
      * clear map
+     *
+     * @return void
      ************************************************************************/
     public function clear() : void
     {
@@ -36,6 +38,7 @@ class MapData implements Map
      * delete value by key
      *
      * @param   mixed   $key                value key
+     * @return  void
      ************************************************************************/
     public function delete($key) : void
     {
@@ -116,6 +119,7 @@ class MapData implements Map
      *
      * @param   mixed   $key                key
      * @param   mixed   $value              value
+     * @return  void
      ************************************************************************/
     public function set($key, $value) : void
     {

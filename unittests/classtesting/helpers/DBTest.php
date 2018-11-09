@@ -47,6 +47,7 @@ final class DBTest extends AbstractTestCase
      * @test
      * @depends isSingleton
      * @param   DB $db                      DB object
+     * @return  void
      * @throws
      ************************************************************************/
     public function creatingTable(DB $db) : void
@@ -86,6 +87,7 @@ final class DBTest extends AbstractTestCase
      * @depends isSingleton
      * @depends creatingTable
      * @param   DB $db                      DB object
+     * @return  void
      * @throws
      ************************************************************************/
     public function readWriteRecords(DB $db) : void
@@ -135,6 +137,7 @@ final class DBTest extends AbstractTestCase
      * @depends isSingleton
      * @depends readWriteRecords
      * @param   DB $db                      DB object
+     * @return  void
      * @throws
      ************************************************************************/
     public function gettingLastInsertedId(DB $db) : void
@@ -170,6 +173,7 @@ final class DBTest extends AbstractTestCase
      * @depends isSingleton
      * @depends readWriteRecords
      * @param   DB $db                      DB object
+     * @return  void
      * @throws
      ************************************************************************/
     public function gettingQueryLastError(DB $db) : void
@@ -189,6 +193,7 @@ final class DBTest extends AbstractTestCase
      * @depends isSingleton
      * @depends readWriteRecords
      * @param   DB $db                      DB object
+     * @return  void
      * @throws
      ************************************************************************/
     public function lastErrorRefreshing(DB $db) : void
@@ -215,6 +220,7 @@ final class DBTest extends AbstractTestCase
      * @depends isSingleton
      * @depends readWriteRecords
      * @param   DB $db                      DB object
+     * @return  void
      * @throws
      ************************************************************************/
     public function deleteRecords(DB $db) : void
@@ -250,6 +256,7 @@ final class DBTest extends AbstractTestCase
      * @depends isSingleton
      * @depends deleteRecords
      * @param   DB $db                      DB object
+     * @return  void
      * @throws
      ************************************************************************/
     public function deleteTable(DB $db) : void

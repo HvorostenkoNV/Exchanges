@@ -43,6 +43,7 @@ class MainGenerator
     /** **********************************************************************
      * generate project temp structure
      *
+     * @return  void
      * @throws  RuntimeException            generating error
      ************************************************************************/
     public function generate() : void
@@ -70,6 +71,7 @@ class MainGenerator
      * set procedure parent class
      *
      * @param   string $className           procedure parent class
+     * @return  void
      ************************************************************************/
     public function setProcedureParentClass(string $className) : void
     {
@@ -79,6 +81,7 @@ class MainGenerator
      * set participant parent class
      *
      * @param   string $className           participant parent class
+     * @return  void
      ************************************************************************/
     public function setParticipantParentClass(string $className) : void
     {
@@ -149,6 +152,8 @@ class MainGenerator
     }
     /** **********************************************************************
      * clean temp data
+     *
+     * @return void
      ************************************************************************/
     public function clean() : void
     {

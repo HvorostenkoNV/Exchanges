@@ -102,6 +102,7 @@ final class ItemDataTest extends MapDataAbstractTest
      * check seting incorrect field value
      *
      * @test
+     * @return void
      * @throws
      ************************************************************************/
     public function setingIncorrectFieldValue() : void

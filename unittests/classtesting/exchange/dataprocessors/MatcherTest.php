@@ -22,6 +22,9 @@ final class MatcherTest extends AbstractTestCase
     private static $structureGenerator = null;
     /** **********************************************************************
      * construct
+     *
+     * @return void
+     * @throws
      ************************************************************************/
     public static function setUpBeforeClass() : void
     {
@@ -33,6 +36,8 @@ final class MatcherTest extends AbstractTestCase
     }
     /** **********************************************************************
      * destruct
+     *
+     * @return void
      ************************************************************************/
     public static function tearDownAfterClass() : void
     {
@@ -44,6 +49,7 @@ final class MatcherTest extends AbstractTestCase
      * check matching data process
      *
      * @test
+     * @return void
      * @throws
      ************************************************************************/
     public function matchingData() : void

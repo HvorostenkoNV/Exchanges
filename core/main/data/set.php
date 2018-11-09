@@ -22,10 +22,13 @@ interface Set extends Data, Iterator
      * drop item from set
      *
      * @param   object  $object             item for drop
+     * @return  void
      ************************************************************************/
     public function delete($object) : void;
     /** **********************************************************************
      * move forward to next item
+     *
+     * @return void
      ************************************************************************/
     public function next() : void;
     /** **********************************************************************
@@ -38,10 +41,13 @@ interface Set extends Data, Iterator
      * push item to set
      *
      * @param   object  $object             pushed item
+     * @return  void
      ************************************************************************/
     public function push($object) :void;
     /** **********************************************************************
      * rewind iterator to the first item
+     *
+     * @return void
      ************************************************************************/
     public function rewind() : void;
     /** **********************************************************************

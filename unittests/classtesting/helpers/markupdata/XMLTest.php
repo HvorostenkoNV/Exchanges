@@ -23,6 +23,7 @@ final class XMLTest extends AbstractTestCase
      * check XML reading
      *
      * @test
+     * @return void
      * @throws
      ************************************************************************/
     public function readingXml() : void
@@ -46,6 +47,7 @@ final class XMLTest extends AbstractTestCase
      *
      * @test
      * @depends readingXml
+     * @return  void
      * @throws
      ************************************************************************/
     public function readingEmptyXml() : void
@@ -68,6 +70,7 @@ final class XMLTest extends AbstractTestCase
      *
      * @test
      * @depends readingXml
+     * @return  void
      * @throws
      ************************************************************************/
     public function readingIncorrectXml() : void
@@ -89,6 +92,8 @@ final class XMLTest extends AbstractTestCase
      * check XML writing
      *
      * @test
+     * @return void
+     * @return void
      * @throws
      ************************************************************************/
     public function writing() : void

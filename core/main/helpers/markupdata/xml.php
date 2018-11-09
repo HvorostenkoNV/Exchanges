@@ -10,7 +10,6 @@ use
     DOMDocument,
     DOMNode,
     SimpleXMLElement,
-    Main\Helpers\Config,
     Main\Helpers\MarkupData\Exceptions\ParseDataException,
     Main\Helpers\MarkupData\Exceptions\WriteDataException;
 /** ***********************************************************************************************
@@ -21,6 +20,14 @@ use
  *************************************************************************************************/
 class XML implements Data
 {
+    private const
+        DEFAULT_VERSION         = '1.0',
+        DEFAULT_ENCODING        = 'UTF-8',
+        DEFAULT_ROOT_TAG_NAME   = 'DOCUMENT';
+    public
+        $version        = '',
+        $encoding       = '',
+        $rootTagName    = '';
     /** **********************************************************************
      * read from file
      *
@@ -36,6 +43,7 @@ class XML implements Data
 
         try
         {
+            libxml_use_internal_errors(true);
             $xml = new SimpleXMLElement($fileContent);
             $this->parseXml($xml, $result);
         }
@@ -60,21 +68,37 @@ class XML implements Data
      ************************************************************************/
     public function readFromString(string $content) : array
     {
+        $errors = [];
         $result = [];
 
         try
         {
+            libxml_use_internal_errors(true);
             $xml = new SimpleXMLElement($content);
             $this->parseXml($xml, $result);
         }
         catch (Exception $exception)
         {
-            throw new ParseDataException($exception->getMessage());
+            $errors[] = $exception->getMessage();
         }
 
-        if (!is_array($result))
+        if (count($errors) <= 0)
         {
-            throw new ParseDataException('parse data error');
+            foreach (libxml_get_errors() as $error)
+            {
+                $errors[] = $error->message;
+            }
+        }
+
+        if (!is_array($result) && count($errors) <= 0)
+        {
+            $errors = ['parse data error'];
+
+        }
+
+        if (count($errors) > 0)
+        {
+            throw new ParseDataException(implode(', ', $errors));
         }
 
         return $result;
@@ -84,6 +108,7 @@ class XML implements Data
      *
      * @param   SplFileInfo $file           file
      * @param   array       $data           data
+     * @return  void
      * @throws  WriteDataException          write data error
      ************************************************************************/
     public function writeToFile(SplFileInfo $file, array $data) : void
@@ -104,10 +129,29 @@ class XML implements Data
         }
     }
     /** **********************************************************************
+     * write to string
+     *
+     * @param   array $data                 data
+     * @return  string                      string data
+     * @throws  WriteDataException          write data error
+     ************************************************************************/
+    public function writeToString(array $data) : string
+    {
+        try
+        {
+            return $this->prepareDataForWriting($data);
+        }
+        catch (WriteDataException $exception)
+        {
+            throw $exception;
+        }
+    }
+    /** **********************************************************************
      * parse XML to array
      *
      * @param   SimpleXMLElement    $xml    xml
      * @param   mixed               $data   data
+     * @return  void
      ************************************************************************/
     private function parseXml(SimpleXMLElement $xml, &$data) : void
     {
@@ -167,28 +211,40 @@ class XML implements Data
      ************************************************************************/
     private function prepareDataForWriting(array $data) : string
     {
-        $config         = Config::getInstance();
-        $rootTagName    = $config->getParam('markup.xml.rootTagName');
-        $version        = $config->getParam('markup.xml.version');
-        $encoding       = $config->getParam('markup.xml.encoding');
         $xml            = new DOMDocument;
-
-        $xml->xmlVersion           = $version;
-        $xml->encoding             = $encoding;
-        $xml->preserveWhiteSpace   = false;
-        $xml->formatOutput         = true;
+        $version        = is_string($this->version) && strlen($this->version) > 0
+            ? $this->version
+            : static::DEFAULT_VERSION;
+        $encoding       = is_string($this->encoding) && strlen($this->encoding) > 0
+            ? $this->encoding
+            : static::DEFAULT_ENCODING;
+        $rootTagName    = is_string($this->rootTagName) && strlen($this->rootTagName) > 0
+            ? $this->rootTagName
+            : static::DEFAULT_ROOT_TAG_NAME;
+        $xmlData        = [$rootTagName => $data];
+        $result         = null;
 
         try
         {
-            $rootNode = $xml->appendChild($xml->createElement($rootTagName));
-            $this->constructXml($xml, $rootNode, $data);
+            $xml->xmlVersion            = $version;
+            $xml->encoding              = $encoding;
+            $xml->preserveWhiteSpace    = false;
+            $xml->formatOutput          = true;
+            $xml->validateOnParse       = true;
+
+            $rootNodeName   = (string)  key($xmlData);
+            $rootNodeData   = (array)   current($xmlData);
+            $rootNode       = $xml->appendChild($xml->createElement($rootNodeName));
+
+            $this->constructXml($xml, $rootNode, $rootNodeData);
+            $result = $xml->saveXML();
         }
         catch (DOMException $exception)
         {
             throw new WriteDataException($exception->getMessage());
         }
 
-        return $xml->saveXML();
+        return is_string($result) ? $result : '';
     }
     /** **********************************************************************
      * construct XML structure based on data array
@@ -196,6 +252,7 @@ class XML implements Data
      * @param   DOMDocument $xml            xml
      * @param   DOMNode     $node           current node
      * @param   mixed       $data           data
+     * @return  void
      * @throws  DOMException                XML constructing error
      ************************************************************************/
     private function constructXml(DOMDocument $xml, DOMNode $node, $data) : void

@@ -20,7 +20,7 @@ spl_autoload_register(function($className)
     $classFilePath      = $classesFolderPath.DIRECTORY_SEPARATOR.$classNameString.'.php';
     $file               = new SplFileInfo($classFilePath);
 
-    if ($file->isFile() && $file->getExtension() == 'php')
+    if ($file->isFile())
     {
         include $file->getPathname();
     }

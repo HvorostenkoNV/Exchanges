@@ -132,6 +132,7 @@ class UsersBitrix extends AbstractParticipant
      *
      * @param   string      $requestUrl     url response
      * @param   resource    $streamContext  stream context
+     * @return  void
      * @throws  RuntimeException            post data error
      ************************************************************************/
     private function postBitrixDataForDelivery(string $requestUrl, $streamContext) : void

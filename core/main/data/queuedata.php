@@ -24,6 +24,8 @@ class QueueData implements Queue
 	}
 	/** **********************************************************************
 	 * clear queue
+     *
+     * @return void
 	 ************************************************************************/
 	public function clear() : void
 	{
@@ -68,6 +70,7 @@ class QueueData implements Queue
      * push data to the end
      *
 	 * @param   mixed   $data               data
+     * @return  void
 	 ************************************************************************/
 	public function push($data) : void
 	{

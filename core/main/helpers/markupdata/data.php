@@ -36,7 +36,16 @@ interface Data
      *
      * @param   SplFileInfo $file           file
      * @param   array       $data           data
+     * @return  void
      * @throws  WriteDataException          write data error
      ************************************************************************/
     public function writeToFile(SplFileInfo $file, array $data) : void;
+    /** **********************************************************************
+     * write to string
+     *
+     * @param   array $data                 data
+     * @return  string                      string data
+     * @throws  WriteDataException          write data error
+     ************************************************************************/
+    public function writeToString(array $data) : string;
 }

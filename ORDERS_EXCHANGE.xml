@@ -1,0 +1,292 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ORDERS>
+    <ORDER>
+        <BASE>
+            <ID>21</ID>
+            <EXTERNAL_ID>wgwrg-wrgwrg</EXTERNAL_ID>
+            <CREATED_DATE>06.11.2018 15:02:37</CREATED_DATE>
+            <NUMBER>111</NUMBER>
+            <STATUS>
+                <ID>N</ID>
+                <EXTERNAL_ID>stjsh-serthsrth-srth</EXTERNAL_ID>
+                <TITLE>Новый</TITLE>
+            </STATUS>
+            <CANCELED>
+                <VALUE>N</VALUE>
+                <DATE>06.11.2018 15:02:37</DATE>
+                <COMMENTS>
+                    some text some text some text some text
+                    some text some text some text some text
+                    some text some text some text some text
+                </COMMENTS>
+            </CANCELED>
+            <DEDUCTED>
+                <VALUE>N</VALUE>
+                <DATE>07.11.2018 00:00:00</DATE>
+            </DEDUCTED>
+            <PRICE>
+                <VALUE>409.00</VALUE>
+                <CURRENCY>
+                    <ID>UAH</ID>
+                    <EXTERNAL_ID>wfg-wrg-wg</EXTERNAL_ID>
+                    <TITLE>Гривна</TITLE>
+                </CURRENCY>
+            </PRICE>
+            <PAYED>
+                <VALUE>N</VALUE>
+                <DATE>07.11.2018 00:00:00</DATE>
+            </PAYED>
+            <DELIVERY_ADDRESS>г. Днепр ул.Карла Маркса 49</DELIVERY_ADDRESS>
+            <COMMENTS>
+                some text some text some text some text
+                some text some text some text some text
+                some text some text some text some text
+            </COMMENTS>
+        </BASE>
+        <BUYER>
+            <PERSON>
+                <ID>24</ID>
+                <EXTERNAL_ID>srths-shserh</EXTERNAL_ID>
+                <TITLE>User Test</TITLE>
+            </PERSON>
+            <TYPE>
+                <ID>3</ID>
+                <EXTERNAL_ID>wgwrg-wrgwrg</EXTERNAL_ID>
+                <TITLE>Приватна особа</TITLE>
+            </TYPE>
+            <FIELDS>
+                <FIELD-1>
+                    <ID>27</ID>
+                    <CODE>FIO</CODE>
+                    <TITLE>П.І.Б.</TITLE>
+                    <VALUE>User User123</VALUE>
+                </FIELD-1>
+                <FIELD-2>
+                    <ID>28</ID>
+                    <CODE>EMAIL</CODE>
+                    <TITLE>EMail</TITLE>
+                    <VALUE>123manyes@ukr.net</VALUE>
+                </FIELD-2>
+            </FIELDS>
+        </BUYER>
+        <SHIPMNETS>
+            <SHIPMNET>
+                <ID>21</ID>
+                <EXTERNAL_ID>wgwrg-wrgwrg</EXTERNAL_ID>
+                <CREATED_DATE>06.11.2018 15:02:37</CREATED_DATE>
+                <NUMBER>111</NUMBER>
+                <SERVICE>
+                    <ID>8</ID>
+                    <EXTERNAL_ID>sth-sethsth</EXTERNAL_ID>
+                    <TITLE>Інтайм</TITLE>
+                </SERVICE>
+                <COST>
+                    <VALUE>150</VALUE>
+                    <CURRENCY>
+                        <ID>UAH</ID>
+                        <EXTERNAL_ID>wfg-wrg-wg</EXTERNAL_ID>
+                        <TITLE>Гривна</TITLE>
+                    </CURRENCY>
+                </COST>
+                <DEPARTMENT>
+                    <ID>2</ID>
+                    <EXTERNAL_ID>wer-asrgbzdb-zdfg</EXTERNAL_ID>
+                    <TITLE>Test01</TITLE>
+                    <ADDRESS>г. Днепр ул.Карла Маркса 49</ADDRESS>
+                </DEPARTMENT>
+                <STORAGE>
+                    <ID>212</ID>
+                    <EXTERNAL_ID>zdth-tfuyk-uk</EXTERNAL_ID>
+                    <TITLE>Офіс-склад Дніпро</TITLE>
+                    <ADDRESS>м. Дніпро, вул. Олександра Оцупа, 21а (Комісара Крилова, 21а)</ADDRESS>
+                </STORAGE>
+                <POSITIONS>
+                    <POSITION>
+                        <ID>89</ID>
+                        <EXTERNAL_ID>ryseyh-seyhsth</EXTERNAL_ID>
+                        <AMOUNT>1</AMOUNT>
+                    </POSITION>
+                    <POSITION>
+                        <ID>90</ID>
+                        <EXTERNAL_ID>awrgergh-sthsrth</EXTERNAL_ID>
+                        <AMOUNT>2</AMOUNT>
+                    </POSITION>
+                </POSITIONS>
+                <ALLOWED>Y</ALLOWED>
+                <DEDUCTED>N</DEDUCTED>
+                <TRACKING_NUMBER>111</TRACKING_NUMBER>
+                <DOCUMENT_NUMBER>222</DOCUMENT_NUMBER>
+                <DOCUMENT_DATE>06.11.2018 15:02:37</DOCUMENT_DATE>
+                <COMMENTS>
+                    some text some text some text some text
+                    some text some text some text some text
+                    some text some text some text some text
+                </COMMENTS>
+            </SHIPMNET>
+            <SHIPMNET>
+                <ID>22</ID>
+                <EXTERNAL_ID>bhlk-bhkl-vbhl</EXTERNAL_ID>
+                <CREATED_DATE>06.11.2018 16:02:37</CREATED_DATE>
+                <NUMBER>112</NUMBER>
+                <SERVICE>
+                    <ID>3</ID>
+                    <EXTERNAL_ID>cguyk-vguk-vuk</EXTERNAL_ID>
+                    <TITLE>Самовивіз</TITLE>
+                </SERVICE>
+                <COST>
+                    <VALUE>0</VALUE>
+                    <CURRENCY>
+                        <ID>UAH</ID>
+                        <EXTERNAL_ID>wfg-wrg-wg</EXTERNAL_ID>
+                        <TITLE>Гривна</TITLE>
+                    </CURRENCY>
+                </COST>
+                <DEPARTMENT>
+                    <ID>2</ID>
+                    <EXTERNAL_ID>wer-asrgbzdb-zdfg</EXTERNAL_ID>
+                    <TITLE>Test01</TITLE>
+                    <ADDRESS>г. Днепр ул.Карла Маркса 49</ADDRESS>
+                </DEPARTMENT>
+                <STORAGE>
+                    <ID>212</ID>
+                    <EXTERNAL_ID>zdth-tfuyk-uk</EXTERNAL_ID>
+                    <TITLE>Офіс-склад Дніпро</TITLE>
+                    <ADDRESS>м. Дніпро, вул. Олександра Оцупа, 21а (Комісара Крилова, 21а)</ADDRESS>
+                </STORAGE>
+                <POSITIONS>
+                    <POSITION>
+                        <ID>90</ID>
+                        <EXTERNAL_ID>awrgergh-sthsrth</EXTERNAL_ID>
+                        <AMOUNT>1</AMOUNT>
+                    </POSITION>
+                </POSITIONS>
+                <ALLOWED>Y</ALLOWED>
+                <DEDUCTED>Y</DEDUCTED>
+                <TRACKING_NUMBER>111</TRACKING_NUMBER>
+                <DOCUMENT_NUMBER>222</DOCUMENT_NUMBER>
+                <DOCUMENT_DATE>06.11.2018 15:02:37</DOCUMENT_DATE>
+                <COMMENTS>
+                    some text some text some text some text
+                    some text some text some text some text
+                    some text some text some text some text
+                </COMMENTS>
+            </SHIPMNET>
+        </SHIPMNETS>
+        <PAYMENTS>
+            <PAYMENT>
+                <ID>49</ID>
+                <EXTERNAL_ID>ergerg-ergerg-ergwerg</EXTERNAL_ID>
+                <CREATED_DATE>06.11.2018 16:02:37</CREATED_DATE>
+                <NUMBER>888</NUMBER>
+                <STATUS>
+                    <ID>N</ID>
+                    <EXTERNAL_ID>wrg-wrgwerg</EXTERNAL_ID>
+                    <TITLE>Новый</TITLE>
+                </STATUS>
+                <SERVICE>
+                    <ID>1</ID>
+                    <EXTERNAL_ID>aerg-sergh-serhg</EXTERNAL_ID>
+                    <TITLE>Готівковий розрахунок</TITLE>
+                </SERVICE>
+                <COST>
+                    <VALUE>50</VALUE>
+                    <CURRENCY>
+                        <ID>UAH</ID>
+                        <EXTERNAL_ID>wfg-wrg-wg</EXTERNAL_ID>
+                        <TITLE>Гривна</TITLE>
+                    </CURRENCY>
+                </COST>
+                <PAYED>Y</PAYED>
+                <VOUCHER_NUMBER>456</VOUCHER_NUMBER>
+                <VOUCHER_DATE>06.11.2018 16:02:37</VOUCHER_DATE>
+                <DEPARTMENT>
+                    <ID>2</ID>
+                    <EXTERNAL_ID>wer-asrgbzdb-zdfg</EXTERNAL_ID>
+                    <TITLE>Test01</TITLE>
+                    <ADDRESS>г. Днепр ул.Карла Маркса 49</ADDRESS>
+                </DEPARTMENT>
+            </PAYMENT>
+            <PAYMENT>
+                <ID>50</ID>
+                <EXTERNAL_ID>zdth-xfj-xfyuj</EXTERNAL_ID>
+                <CREATED_DATE>06.11.2018 17:02:37</CREATED_DATE>
+                <NUMBER>999</NUMBER>
+                <STATUS>
+                    <ID>F</ID>
+                    <EXTERNAL_ID>grseg-sethgs-thth</EXTERNAL_ID>
+                    <TITLE>Выполнен</TITLE>
+                </STATUS>
+                <SERVICE>
+                    <ID>3</ID>
+                    <EXTERNAL_ID>seth-srthsgh-srth</EXTERNAL_ID>
+                    <TITLE>Безготівковий переказ</TITLE>
+                </SERVICE>
+                <COST>
+                    <VALUE>70</VALUE>
+                    <CURRENCY>
+                        <ID>UAH</ID>
+                        <EXTERNAL_ID>wfg-wrg-wg</EXTERNAL_ID>
+                        <TITLE>Гривна</TITLE>
+                    </CURRENCY>
+                </COST>
+                <PAYED>N</PAYED>
+                <VOUCHER_NUMBER>457</VOUCHER_NUMBER>
+                <VOUCHER_DATE>06.11.2018 17:02:37</VOUCHER_DATE>
+                <DEPARTMENT>
+                    <ID>2</ID>
+                    <EXTERNAL_ID>wer-asrgbzdb-zdfg</EXTERNAL_ID>
+                    <TITLE>Test01</TITLE>
+                    <ADDRESS>г. Днепр ул.Карла Маркса 49</ADDRESS>
+                </DEPARTMENT>
+            </PAYMENT>
+        </PAYMENTS>
+        <POSITIONS>
+            <POSITION>
+                <ID>89</ID>
+                <EXTERNAL_ID>ryseyh-seyhsth</EXTERNAL_ID>
+                <PRICE>
+                    <VALUE>46.00</VALUE>
+                    <CURRENCY>
+                        <ID>UAH</ID>
+                        <EXTERNAL_ID>wfg-wrg-wg</EXTERNAL_ID>
+                        <TITLE>Гривна</TITLE>
+                    </CURRENCY>
+                    <TYPE>
+                        <ID>1588</ID>
+                        <EXTERNAL_ID>a97e1462-f038-11e2-809b-00155d031e00</EXTERNAL_ID>
+                        <TITLE>Розничная Днепр нерж.</TITLE>
+                    </TYPE>
+                </PRICE>
+                <MEASURE>
+                    <ID>6</ID>
+                    <EXTERNAL_ID>wef-wef-wef</EXTERNAL_ID>
+                    <TITLE>Штука</TITLE>
+                </MEASURE>
+                <AMOUNT>4</AMOUNT>
+            </POSITION>
+            <POSITION>
+                <ID>90</ID>
+                <EXTERNAL_ID>qef-qefqef-qeff</EXTERNAL_ID>
+                <PRICE>
+                    <VALUE>48.00</VALUE>
+                    <CURRENCY>
+                        <ID>UAH</ID>
+                        <EXTERNAL_ID>wfg-wrg-wg</EXTERNAL_ID>
+                        <TITLE>Гривна</TITLE>
+                    </CURRENCY>
+                    <TYPE>
+                        <ID>1588</ID>
+                        <EXTERNAL_ID>a97e1462-f038-11e2-809b-00155d031e00</EXTERNAL_ID>
+                        <TITLE>Розничная Днепр нерж.</TITLE>
+                    </TYPE>
+                </PRICE>
+                <MEASURE>
+                    <ID>6</ID>
+                    <EXTERNAL_ID>wef-wef-wef</EXTERNAL_ID>
+                    <TITLE>Штука</TITLE>
+                </MEASURE>
+                <AMOUNT>4</AMOUNT>
+            </POSITION>
+        </POSITIONS>
+    </ORDER>
+</ORDERS>

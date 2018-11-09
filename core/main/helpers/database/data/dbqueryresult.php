@@ -31,6 +31,7 @@ class DBQueryResult extends QueueData
      * push data to the end
      *
      * @param   DBRow $data                 data
+     * @return  void
      * @throws  InvalidArgumentException    incorrect pushed data
      ************************************************************************/
     public function push($data) : void

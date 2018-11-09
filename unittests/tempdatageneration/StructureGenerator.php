@@ -25,6 +25,8 @@ class StructureGenerator
         $proceduresCombiningRules   = [];
     /** **********************************************************************
      * generate project temp structure
+     *
+     * @return void
      ************************************************************************/
     public function generate() : void
     {

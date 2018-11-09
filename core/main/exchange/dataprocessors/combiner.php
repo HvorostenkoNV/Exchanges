@@ -44,12 +44,15 @@ class Combiner
      ************************************************************************/
     public function combineItems(MatchedData $matchedData) : CombinedData
     {
-        $result = new CombinedData;
+        $logger             = Logger::getInstance();
+        $procedureCode      = $this->procedure->getCode();
+        $logMessagePrefix   = "Combiner for procedure \"$procedureCode\"";
+        $result             = new CombinedData;
 
-        $this->addLogMessage('start combining data', 'notice');
+        $logger->addNotice("$logMessagePrefix: start combining data");
         if ($matchedData->count() <= 0)
         {
-            $this->addLogMessage('caught empty matched data', 'notice');
+            $logger->addNotice("$logMessagePrefix: caught empty matched data");
             return $result;
         }
 
@@ -73,12 +76,12 @@ class Combiner
                 catch (InvalidArgumentException $exception)
                 {
                     $error = $exception->getMessage();
-                    $this->addLogMessage("unexpected error on constructing combined data, \"$error\"", 'warning');
+                    $logger->addWarning("$logMessagePrefix: unexpected error on constructing combined data, \"$error\"");
                 }
                 catch (RuntimeException $exception)
                 {
                     $error = $exception->getMessage();
-                    $this->addLogMessage("error on saving data into procedure data container, \"$error\"", 'warning');
+                    $logger->addWarning("$logMessagePrefix: error on saving data into procedure data container, \"$error\"");
                 }
                 $procedureFieldsSet->next();
             }
@@ -90,13 +93,13 @@ class Combiner
             catch (InvalidArgumentException $exception)
             {
                 $error = $exception->getMessage();
-                $this->addLogMessage("unexpected error on constructing combined data, \"$error\"", 'warning');
+                $logger->addWarning("$logMessagePrefix: unexpected error on constructing combined data, \"$error\"");
             }
         }
 
         if ($result->count() <= 0)
         {
-            $this->addLogMessage('returning empty combined data while matched data is not empty', 'warning');
+            $logger->addWarning("$logMessagePrefix: returning empty combined data while matched data is not empty");
         }
 
         return $result;
@@ -167,29 +170,6 @@ class Combiner
                 return true;
             default:
                 return false;
-        }
-    }
-    /** **********************************************************************
-     * get object short name
-     *
-     * @param   string  $message                message
-     * @param   string  $type                   message type
-     ************************************************************************/
-    private function addLogMessage(string $message, string $type) : void
-    {
-        $logger         = Logger::getInstance();
-        $procedureCode  = $this->procedure->getCode();
-        $fullMessage    = "Combiner for procedure \"$procedureCode\": $message";
-
-        switch ($type)
-        {
-            case 'warning':
-                $logger->addWarning($fullMessage);
-                break;
-            case 'notice':
-            default:
-                $logger->addNotice($fullMessage);
-                break;
         }
     }
 }

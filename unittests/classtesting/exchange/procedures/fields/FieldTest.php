@@ -25,6 +25,7 @@ final class FieldTest extends AbstractTestCase
      * check correct creating field
      *
      * @test
+     * @return void
      * @throws
      ************************************************************************/
     public function creating() : void
@@ -57,6 +58,7 @@ final class FieldTest extends AbstractTestCase
      *
      * @test
      * @depends creating
+     * @return  void
      * @throws
      ************************************************************************/
     public function incorrectCreating() : void
@@ -106,6 +108,7 @@ final class FieldTest extends AbstractTestCase
      *
      * @test
      * @depends creating
+     * @return  void
      * @throws
      ************************************************************************/
     public function readingParams() : void
@@ -138,6 +141,7 @@ final class FieldTest extends AbstractTestCase
      *
      * @test
      * @depends creating
+     * @return  void
      * @throws
      ************************************************************************/
     public function gettingProcedure() : void
@@ -165,6 +169,7 @@ final class FieldTest extends AbstractTestCase
      *
      * @test
      * @depends creating
+     * @return  void
      * @throws
      ************************************************************************/
     public function gettingParticipantsFields() : void
@@ -192,6 +197,7 @@ final class FieldTest extends AbstractTestCase
      *
      * @test
      * @depends creating
+     * @return  void
      * @throws
      ************************************************************************/
     public function gettingRewoundParticipantsFieldsSet() : void

@@ -65,12 +65,15 @@ class Provider
      ************************************************************************/
     public function provideData(CombinedData $combinedData) : ProviderResult
     {
-        $result = new ProviderResult;
+        $logger             = Logger::getInstance();
+        $procedureCode      = $this->procedure->getCode();
+        $logMessagePrefix   = "Provider for procedure \"$procedureCode\"";
+        $result             = new ProviderResult;
 
-        $this->addLogMessage('start providing data', 'notice');
+        $logger->addNotice("$logMessagePrefix: start providing data");
         if ($combinedData->count() <= 0)
         {
-            $this->addLogMessage('caught empty combined data', 'notice');
+            $logger->addNotice("$logMessagePrefix: caught empty combined data");
             return $result;
         }
 
@@ -88,7 +91,7 @@ class Provider
             }
             catch (UnknownParticipantFieldException $exception)
             {
-                $this->addLogMessage("participant \"$participantCode\" has no ID field", 'warning');
+                $logger->addWarning("$logMessagePrefix: participant \"$participantCode\" has no ID field");
                 $participantsSet->next();
                 continue;
             }
@@ -116,7 +119,7 @@ class Provider
                 catch (InvalidArgumentException $exception)
                 {
                     $error = $exception->getMessage();
-                    $this->addLogMessage("unexpected error on constructing provided data, \"$error\"", 'warning');
+                    $logger->addWarning("$logMessagePrefix: unexpected error on constructing provided data, \"$error\"");
                 }
             }
 
@@ -128,7 +131,7 @@ class Provider
             catch (InvalidArgumentException $exception)
             {
                 $error = $exception->getMessage();
-                $this->addLogMessage("unexpected error on constructing provided data, \"$error\"", 'warning');
+                $logger->addWarning("$logMessagePrefix: unexpected error on constructing provided data, \"$error\"");
             }
 
             $participantsSet->next();
@@ -255,28 +258,5 @@ class Provider
         }
 
         return $result;
-    }
-    /** **********************************************************************
-     * add message to log
-     *
-     * @param   string  $message                    message
-     * @param   string  $type                       message type
-     ************************************************************************/
-    private function addLogMessage(string $message, string $type) : void
-    {
-        $logger         = Logger::getInstance();
-        $procedureCode  = $this->procedure->getCode();
-        $fullMessage    = "Provider for procedure \"$procedureCode\": $message";
-
-        switch ($type)
-        {
-            case 'warning':
-                $logger->addWarning($fullMessage);
-                break;
-            case 'notice':
-            default:
-                $logger->addNotice($fullMessage);
-                break;
-        }
     }
 }

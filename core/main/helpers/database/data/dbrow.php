@@ -19,6 +19,7 @@ class DBRow extends MapData
      * delete value by key
      *
      * @param   string $key                 value key
+     * @return  void
      ************************************************************************/
     public function delete($key) : void
     {
@@ -68,6 +69,7 @@ class DBRow extends MapData
      *
      * @param   string  $key                value key
      * @param   mixed   $value              value
+     * @return  void
      * @throws  InvalidArgumentException    incorrect key
      ************************************************************************/
     public function set($key, $value) : void

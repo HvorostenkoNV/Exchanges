@@ -29,6 +29,7 @@ final class ConfigTest extends AbstractTestCase
      * check Config is singleton
      *
      * @test
+     * @return void
      * @throws
      ************************************************************************/
     public function isSingleton() : void
@@ -44,6 +45,7 @@ final class ConfigTest extends AbstractTestCase
      *
      * @test
      * @depends isSingleton
+     * @return  void
      * @throws
      ************************************************************************/
     public function canReadParams() : void
@@ -80,6 +82,7 @@ final class ConfigTest extends AbstractTestCase
      *
      * @test
      * @depends isSingleton
+     * @return  void
      * @throws
      ************************************************************************/
     public function crushedWithoutParamsFolder() : void
@@ -146,6 +149,8 @@ final class ConfigTest extends AbstractTestCase
     }
     /** **********************************************************************
      * delete temp application params
+     *
+     * @return void
      ************************************************************************/
     private function dropTempParams() : void
     {

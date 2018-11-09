@@ -19,6 +19,7 @@ class CombinedData extends MapData
      * delete value by key
      *
      * @param   int $key                    value key
+     * @return  void
      ************************************************************************/
     public function delete($key) : void
     {
@@ -68,6 +69,7 @@ class CombinedData extends MapData
      *
      * @param   int             $key        value key
      * @param   CombinedItem    $value      value
+     * @return  void
      * @throws  InvalidArgumentException    incorrect key or value
      ************************************************************************/
     public function set($key, $value) : void

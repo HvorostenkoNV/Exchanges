@@ -17,6 +17,7 @@ final class SystemTest extends AbstractTestCase
      * check PHP version
      *
      * @test
+     * @return void
      * @throws
      ************************************************************************/
     public function phpVersion() : void
@@ -53,7 +54,8 @@ final class SystemTest extends AbstractTestCase
      *
      * @test
      * @depends documentRootConstantExist
-     * @param   string  $documentRoot           document root path
+     * @param   string $documentRoot            document root path
+     * @return  void
      * @throws
      ************************************************************************/
     public function paramsFolderConstantExist(string $documentRoot) : void
@@ -74,7 +76,8 @@ final class SystemTest extends AbstractTestCase
      *
      * @test
      * @depends documentRootConstantExist
-     * @param   string  $documentRoot           document root path
+     * @param   string $documentRoot            document root path
+     * @return  void
      * @throws
      ************************************************************************/
     public function logsFolderConstantExist(string $documentRoot) : void

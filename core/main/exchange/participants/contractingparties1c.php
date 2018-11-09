@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace Main\Exchange\Participants;
 
 use
-    Throwable,
     UnderflowException,
     RuntimeException,
     UnexpectedValueException,
@@ -24,6 +23,29 @@ use
  *************************************************************************************************/
 class ContractingParties1C extends AbstractParticipant
 {
+    private static
+        $companiesTypes         =
+            [
+                'CUSTOMER'      => 'Покупатель',
+                'SUPPLIER'      => 'Поставщик',
+                'COMPETITOR'    => 'Конкурент',
+                'PARTNER'       => 'Партенр',
+                'OTHER'         => 'Другое'
+            ],
+        $companiesScopes        =
+            [
+                'IT'            => 'Информационные технологии',
+                'TELECOM'       => 'Телекоммуникации и связь',
+                'MANUFACTURING' => 'Производство',
+                'BANKING'       => 'Банковские услуги',
+                'CONSULTING'    => 'Консалтинг',
+                'FINANCE'       => 'Финансы',
+                'GOVERNMENT'    => 'Правительство',
+                'DELIVERY'      => 'Доставка',
+                'ENTERTAINMENT' => 'Развлечения',
+                'NOTPROFIT'     => 'Не для получения прибыли',
+                'OTHER'         => 'Другое'
+            ];
     /** **********************************************************************
      * read participant provided data and get it
      *
@@ -36,47 +58,93 @@ class ContractingParties1C extends AbstractParticipant
 
         try
         {
-            $providedImplodedDataFile = $this->getProvidedImplodedDataFile();
-            $this->processingProvidedImplodedDataFile($providedImplodedDataFile);
+            $companiesGetedDataFolder   = $this->getParticipantFolderByParameter('participants.contractingparties.companies.1c.receivedDataPath');
+            $companiesGetedDataFile     = $this->getAnyFileInFolder($companiesGetedDataFolder);
+            $data                       = (new XML)->readFromFile($companiesGetedDataFile);
 
-            return [];
+            $this->removeFile($companiesGetedDataFile);
+            return $data;
         }
         catch (UnderflowException $exception)
         {
-
+            $logger->addNotice("$logMessagePrefix: no prepared provided data was found");
+        }
+        catch (ParseDataException $exception)
+        {
+            $error = $exception->getMessage();
+            $logger->addWarning("$logMessagePrefix: extracted prepared provided data parsing error, $error");
+            return [];
         }
         catch (RuntimeException $exception)
         {
             $error = $exception->getMessage();
-            $logger->addNotice("$logMessagePrefix: provided imploded data file processing error, $error");
+            $logger->addWarning("$logMessagePrefix: removing prepared extracted provided data file error, $error");
             return [];
         }
 
         try
         {
-            $preparedProvidedDataFile   = $this->getPreparedProvidedDataFile();
-            $data                       = (new XML)->readFromFile($preparedProvidedDataFile);
+            $implodedProcessedDataFolder    = $this->getParticipantFolderByParameter('participants.contractingparties.companies.1c.implodedProcessedDataPath');
+            $implodedReceivedDataFolder     = $this->getParticipantFolderByParameter('participants.contractingparties.companies.1c.implodedReceivedDataPath');
+            $implodedReceivedDataFile       = $this->getAnyFileInFolder($implodedReceivedDataFolder);
+            $implodedReceivedData           = (new XML)->readFromFile($implodedReceivedDataFile);
+            $implodedReceivedData           = count($implodedReceivedData) > 0 ? array_values(array_pop($implodedReceivedData)) : [];
+            $tablesData                     =
+                [
+                    'companies'     => [],
+                    'contacts'      => [],
+                    'requisites'    => [],
+                    'addresses'     => []
+                ];
 
-            $this->removePreparedProvidedDataFile($preparedProvidedDataFile);
-            return $data;
+            foreach ($implodedReceivedData as $item)
+            {
+                if (is_array($item))
+                {
+                    $companyData    = $this->extractCompanyData($item);
+                    $contactsData   = $this->extractCompanyContactsData($item);
+                    $requisitesData = $this->extractCompanyRequisitesData($item);
+                    $addressData    = $this->extractCompanyAddressesData($item);
+
+                    $tablesData['companies'][]  = $companyData;
+                    $tablesData['contacts']     = array_merge($tablesData['contacts'],      $contactsData);
+                    $tablesData['requisites']   = array_merge($tablesData['requisites'],    $requisitesData);
+                    $tablesData['addresses']    = array_merge($tablesData['addresses'],     $addressData);
+                }
+            }
+
+            foreach ($tablesData as $table => $data)
+            {
+                $receivedDataFolder = $this->getParticipantFolderByParameter("participants.contractingparties.$table.1c.receivedDataPath");
+                $clearedData        = array_filter($data, function($value)
+                    {
+                        return is_array($value) && count($value) > 0;
+                    });
+
+                if (count($clearedData) > 0)
+                {
+                    $this->saveDataIntoFolder($receivedDataFolder, $clearedData);
+                }
+            }
+
+            $this->replaceFileToFolder($implodedReceivedDataFile, $implodedProcessedDataFolder);
         }
         catch (UnderflowException $exception)
         {
-            $logger->addNotice("$logMessagePrefix: no provided data file was found");
-            return [];
-        }
-        catch (ParseDataException $exception)
-        {
-            $error = $exception->getMessage();
-            $logger->addWarning("$logMessagePrefix: prepared provided data parsing error, $error");
-            return [];
+            $logger->addNotice("$logMessagePrefix: no imploded provided data was found");
         }
         catch (RuntimeException $exception)
         {
             $error = $exception->getMessage();
-            $logger->addWarning("$logMessagePrefix: removing prepared provided data file error, $error");
-            return [];
+            $logger->addWarning("$logMessagePrefix: imploded provided data file processing error, $error");
         }
+        catch (ParseDataException $exception)
+        {
+            $error = $exception->getMessage();
+            $logger->addWarning("$logMessagePrefix: imploded provided data parsing error, $error");
+        }
+
+        return [];
     }
     /** **********************************************************************
      * provide delivered data to the participant
@@ -91,57 +159,119 @@ class ContractingParties1C extends AbstractParticipant
 
         try
         {
-            $answerFile = $this->getAnswerDataFile();
-            $fullData   = $this->constructImplodedDataForDelivery($data);
+            $companiesReturnedDataFolder    = $this->getParticipantFolderByParameter('participants.contractingparties.companies.1c.returnedDataPath');
+            $companiesReturnedDataFile      = $this->getNewFileInFolder($companiesReturnedDataFolder);
 
-            (new XML)->writeToFile($answerFile, $fullData);
-            return true;
+            (new XML)->writeToFile($companiesReturnedDataFile, $data);
         }
-        catch (UnexpectedValueException $exception)
+        catch (UnderflowException $exception)
         {
             $error = $exception->getMessage();
-            $logger->addNotice("$logMessagePrefix: constructing imploded data error, $error");
+            $logger->addWarning("$logMessagePrefix: answer data file creating error, $error");
+        }
+        catch (WriteDataException $exception)
+        {
+            $error = $exception->getMessage();
+            $logger->addWarning("$logMessagePrefix: answer data file writing error, $error");
+        }
+
+        try
+        {
+            $implodedReturnedDataFolder = $this->getParticipantFolderByParameter('participants.contractingparties.companies.1c.implodedReturnedDataPath');
+            $implodedReturnedDataFile   = $this->getNewFileInFolder($implodedReturnedDataFolder);
+            $tablesData                 =
+                [
+                    'companies'     => [],
+                    'contacts'      => [],
+                    'requisites'    => [],
+                    'addresses'     => []
+                ];
+            $tablesFiles                = [];
+
+            foreach (array_keys($tablesData) as $table)
+            {
+                $dataFolder = $this->getParticipantFolderByParameter("participants.contractingparties.$table.1c.returnedDataPath");
+                $dataFiles  = $this->getAllFilesInFolder($dataFolder);
+
+                foreach ($dataFiles as $file)
+                {
+                    $data               = (new XML)->readFromFile($file);
+                    $tablesData[$table] = array_merge($tablesData[$table], $data);
+                    $tablesFiles[]      = $file;
+                }
+            }
+
+            $collectedData  = $this->combineCollectedData($tablesData);
+            $implodedData   = $this->constructImplodedData($collectedData);
+
+            if (count($implodedData) > 0)
+            {
+                (new XML)->writeToFile($implodedReturnedDataFile, $implodedData);
+            }
+
+            foreach ($tablesFiles as $file)
+            {
+                $this->removeFile($file);
+            }
+
+            return true;
+        }
+        catch (UnderflowException $exception)
+        {
+            $error = $exception->getMessage();
+            $logger->addWarning("$logMessagePrefix: imploded answer data file creating error, $error");
+            return false;
+        }
+        catch (ParseDataException $exception)
+        {
+            $error = $exception->getMessage();
+            $logger->addWarning("$logMessagePrefix: returned participants data files parsing error, $error");
             return false;
         }
         catch (WriteDataException $exception)
         {
             $error = $exception->getMessage();
-            $logger->addWarning("$logMessagePrefix: answer data writing error, $error");
+            $logger->addWarning("$logMessagePrefix: imploded answer data file writing error, $error");
             return false;
         }
-        catch (UnderflowException $exception)
+        catch (RuntimeException $exception)
         {
-            $logger->addNotice("$logMessagePrefix: answer file was not created");
+            $logger->addWarning("$logMessagePrefix: returned participants data files removing error error");
             return false;
         }
     }
     /** **********************************************************************
-     * get provided imploded data file
+     * get participant folder by parameter
      *
-     * @return  SplFileInfo                 provided imploded data file
-     * @throws  UnderflowException          no provided imploded data file was found
+     * @param   string $param               parameter full name
+     * @return  SplFileInfo                 folder
      ************************************************************************/
-    private function getProvidedImplodedDataFile() : SplFileInfo
+    private function getParticipantFolderByParameter(string $param) : SplFileInfo
     {
-        $config                             = Config::getInstance();
-        $tempFolderParam                    = $config->getParam('structure.tempFolder');
-        $implodedReceivedDataFolderParam    = $config->getParam('participants.contractingparties.companies.1c.implodedReceivedDataPath');
-        $implodedReceivedDataFolderPath     =
+        $config             = Config::getInstance();
+        $tempFolderParam    = $config->getParam('structure.tempFolder');
+        $needFolderParam    = $config->getParam($param);
+        $needFolderPath     =
             DOCUMENT_ROOT.DIRECTORY_SEPARATOR.
             $tempFolderParam.DIRECTORY_SEPARATOR.
-            $implodedReceivedDataFolderParam;
-        $implodedReceivedDataFolder         = new SplFileInfo($implodedReceivedDataFolderPath);
+            $needFolderParam;
 
-        if (!$implodedReceivedDataFolder->isDir())
-        {
-            @mkdir($implodedReceivedDataFolder->getPathname(), 0777, true);
-        }
-
+        return new SplFileInfo($needFolderPath);
+    }
+    /** **********************************************************************
+     * find any file in folder
+     *
+     * @param   SplFileInfo $folder         folder
+     * @return  SplFileInfo                 file
+     * @throws  UnderflowException          no file was found
+     ************************************************************************/
+    private function getAnyFileInFolder(SplFileInfo $folder) : SplFileInfo
+    {
         try
         {
             $folderIterator = new RecursiveDirectoryIterator
             (
-                $implodedReceivedDataFolder->getPathname(),
+                $folder->getPathname(),
                 FilesystemIterator::SKIP_DOTS
             );
 
@@ -165,119 +295,22 @@ class ContractingParties1C extends AbstractParticipant
         throw new UnderflowException;
     }
     /** **********************************************************************
-     * mark provided imploded XML data file as processed
+     * get new file in folder
      *
-     * @param   SplFileInfo $file           provided imploded XML data file
-     * @throws  RuntimeException            marking provided imploded data file error
+     * @param   SplFileInfo $folder         folder
+     * @return  SplFileInfo                 new file
+     * @throws  UnderflowException          no imploded answer data file was created
      ************************************************************************/
-    private function markProvidedImplodedDataFileAsProcessed(SplFileInfo $file) : void
+    private function getNewFileInFolder(SplFileInfo $folder) : SplFileInfo
     {
-        $config                             = Config::getInstance();
-        $tempFolderParam                    = $config->getParam('structure.tempFolder');
-        $processedReceivedDataFolderParam   = $config->getParam('participants.contractingparties.companies.1c.implodedProcessedDataPath');
-        $processedReceivedDataFolderPath    =
-            DOCUMENT_ROOT.DIRECTORY_SEPARATOR.
-            $tempFolderParam.DIRECTORY_SEPARATOR.
-            $processedReceivedDataFolderParam;
-        $processedReceivedDataFolder        = new SplFileInfo($processedReceivedDataFolderPath);
-        $processedDataFilePath              = $processedReceivedDataFolder->getPathname().DIRECTORY_SEPARATOR.$file->getFilename();
-        $processedDataFile                  = new SplFileInfo($processedDataFilePath);
+        $dataFileNameTemplate   = 'answer_data_{FILE_NUMBER}';
+        $dataFileIndex          = 1;
 
-        if (!$processedReceivedDataFolder->isDir())
+        if (!$folder->isDir())
         {
-            @mkdir($processedReceivedDataFolder->getPathname(), 0777, true);
+            @mkdir($folder->getPathname(), 0777, true);
         }
-        if (!$processedReceivedDataFolder->isDir())
-        {
-            $folderPath = $processedReceivedDataFolder->getPathname();
-            throw new RuntimeException("unable to create folder \"$folderPath\"");
-        }
-
-        try
-        {
-            rename($file->getPathname(), $processedDataFile->getPathname());
-        }
-        catch (Throwable $exception)
-        {
-            $movingFrom = $file->getPathname();
-            $movingTo   = $processedDataFile->getPathname();
-
-            throw new RuntimeException("moving file from \"$movingFrom\" to \"$movingTo\" failed");
-        }
-    }
-    /** **********************************************************************
-     * get prepared provided XML data file
-     *
-     * @return  SplFileInfo                 prepared provided XML data file
-     * @throws  UnderflowException          no prepared provided data file was found
-     ************************************************************************/
-    private function getPreparedProvidedDataFile() : SplFileInfo
-    {
-        $config                     = Config::getInstance();
-        $tempFolderParam            = $config->getParam('structure.tempFolder');
-        $receivedDataFolderParam    = $config->getParam('participants.contractingparties.companies.1c.receivedDataPath');
-        $receivedDataFolderPath     =
-            DOCUMENT_ROOT.DIRECTORY_SEPARATOR.
-            $tempFolderParam.DIRECTORY_SEPARATOR.
-            $receivedDataFolderParam;
-        $receivedDataFolder         = new SplFileInfo($receivedDataFolderPath);
-
-        if (!$receivedDataFolder->isDir())
-        {
-            @mkdir($receivedDataFolder->getPathname(), 0777, true);
-        }
-
-        try
-        {
-            $folderIterator = new RecursiveDirectoryIterator
-            (
-                $receivedDataFolder->getPathname(),
-                FilesystemIterator::SKIP_DOTS
-            );
-
-            while ($folderIterator->valid())
-            {
-                $file = $folderIterator->current();
-
-                if ($file->isFile() && $file->isReadable())
-                {
-                    return $file;
-                }
-
-                $folderIterator->next();
-            }
-        }
-        catch (UnexpectedValueException $exception)
-        {
-
-        }
-
-        throw new UnderflowException;
-    }
-    /** **********************************************************************
-     * get answer XML data file
-     *
-     * @return  SplFileInfo                 answer XML data file
-     * @throws  UnderflowException          no answer data file was created
-     ************************************************************************/
-    private function getAnswerDataFile() : SplFileInfo
-    {
-        $config                     = Config::getInstance();
-        $tempFolderParam            = $config->getParam('structure.tempFolder');
-        $returnedDataFolderParam    = $config->getParam('participants.contractingparties.companies.1c.returnedDataPath');
-        $returnedDataFolderPath     =
-            DOCUMENT_ROOT.DIRECTORY_SEPARATOR.
-            $tempFolderParam.DIRECTORY_SEPARATOR.
-            $returnedDataFolderParam;
-        $returnedDataFolder         = new SplFileInfo($returnedDataFolderPath);
-        $dataFileNameTemplate       = 'answer_data_{FILE_NUMBER}';
-        $dataFileIndex              = 1;
-
-        if (!$returnedDataFolder->isDir())
-        {
-            @mkdir($returnedDataFolder->getPathname(), 0777, true);
-        }
-        if (!$returnedDataFolder->isDir())
+        if (!$folder->isDir())
         {
             throw new UnderflowException;
         }
@@ -286,7 +319,7 @@ class ContractingParties1C extends AbstractParticipant
         {
             $filesIterator  = new FilesystemIterator
             (
-                $returnedDataFolder->getPathname(),
+                $folder->getPathname(),
                 FilesystemIterator::SKIP_DOTS
             );
             $dataFileIndex += iterator_count($filesIterator);
@@ -299,7 +332,7 @@ class ContractingParties1C extends AbstractParticipant
         while (true)
         {
             $dataFileName   = str_replace('{FILE_NUMBER}', $dataFileIndex, $dataFileNameTemplate);
-            $dataFilePath   = $returnedDataFolder->getPathname().DIRECTORY_SEPARATOR.$dataFileName.'.xml';
+            $dataFilePath   = $folder->getPathname().DIRECTORY_SEPARATOR.$dataFileName.'.xml';
             $dataFile       = new SplFileInfo($dataFilePath);
 
             if (!$dataFile->isFile())
@@ -313,109 +346,93 @@ class ContractingParties1C extends AbstractParticipant
         throw new UnderflowException;
     }
     /** **********************************************************************
-     * remove prepared provided XML data file
+     * get data from all files in folder
      *
-     * @param   SplFileInfo $file           prepared provided XML data file
-     * @throws  RuntimeException            removing prepared provided data file error
+     * @param   SplFileInfo $folder         folder
+     * @return  SplFileInfo[]               files
      ************************************************************************/
-    private function removePreparedProvidedDataFile(SplFileInfo $file) : void
+    private function getAllFilesInFolder(SplFileInfo $folder) : array
     {
-        $deletingSuccess = false;
-
         try
         {
-            $deletingSuccess = unlink($file->getPathname());
+            $result         = [];
+            $folderIterator = new RecursiveDirectoryIterator
+            (
+                $folder->getPathname(),
+                FilesystemIterator::SKIP_DOTS
+            );
+
+            while ($folderIterator->valid())
+            {
+                $file = $folderIterator->current();
+
+                if ($file->isFile() && $file->isReadable())
+                {
+                    $result[] = $file;
+                }
+
+                $folderIterator->next();
+            }
+
+            return $result;
         }
-        catch (Throwable $exception)
+        catch (UnexpectedValueException $exception)
         {
+            return [];
+        }
+    }
+    /** **********************************************************************
+     * replace file to folder
+     *
+     * @param   SplFileInfo $file           file
+     * @param   SplFileInfo $folder         folder
+     * @return  void
+     * @throws  RuntimeException            file replacing error
+     ************************************************************************/
+    private function replaceFileToFolder(SplFileInfo $file, SplFileInfo $folder) : void
+    {
+        $fileOldPath    = $file->getPathname();
+        $fileNewPath    = $folder->getPathname().DIRECTORY_SEPARATOR.$file->getFilename();
 
+        if (!$folder->isDir())
+        {
+            @mkdir($folder->getPathname(), 0777, true);
+        }
+        if (!$folder->isDir())
+        {
+            $folderPath = $folder->getPathname();
+            throw new RuntimeException("unable to create folder \"$folderPath\"");
         }
 
-        if (!$deletingSuccess)
+        $renameResult = @rename($fileOldPath, $fileNewPath);
+        if (!$renameResult)
+        {
+            throw new RuntimeException("moving file from \"$fileOldPath\" to \"$fileNewPath\" failed");
+        }
+    }
+    /** **********************************************************************
+     * remove file
+     *
+     * @param   SplFileInfo $file           file
+     * @return  void
+     * @throws  RuntimeException            file removing error
+     ************************************************************************/
+    private function removeFile(SplFileInfo $file) : void
+    {
+        if (!@unlink($file->getPathname()))
         {
             throw new RuntimeException;
         }
     }
     /** **********************************************************************
-     * processing provided imploded XML data file
+     * save data into folder
      *
-     * @param   SplFileInfo $file           provided imploded XML data file
-     * @throws  RuntimeException            processing provided imploded data file error
+     * @param   SplFileInfo $folder         folder
+     * @param   array       $data           data
+     * @return  void
+     * @throws  RuntimeException            data saving error
      ************************************************************************/
-    private function processingProvidedImplodedDataFile(SplFileInfo $file) : void
-    {
-        try
-        {
-            $xmlData                    = (new XML)->readFromFile($file);
-            $xmlData                    = array_values(array_pop($xmlData));
-            $config                     = Config::getInstance();
-            $tempFolderParam            = $config->getParam('structure.tempFolder');
-            $companiesDataFolderParam   = $config->getParam('participants.contractingparties.companies.1c.receivedDataPath');
-            $contactsDataFolderParam    = $config->getParam('participants.contractingparties.contacts.1c.receivedDataPath');
-            $requisitesDataFolderParam  = $config->getParam('participants.contractingparties.requisites.1c.receivedDataPath');
-            $addressesDataFolderParam   = $config->getParam('participants.contractingparties.addresses.1c.receivedDataPath');
-            $tempFolderPath             = DOCUMENT_ROOT.DIRECTORY_SEPARATOR.$tempFolderParam;
-            $companiesDataFolder        = new SplFileInfo($tempFolderPath.DIRECTORY_SEPARATOR.$companiesDataFolderParam);
-            $contactsDataFolder         = new SplFileInfo($tempFolderPath.DIRECTORY_SEPARATOR.$contactsDataFolderParam);
-            $requisitesDataFolder       = new SplFileInfo($tempFolderPath.DIRECTORY_SEPARATOR.$requisitesDataFolderParam);
-            $addressesDataFolder        = new SplFileInfo($tempFolderPath.DIRECTORY_SEPARATOR.$addressesDataFolderParam);
-            $companiesData              = [];
-            $contactsData               = [];
-            $requisitesData             = [];
-            $addressData                = [];
-
-            foreach ($xmlData as $item)
-            {
-                if (is_array($item))
-                {
-                    $item                   = $this->validateImplodedItemData($item);
-                    $companyData            = $this->extractCompanyData($item);
-                    $companyContactsData    = $this->extractCompanyContactsData($item);
-                    $companyRequisitesData  = $this->extractCompanyRequisitesData($item);
-                    $companyAddressData     = $this->extractCompanyAddressesData($item);
-
-                    if (count($companyData) > 0)
-                    {
-                        $companiesData[] = $companyData;
-                    }
-                    if (count($companyContactsData) > 0)
-                    {
-                        $contactsData = array_merge($contactsData, $companyContactsData);
-                    }
-                    if (count($companyRequisitesData) > 0)
-                    {
-                        $requisitesData = array_merge($requisitesData, $companyRequisitesData);
-                    }
-                    if (count($companyAddressData) > 0)
-                    {
-                        $addressData = array_merge($addressData, $companyAddressData);
-                    }
-                }
-            }
-
-            $this->saveExtractedData($companiesDataFolder, $companiesData);
-            $this->saveExtractedData($contactsDataFolder, $contactsData);
-            $this->saveExtractedData($requisitesDataFolder, $requisitesData);
-            $this->saveExtractedData($addressesDataFolder, $addressData);
-            $this->markProvidedImplodedDataFileAsProcessed($file);
-        }
-        catch (ParseDataException $exception)
-        {
-            throw new RuntimeException($exception->getMessage());
-        }
-        catch (RuntimeException $exception)
-        {
-            throw $exception;
-        }
-    }
-    /** **********************************************************************
-     * save extracted data
-     *
-     * @param   SplFileInfo $folder         folder for saving data file
-     * @param   array       $data           extracted data
-     * @throws  RuntimeException            saving extracted data error
-     ************************************************************************/
-    private function saveExtractedData(SplFileInfo $folder, array $data) : void
+    private function saveDataIntoFolder(SplFileInfo $folder, array $data) : void
     {
         $dataFileNameTemplate   = 'data_{FILE_NUMBER}';
         $dataFileIndex          = 1;
@@ -472,103 +489,6 @@ class ContractingParties1C extends AbstractParticipant
         }
     }
     /** **********************************************************************
-     * construct imploded data for delivery
-     *
-     * @param   array $companyData          company data
-     * @return  array                       imploded data for delivery
-     * @throws  UnexpectedValueException    saving extracted data error
-     ************************************************************************/
-    private function constructImplodedDataForDelivery(array $companyData) : array
-    {
-        return [];
-    }
-    /** **********************************************************************
-     * validate imploded item data
-     *
-     * @param   array $itemData             imploded item data
-     * @return  array                       validated imploded item data
-     ************************************************************************/
-    private function validateImplodedItemData(array $itemData) : array
-    {
-        $workFieldsStrings          =
-            [
-                'Ид', 'ПометкаУдаления', 'Наименование',
-                'Роль', 'ИНН', 'КодПоОКПО',
-                'ЮрФизЛицо', 'ПолноеНаименование', 'Руководитель',
-                'ОсновнойВидДеятельности', 'ОсновнойМенеджер', 'Комментарий',
-                'Документ', 'КемВыдано' , 'ДатаВыдачи'
-            ];
-        $workFieldsArrays           =
-            [
-                'Контакты', 'Представители'
-            ];
-        $contactsWorkFieldsStrings  =
-            [
-                'Тип', 'Представление'
-            ];
-        $peopleWorkFieldsStrings    =
-            [
-                'Ид',
-                'Фамилия', 'Имя', 'Отчество',
-                'ДатаРождения', 'Должность'
-            ];
-
-        foreach ($workFieldsStrings as $field)
-        {
-            if (!array_key_exists($field, $itemData))
-            {
-                $itemData[$field] = '';
-            }
-        }
-        foreach ($workFieldsArrays as $field)
-        {
-            if (!array_key_exists($field, $itemData) || !is_array($itemData[$field]))
-            {
-                $itemData[$field] = [];
-            }
-        }
-
-        foreach ($itemData['Контакты'] as $index => $contactData)
-        {
-            foreach ($contactsWorkFieldsStrings as $field)
-            {
-                if (!array_key_exists($field, $contactData))
-                {
-                    $itemData['Контакты'][$index][$field] = '';
-                }
-            }
-        }
-
-        foreach ($itemData['Представители'] as $index => $peopleData)
-        {
-            foreach ($peopleWorkFieldsStrings as $field)
-            {
-                if (!array_key_exists($field, $peopleData))
-                {
-                    $itemData['Представители'][$index][$field] = '';
-                }
-            }
-            $itemData['Представители'][$index]['Контакты'] =
-                array_key_exists('Контакты', $peopleData) &&
-                is_array($peopleData['Контакты'])
-                    ? $peopleData['Контакты']
-                    : [];
-
-            foreach ($itemData['Представители'][$index]['Контакты'] as $subIndex => $contactData)
-            {
-                foreach ($contactsWorkFieldsStrings as $field)
-                {
-                    if (!array_key_exists($field, $contactData))
-                    {
-                        $itemData['Представители'][$index]['Контакты'][$subIndex][$field] = '';
-                    }
-                }
-            }
-        }
-
-        return $itemData;
-    }
-    /** **********************************************************************
      * extract company data
      *
      * @param   array $itemData             common item data
@@ -576,65 +496,32 @@ class ContractingParties1C extends AbstractParticipant
      ************************************************************************/
     private function extractCompanyData(array $itemData) : array
     {
-        $companyTypes           =
-            [
-                'Покупатель'    => 'CUSTOMER',
-                'Поставщик'     => 'PROVIDER',
-                'Конкурент'     => 'COMPETITOR',
-                'Партенр'       => 'PARTNER'
-            ];
-        $companyDefaultType     = 'OTHER';
-        $companyScopes          =
-            [
-                'Информационные технологии' => 'INFORMATION_TECHNOLOGY',
-                'Производство'              => 'PRODUCTION',
-                'Финансы'                   => 'FINANCE'
-            ];
-        $companyDefaultScope    = 'OTHER';
-        $companyPhones          = [];
-        $companyEmails          = [];
-        $companySites           = [];
-
-        foreach ($itemData['Контакты'] as $contactData)
-        {
-            $contactValue = $contactData['Представление'];
-            switch ($contactData['Тип'])
-            {
-                case 'Телефон контрагента':
-                    $companyPhones[] = "$contactValue|Мобильный";
-                    break;
-                case 'Факс':
-                    $companyPhones[] = "$contactValue|Факс";
-                    break;
-                case 'Электронная почта':
-                    $companyEmails[] = $contactValue;
-                    break;
-                case 'Сайт компании':
-                    $companySites[] = $contactValue;
-                    break;
-                default:
-            }
-        }
+        $companyId      = (string)  ($itemData['Ид']                        ?? '');
+        $markDelete     = (string)  ($itemData['ПометкаУдаления']           ?? '');
+        $typeRaw        = (string)  ($itemData['Роль']                      ?? '');
+        $scopeRaw       = (string)  ($itemData['ОсновнойВидДеятельности']   ?? '');
+        $contactsRaw    = (array)   ($itemData['Контакты']                  ?? []);
+        $type           = array_search($typeRaw,    self::$companiesTypes);
+        $scope          = array_search($scopeRaw,   self::$companiesScopes);
+        $type           = $type  !== false  ? $type     : '';
+        $scope          = $scope !== false  ? $scope    : '';
+        $contacts       = $this->getContactsData($contactsRaw);
 
         return
             [
-                'Ид'                        => $itemData['Ид'],
-                'ИдКонтрагента1С'           => $itemData['Ид'],
-                'Активность'                => $itemData['ПометкаУдаления'] == 'false' ? 'Y' : 'N',
-                'Наименование'              => $itemData['Наименование'],
-                'Роль'                      => array_key_exists($itemData['Роль'], $companyTypes)
-                    ? $companyTypes[$itemData['Роль']]
-                    : $companyDefaultType,
-                'ОсновнойВидДеятельности'   => array_key_exists($itemData['ОсновнойВидДеятельности'], $companyScopes)
-                    ? $companyScopes[$itemData['Роль']]
-                    : $companyDefaultScope,
-                'ОсновнойМенеджер'          => $itemData['ОсновнойМенеджер'],
-                'Телефон'                   => $companyPhones,
-                'ЭлектроннаяПочта'          => $companyEmails,
-                'Сайт'                      => $companySites,
-                'Комментарий'               => $itemData['Комментарий'],
-                'ИНН'                       => $itemData['ИНН'],
-                'КодПоОКПО'                 => $itemData['КодПоОКПО']
+                'Ид'                        => $companyId,
+                'ИдКонтрагента1С'           => $companyId,
+                'Активность'                => $markDelete != 'true',
+                'Наименование'              => (string) ($itemData['Наименование']      ?? ''),
+                'Роль'                      => $type,
+                'ОсновнойВидДеятельности'   => $scope,
+                'ОсновнойМенеджер'          => (string) ($itemData['ОсновнойМенеджер']  ?? ''),
+                'Телефон'                   => $contacts['phone'],
+                'ЭлектроннаяПочта'          => $contacts['email'],
+                'Сайт'                      => $contacts['site'],
+                'Комментарий'               => (string) ($itemData['Комментарий']       ?? ''),
+                'ИНН'                       => (string) ($itemData['ИНН']               ?? ''),
+                'КодПоОКПО'                 => (string) ($itemData['КодПоОКПО']         ?? '')
             ];
     }
     /** **********************************************************************
@@ -645,48 +532,25 @@ class ContractingParties1C extends AbstractParticipant
      ************************************************************************/
     private function extractCompanyContactsData(array $itemData) : array
     {
-        $result = [];
+        $companyId  = (string)  ($itemData['Ид']            ?? '');
+        $people     = (array)   ($itemData['Представители'] ?? []);
+        $result     = [];
 
-        foreach ($itemData['Представители'] as $peopleData)
+        foreach ($people as $peopleData)
         {
-            $peoplePhones   = [];
-            $peopleEmails   = [];
-            $peopleSites    = [];
-
-            foreach ($peopleData['Контакты'] as $peopleContactData)
-            {
-                $value = $peopleContactData['Представление'];
-                switch ($peopleContactData['Тип'])
-                {
-                    case 'Телефон контрагента':
-                        $peoplePhones[] = "$value|Телефон";
-                        break;
-                    case 'Факс':
-                        $peoplePhones[] = "$value|Факс";
-                        break;
-                    case 'e-mail':
-                        $peopleEmails[] = $value;
-                        break;
-                    case 'Сайт компании':
-                        $peopleSites[] = $value;
-                        break;
-                    default:
-                }
-            }
-
-            $result[] =
+            $contacts   = $this->getContactsData((array) $peopleData['Контакты']);
+            $result[]   =
                 [
-                    'Ид'                        => $peopleData['Ид'],
-                    'ИдКонтактаКонтрагента1С'   => $peopleData['Ид'],
-                    'ИдКонтрагента1С'           => $itemData['Ид'],
-                    'Фамилия'                   => $peopleData['Фамилия'],
-                    'Имя'                       => $peopleData['Имя'],
-                    'Отчество'                  => $peopleData['Отчество'],
-                    'ДатаРождения'              => $peopleData['ДатаРождения'],
-                    'Телефон'                   => $peoplePhones,
-                    'ЭлектроннаяПочта'          => $peopleEmails,
-                    'Сайт'                      => $peopleSites,
-                    'Должность'                 => $peopleData['Должность']
+                    'Ид'                        => (string) ($peopleData['Ид']              ?? ''),
+                    'ИдКонтрагента1С'           => $companyId,
+                    'Фамилия'                   => (string) ($peopleData['Фамилия']         ?? ''),
+                    'Имя'                       => (string) ($peopleData['Имя']             ?? ''),
+                    'Отчество'                  => (string) ($peopleData['Отчество']        ?? ''),
+                    'ДатаРождения'              => (string) ($peopleData['ДатаРождения']    ?? ''),
+                    'Телефон'                   => $contacts['phone'],
+                    'ЭлектроннаяПочта'          => $contacts['email'],
+                    'Сайт'                      => $contacts['site'],
+                    'Должность'                 => (string) ($peopleData['Должность']       ?? '')
                 ];
         }
 
@@ -700,46 +564,87 @@ class ContractingParties1C extends AbstractParticipant
      ************************************************************************/
     private function extractCompanyRequisitesData(array $itemData) : array
     {
-        $companyId  = $itemData['Ид'];
-        $result     = [];
+        $companyId          = (string)  ($itemData['Ид']                    ?? '');
+        $fullName           = (string)  ($itemData['ПолноеНаименование']    ?? '');
+        $requisiteType      = (string)  ($itemData['ЮрФизЛицо']             ?? '');
+        $people             = (array)   ($itemData['Представители']         ?? []);
+        $companyRequisiteId = $this->getRequisiteId('company', $companyId, $requisiteType, 1);
+        $result             = [];
 
-        switch ($itemData['ЮрФизЛицо'])
+        switch ($requisiteType)
         {
             case 'ЮрЛицо':
-                $requisiteId    = "company-$companyId|UR-1";
-                $result[]       =
+                $result[] =
                     [
-                        'Ид'                        => $requisiteId,
-                        'ИдРеквизитаКонтрагента1С'  => $requisiteId,
-                        'ИдКонтрагента1С'           => $companyId,
-                        'Тип'                       => 'UR',
-                        'ИНН'                       => $itemData['ИНН'],
-                        'КодПоОКПО'                 => $itemData['КодПоОКПО'],
-                        'Наименование'              => $itemData['Наименование'],
-                        'ПолноеНаименование'        => $itemData['ПолноеНаименование'],
-                        'Директор'                  => $itemData['Руководитель']
+                        'Ид'                    => $companyRequisiteId,
+                        'ИдКонтрагента1С'       => $companyId,
+                        'Тип'                   => $requisiteType,
+                        'ИНН'                   => (string) ($itemData['ИНН']           ?? ''),
+                        'КодПоОКПО'             => (string) ($itemData['КодПоОКПО']     ?? ''),
+                        'Наименование'          => (string) ($itemData['Наименование']  ?? ''),
+                        'ПолноеНаименование'    => $fullName,
+                        'Директор'              => (string) ($itemData['Руководитель']  ?? '')
                     ];
                 break;
             case 'ФизЛицо':
-                $requisiteId        = "company-$companyId|FIZ-1";
-                $nameExplode        = explode(' ', $itemData['ПолноеНаименование']);
-                $passportExplode    = explode(' ', $itemData['Документ']);
+                $nameExplode        = explode(' ', $fullName);
+                $lastName           = $nameExplode[0]       ?? '';
+                $name               = $nameExplode[1]       ?? '';
+                $secondName         = $nameExplode[2]       ?? '';
+                $passportRaw        = (string) ($itemData['Документ'] ?? '');
+                $passportExplode    = explode(' ', $passportRaw);
+                $passportSeries     = $passportExplode[0]   ?? '';
+                $passportNumber     = $passportExplode[1]   ?? '';
                 $result[]           =
                     [
-                        'Ид'                        => $requisiteId,
-                        'ИдРеквизитаКонтрагента1С'  => $requisiteId,
-                        'ИдКонтрагента1С'           => $companyId,
-                        'Тип'                       => 'FIZ',
-                        'Фамилия'                   => $nameExplode[0],
-                        'Имя'                       => $nameExplode[1],
-                        'Отчество'                  => $nameExplode[2],
-                        'Серия'                     => $passportExplode[0],
-                        'Номер'                     => $passportExplode[1],
-                        'КемВыдано'                 => $itemData['КемВыдано'],
-                        'ДатаВыдачи'                => $itemData['ДатаВыдачи']
+                        'Ид'                => $companyRequisiteId,
+                        'ИдКонтрагента1С'   => $companyId,
+                        'Тип'               => $requisiteType,
+                        'Фамилия'           => $lastName,
+                        'Имя'               => $name,
+                        'Отчество'          => $secondName,
+                        'Серия'             => $passportSeries,
+                        'Номер'             => $passportNumber,
+                        'КемВыдано'         => (string) ($itemData['КемВыдано']     ?? ''),
+                        'ДатаВыдачи'        => (string) ($itemData['ДатаВыдачи']    ?? '')
                     ];
                 break;
             default:
+        }
+
+        foreach ($people as $peopleData)
+        {
+            $peopleId       = (string)  ($peopleData['Ид']          ?? '');
+            $peopleContacts = (array)   ($peopleData['Контакты']    ?? []);
+            $peopleContacts = array_values($peopleContacts);
+
+            foreach ($peopleContacts as $contactIndex => $contactData)
+            {
+                $contactType    = (string) ($contactData['Тип'] ?? '');
+                $requisiteType  = '';
+
+                switch ($contactType)
+                {
+                    case 'юридический адрес':
+                        $requisiteType  = 'ЮрЛицо';
+                        break;
+                    case 'физический адрес':
+                        $requisiteType  = 'ФизЛицо';
+                        break;
+                    default:
+                }
+
+                if (strlen($requisiteType) > 0)
+                {
+                    $requisiteId    = $this->getRequisiteId('contact', $peopleId, $requisiteType, $contactIndex + 1);
+                    $result[]       =
+                        [
+                            'Ид'                        => $requisiteId,
+                            'ИдКонтактаКонтрагента1С'   => $peopleId,
+                            'Тип'                       => $requisiteType
+                        ];
+                }
+            }
         }
 
         return $result;
@@ -752,94 +657,479 @@ class ContractingParties1C extends AbstractParticipant
      ************************************************************************/
     private function extractCompanyAddressesData(array $itemData) : array
     {
-        $companyId              = $itemData['Ид'];
-        $companyAddressTypes    =
-            [
-                'Юридический адрес контрагента' => 'UR',
-                'Физический адрес контрагента'  => 'FIZ',
-            ];
-        $addressFields          =
-            [
-                'Страна'            => 'Страна',
-                'Почтовый индекс'   => 'ПочтовыйИндекс',
-                'Регион'            => 'Область',
-                'Город'             => 'Город',
-                'Улица'             => 'Улица',
-                'Квартира'          => 'Квартира'
-            ];
-        $addressData            =
-            [
-                'company'   => [],
-                'people'    => []
-            ];
-        $result                 = [];
+        $addresses  = $this->getAddressesData($itemData);
+        $result     = [];
 
-        foreach ($itemData['Контакты'] as $contactData)
+        foreach ($addresses as $addressData)
         {
-            if (array_key_exists($contactData['Тип'], $companyAddressTypes))
+            $addressExtractedData =
+                [
+                    'Страна'            => '',
+                    'Почтовый индекс'   => '',
+                    'Регион'            => '',
+                    'Город'             => '',
+                    'Улица'             => '',
+                    'Квартира'          => ''
+                ];
+
+            foreach ($addressData as $itemValue)
             {
-                if (!array_key_exists($companyId, $addressData['company']))
+                if (is_array($itemValue))
                 {
-                    $addressData['company'][$companyId] = [];
-                }
-
-                $addressData['company'][$companyId][] = $contactData;
-            }
-        }
-
-        foreach ($itemData['Представители'] as $index => $peopleData)
-        {
-            foreach ($peopleData['Контакты'] as $contactData)
-            {
-                if (array_key_exists($contactData['Тип'], $companyAddressTypes))
-                {
-                    if (!array_key_exists($peopleData['Ид'], $addressData['company']))
-                    {
-                        $addressData['people'][$peopleData['Ид']] = [];
-                    }
-
-                    $addressData['people'][$peopleData['Ид']][] = $contactData;
+                    $index                          = (string)  ($itemValue['Тип']      ?? '');
+                    $value                          = (string)  ($itemValue['Значение'] ?? '');
+                    $addressExtractedData[$index]   = $value;
                 }
             }
+
+            $result[] =
+                [
+                    'ИдРеквизитаКонтрагента1С'  => (string) ($addressData['ИдРеквизитаКонтрагента1С']   ?? ''),
+                    'Тип'                       => (string) ($addressData['Тип']                        ?? ''),
+                    'Страна'                    => $addressExtractedData['Страна'],
+                    'ПочтовыйИндекс'            => $addressExtractedData['Почтовый индекс'],
+                    'Область'                   => $addressExtractedData['Регион'],
+                    'Город'                     => $addressExtractedData['Город'],
+                    'Улица'                     => $addressExtractedData['Улица'],
+                    'Квартира'                  => $addressExtractedData['Квартира']
+                ];
         }
 
-        foreach ($addressData as $parentType => $addressTypeData)
+        return $result;
+    }
+    /** **********************************************************************
+     * get item contacts data
+     *
+     * @param   array $data                 item data
+     * @return  array                       contacts data
+     * @example
+     * [
+     *      'phone' => [phone, phone, phone],
+     *      'email' => [email, email, email],
+     *      'site'  => [site, site, site]
+     * ]
+     ************************************************************************/
+    private function getContactsData(array $data) : array
+    {
+        $result =
+            [
+                'phone' => [],
+                'email' => [],
+                'site'  => []
+            ];
+
+        foreach ($data as $itemData)
         {
-            foreach ($addressTypeData as $parentId => $parentAddresses)
+            $value  = (string)  ($itemData['Представление'] ?? '');
+            $type   = (string)  ($itemData['Тип']           ?? '');
+
+            if (strlen($value) > 0)
             {
-                foreach ($parentAddresses as $itemIndex => $itemData)
+                switch ($type)
                 {
-                    $addressIndex   = $itemIndex + 1;
-                    $addressType    = $companyAddressTypes[$itemData['Тип']];
-                    $addressId      = "$parentType-$parentId|$addressType-$addressIndex";
-                    $addressData    =
-                        [
-                            'Ид'                        => $addressId,
-                            'ИдАдресаКонтрагента1С'     => $addressId,
-                            'ИдКонтрагента1С'           => $companyId,
-                            'ИдКонтактаКонтрагента1С'   => '',
-                            'Тип'                       => $addressType
-                        ];
-
-                    foreach ($itemData as $index => $value)
-                    {
-                        if
-                        (
-                            is_array($value)                                &&
-                            array_key_exists('Тип', $value)                 &&
-                            array_key_exists($value['Тип'], $addressFields) &&
-                            array_key_exists('Значение', $value)
-                        )
-                        {
-                            $addressData[$addressFields[$value['Тип']]] = $value['Значение'];
-                        }
-                    }
-
-                    $result[] = $addressData;
+                    case 'Телефон контрагента':
+                        $result['phone'][] = "$value|MOBILE";
+                        break;
+                    case 'Факс':
+                        $result['phone'][] = "$value|FAX";
+                        break;
+                    case 'Электронная почта':
+                        $result['email'][] = $value;
+                        break;
+                    case 'Сайт компании':
+                        $result['site'][] = $value;
+                        break;
+                    default:
                 }
             }
         }
 
         return $result;
+    }
+    /** **********************************************************************
+     * get item addresses data
+     *
+     * @param   array $itemData             common item data
+     * @return  array                       addresses data
+     ************************************************************************/
+    private function getAddressesData(array $itemData) : array
+    {
+        $companyId  = (string)  ($itemData['Ид']            ?? '');
+        $contacts   = (array)   ($itemData['Контакты']      ?? []);
+        $people     = (array)   ($itemData['Представители'] ?? []);
+        $result     = [];
+
+        foreach ($contacts as $contactData)
+        {
+            $contactTypeRaw = (string) ($contactData['Тип'] ?? '');
+            $contactType    = '';
+            $requisiteType  = '';
+
+            switch ($contactTypeRaw)
+            {
+                case 'Юридический адрес контрагента':
+                    $contactType    = 'Юридический адрес';
+                    $requisiteType  = 'ЮрЛицо';
+                    break;
+                case 'Физический адрес контрагента':
+                    $contactType    = 'Юридический адрес';
+                    $requisiteType  = 'ФизЛицо';
+                    break;
+                default:
+            }
+
+            if (strlen($contactType) > 0 && strlen($contactType) > 0)
+            {
+                $contactData    = is_array($contactData) ? $contactData : [];
+                $requisiteId    = $this->getRequisiteId('company', $companyId, $requisiteType, 1);
+
+                $contactData['Тип']                         = $contactType;
+                $contactData['ИдРеквизитаКонтрагента1С']    = $requisiteId;
+
+                $result[$requisiteId] = $contactData;
+            }
+        }
+
+        foreach ($people as $peopleData)
+        {
+            $peopleId       = (string)  ($peopleData['Тип']         ?? '');
+            $peopleContacts = (array)   ($peopleData['Контакты']    ?? []);
+            $peopleContacts = array_values($peopleContacts);
+
+            foreach ($peopleContacts as $contactIndex => $contactData)
+            {
+                $contactTypeRaw = (string) ($contactData['Тип'] ?? '');
+                $contactType    = '';
+                $requisiteType  = '';
+
+                switch ($contactTypeRaw)
+                {
+                    case 'юридический адрес':
+                        $contactType    = 'Юридический адрес';
+                        $requisiteType  = 'ЮрЛицо';
+                        break;
+                    case 'физический адрес':
+                        $contactType    = 'Юридический адрес';
+                        $requisiteType  = 'ФизЛицо';
+                        break;
+                    default:
+                }
+
+                if (strlen($contactType) > 0 && strlen($contactType) > 0)
+                {
+                    $contactData    = is_array($contactData) ? $contactData : [];
+                    $requisiteId    = $this->getRequisiteId('contact', $peopleId, $requisiteType, $contactIndex + 1);
+
+                    $contactData['Тип']                         = $contactType;
+                    $contactData['ИдРеквизитаКонтрагента1С']    = $requisiteId;
+
+                    $result[$requisiteId] = $contactData;
+                }
+            }
+        }
+
+        return array_values($result);
+    }
+    /** **********************************************************************
+     * get requisite ID
+     *
+     * @param   string  $parentType         parent type
+     * @param   string  $parentId           parent ID
+     * @param   string  $requisiteType      requisite type
+     * @param   int     $index              requisite index
+     * @return  string                      requisite ID
+     ************************************************************************/
+    private function getRequisiteId(string $parentType, string $parentId, string $requisiteType, int $index) : string
+    {
+        return "$parentType-$parentId|$requisiteType-$index";
+    }
+    /** **********************************************************************
+     * combine companies collected data
+     *
+     * @param   array $data                 companies collected data
+     * @return  array                       companies combined data
+     ************************************************************************/
+    private function combineCollectedData(array $data) : array
+    {
+        $companiesData  = array_values($data['companies']);
+        $contactsData   = [];
+        $requisitesData = [];
+        $addressesData  = [];
+
+        foreach ($data['contacts'] as $contactData)
+        {
+            $companyId                  = (string) ($contactData['ИдКонтрагента1С'] ?? '');
+            $contactsData[$companyId]   = $contactsData[$companyId] ?? [];
+            $contactsData[$companyId][] = $contactData;
+        }
+
+        foreach ($data['requisites'] as $requisiteData)
+        {
+            $companyId                      = (string)  ($requisiteData['ИдКонтрагента1С']          ?? '');
+            $contactId                      = (string)  ($requisiteData['ИдКонтактаКонтрагента1С']  ?? '');
+            $parentId                       = strlen($contactId) > 0 ? $contactId : $companyId;
+            $requisitesData[$parentId]      = $requisitesData[$parentId] ?? [];
+            $requisitesData[$parentId][]    = $requisiteData;
+        }
+
+        foreach ($data['addresses'] as $addressData)
+        {
+            $companyId                  = (string)  ($addressData['ИдКонтрагента1С']            ?? '');
+            $contactId                  = (string)  ($addressData['ИдКонтактаКонтрагента1С']    ?? '');
+            $parentId                   = strlen($contactId) > 0 ? $contactId : $companyId;
+            $addressesData[$parentId]   = $addressesData[$parentId] ?? [];
+            $addressesData[$parentId][] = $addressData;
+        }
+
+        foreach ($companiesData as $companyIndex => $companyData)
+        {
+            $companyId              = $companyData['Ид'];
+            $companyRequisites      = $requisitesData[$companyId] ?? [];
+            $companyAddresses       = $addressesData[$companyId]  ?? [];
+            $companyContacts        = $contactsData[$companyId]   ?? [];
+
+            foreach ($companyContacts as $contactIndex => $contactData)
+            {
+                $contactId                                      = $contactData['Ид'];
+                $companyContacts[$contactIndex]['Реквизиты']    = $requisitesData[$contactId]   ?? [];
+                $companyContacts[$contactIndex]['Адреса']       = $addressesData[$contactId]    ?? [];
+            }
+
+            $companiesData[$companyIndex]['Реквизиты']  = $companyRequisites;
+            $companiesData[$companyIndex]['Адреса']     = $companyAddresses;
+            $companiesData[$companyIndex]['Контакты']   = $companyContacts;
+        }
+
+        return $companiesData;
+    }
+    /** **********************************************************************
+     * construct companies imploded data
+     *
+     * @param   array $data                 companies collected data
+     * @return  array                       companies imploded data
+     ************************************************************************/
+    private function constructImplodedData(array $data) : array
+    {
+        $result                 = [];
+        $validateRequisitesData = function($value)
+        {
+            $indexes =
+                [
+                    'Тип',      'ПолноеНаименование',   'Директор',
+                    'Фамилия',  'Имя',                  'Отчество'
+                ];
+
+            foreach ($indexes as $index)
+            {
+                $value[$index] = (string) ($value[$index] ?? '');
+            }
+
+            return $value;
+        };
+
+        foreach ($data as $itemData)
+        {
+            $type               = self::$companiesTypes[$itemData['Роль']]                      ??  '';
+            $scope              = self::$companiesScopes[$itemData['ОсновнойВидДеятельности']]  ??  '';
+            $communicationsData = $this->constructItemCommunicationsData($itemData);
+            $contactsData       = $this->constructCompanyContactsData($itemData);
+            $requisites         = array_map($validateRequisitesData, (array) $itemData['Реквизиты']);
+            $entityType         = '';
+            $fullName           = '';
+            $directorName       = '';
+
+            foreach ($requisites as $requisiteData)
+            {
+                switch ($requisiteData['Тип'])
+                {
+                    case 'UR':
+                        $entityType     = 'ЮрЛицо';
+                        $fullName       = $requisiteData['ПолноеНаименование'];
+                        $directorName   = $requisiteData['Директор'];
+                        break;
+                    case 'FIZ':
+                        $entityType     = 'ФизЛицо';
+                        $fullNameParts  =
+                            [
+                                $requisiteData['Фамилия'],
+                                $requisiteData['Имя'],
+                                $requisiteData['Отчество']
+                            ];
+                        $fullName       = trim(implode(' ', $fullNameParts));
+                        $directorName   = $requisiteData['Директор'];
+                        break;
+                    default:
+                }
+            }
+
+            $result[] =
+                [
+                    'Ид'                        => $itemData['Ид'],
+                    'ПометкаУдаления'           => $itemData['Активность'] ? 'false' : 'true',
+                    'Наименование'              => $itemData['Наименование'],
+                    'Роль'                      => $type,
+                    'ОсновнойВидДеятельности'   => $scope,
+                    'ОсновнойМенеджер'          => $itemData['ОсновнойМенеджер'],
+                    'Комментарий'               => $itemData['Комментарий'],
+                    'ИНН'                       => $itemData['ИНН'],
+                    'КодПоОКПО'                 => $itemData['КодПоОКПО'],
+                    'ПолноеНаименование'        => $fullName,
+                    'ЮрФизЛицо'                 => $entityType,
+                    'Руководитель'              => $directorName,
+                    'Контакты'                  => $communicationsData,
+                    'Представители'             => $contactsData
+                ];
+        }
+
+        return $result;
+    }
+    /** **********************************************************************
+     * construct company communications data
+     *
+     * @param   array $data                 company item data
+     * @return  array                       company item communications data
+     ************************************************************************/
+    private function constructItemCommunicationsData(array $data) : array
+    {
+        $phones     = $this->filterNotEmptyStrings((array) $data['Телефон']);
+        $emails     = $this->filterNotEmptyStrings((array) $data['ЭлектроннаяПочта']);
+        $sites      = $this->filterNotEmptyStrings((array) $data['Сайт']);
+        $addresses  = $this->filterNotEmptyArrays((array) $data['Адреса']);
+        $result     = [];
+
+        foreach ($phones as $phone)
+        {
+            $valueExplode   = explode('|', $phone);
+            $value          = $valueExplode[0]  ?? '';
+            $type           = $valueExplode[1]  ?? '';
+
+            switch ($type)
+            {
+                case 'FAX':
+                    $result[] =
+                        [
+                            'Тип'           => 'Факс',
+                            'Представление' => $value
+                        ];
+                    break;
+                default:
+                    $result[] =
+                        [
+                            'Тип'           => 'Телефон контрагента',
+                            'Представление' => $value
+                        ];
+            }
+        }
+        foreach ($emails as $email)
+        {
+            $result[] =
+                [
+                    'Тип'           => 'Электронная почта',
+                    'Представление' => $email
+                ];
+        }
+        foreach ($sites as $site)
+        {
+            $result[] =
+                [
+                    'Тип'           => 'Сайт компании',
+                    'Представление' => $site
+                ];
+        }
+        foreach ($addresses as $addressData)
+        {
+            $result[] =
+                [
+                    'Тип' => (string) ($addressData['Тип'] ?? ''),
+                    [
+                        'Тип'       => 'Страна',
+                        'Значение'  => (string) ($addressData['Страна']         ?? '')
+                    ],
+                    [
+                        'Тип'       => 'Почтовый индекс',
+                        'Значение'  => (string) ($addressData['ПочтовыйИндекс'] ?? '')
+                    ],
+                    [
+                        'Тип'       => 'Регион',
+                        'Значение'  => (string) ($addressData['Область']        ?? '')
+                    ],
+                    [
+                        'Тип'       => 'Город',
+                        'Значение'  => (string) ($addressData['Город']          ?? '')
+                    ],
+                    [
+                        'Тип'       => 'Улица',
+                        'Значение'  => (string) ($addressData['Улица']          ?? '')
+                    ],
+                    [
+                        'Тип'       => 'Квартира',
+                        'Значение'  => (string) ($addressData['Квартира']       ?? '')
+                    ]
+                ];
+        }
+
+        return $result;
+    }
+    /** **********************************************************************
+     * construct company contacts data
+     *
+     * @param   array $data                 company item data
+     * @return  array                       company item contacts data
+     ************************************************************************/
+    private function constructCompanyContactsData(array $data) : array
+    {
+        $contacts   = $this->filterNotEmptyArrays((array) $data['Контакты']);
+        $result     = [];
+
+        foreach ($contacts as $contactData)
+        {
+            $result[] =
+                [
+                    'Отношение'     => 'Контактное лицо',
+                    'Ид'            => (string) ($contactData['Ид']             ?? ''),
+                    'Фамилия'       => (string) ($contactData['Фамилия']        ?? ''),
+                    'Имя'           => (string) ($contactData['Имя']            ?? ''),
+                    'Отчество'      => (string) ($contactData['Отчество']       ?? ''),
+                    'ДатаРождения'  => (string) ($contactData['ДатаРождения']   ?? ''),
+                    'Должность'     => (string) ($contactData['Должность']      ?? ''),
+                    'Контакты'      => $this->constructItemCommunicationsData($contactData)
+                ];
+        }
+
+        return $result;
+    }
+    /** **********************************************************************
+     * filter array and leave only not empty string
+     *
+     * @param   array $values               values
+     * @return  array                       filtered values
+     ************************************************************************/
+    private function filterNotEmptyStrings(array $values) : array
+    {
+        return array_filter
+        (
+            $values,
+            function($value)
+            {
+                return is_string($value) && strlen($value) > 0;
+            }
+        );
+    }
+    /** **********************************************************************
+     * filter array and leave only not empty arrays
+     *
+     * @param   array $values               values
+     * @return  array                       filtered values
+     ************************************************************************/
+    private function filterNotEmptyArrays(array $values) : array
+    {
+        return array_filter
+        (
+            $values,
+            function($value)
+            {
+                return is_array($value) && count($value) > 0;
+            }
+        );
     }
 }

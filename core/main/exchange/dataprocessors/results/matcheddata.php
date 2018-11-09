@@ -20,6 +20,7 @@ class MatchedData extends MapData
      * delete value by key
      *
      * @param   int $key                    value key
+     * @return  void
      ************************************************************************/
     public function delete($key) : void
     {
@@ -69,6 +70,7 @@ class MatchedData extends MapData
      *
      * @param   int         $key            value key
      * @param   MatchedItem $value          value
+     * @return  void
      * @throws  InvalidArgumentException    incorrect key or value
      ************************************************************************/
     public function set($key, $value) : void

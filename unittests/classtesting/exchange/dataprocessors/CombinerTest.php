@@ -25,6 +25,9 @@ final class CombinerTest extends AbstractTestCase
     private static $structureGenerator = null;
     /** **********************************************************************
      * construct
+     *
+     * @return void
+     * @throws
      ************************************************************************/
     public static function setUpBeforeClass() : void
     {
@@ -36,6 +39,8 @@ final class CombinerTest extends AbstractTestCase
     }
     /** **********************************************************************
      * destruct
+     *
+     * @return void
      ************************************************************************/
     public static function tearDownAfterClass() : void
     {
@@ -47,6 +52,7 @@ final class CombinerTest extends AbstractTestCase
      * check combining data process
      *
      * @test
+     * @return void
      * @throws
      ************************************************************************/
     public function combiningData() : void

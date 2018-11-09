@@ -29,6 +29,7 @@ class ParticipantsSet extends SetData
      * drop item from set
      *
      * @param   Participant $object         item for drop
+     * @return  void
      ************************************************************************/
     public function delete($object) : void
     {
@@ -38,6 +39,7 @@ class ParticipantsSet extends SetData
      * push item to set
      *
      * @param   Participant $object         pushed item
+     * @return  void
      * @throws  InvalidArgumentException    object is not Field
      ************************************************************************/
     public function push($object) :void

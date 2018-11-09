@@ -43,6 +43,7 @@ abstract class ParticipantFieldClass extends AbstractTestCase
      * check validation value process
      *
      * @test
+     * @return void
      * @throws
      ************************************************************************/
     public function validationValue() : void
@@ -101,6 +102,7 @@ abstract class ParticipantFieldClass extends AbstractTestCase
      * check converting value for print process
      *
      * @test
+     * @return void
      * @throws
      ************************************************************************/
     public function convertingValueForPrint() : void
@@ -159,6 +161,7 @@ abstract class ParticipantFieldClass extends AbstractTestCase
      * check random value
      *
      * @test
+     * @return void
      * @throws
      ************************************************************************/
     public function randomValue() : void

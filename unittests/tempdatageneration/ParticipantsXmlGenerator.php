@@ -23,6 +23,8 @@ class ParticipantsXmlGenerator
     }
     /** **********************************************************************
      * generate project temp files structure
+     *
+     * @return void
      ************************************************************************/
     public function generate() : void
     {
@@ -41,6 +43,8 @@ class ParticipantsXmlGenerator
     }
     /** **********************************************************************
      * clear temp files structure
+     *
+     * @return void
      ************************************************************************/
     public function clear() : void
     {

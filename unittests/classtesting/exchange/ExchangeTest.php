@@ -18,6 +18,7 @@ final class ExchangeTest extends AbstractTestCase
      * check Exchange is singleton
      *
      * @test
+     * @return void
      * @throws
      ************************************************************************/
     public function isSingleton() : void

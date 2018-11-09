@@ -212,7 +212,7 @@ abstract class AbstractParticipant implements Participant
 
         if (strlen($this->currentProcessDataFile) > 0)
         {
-            unlink($this->currentProcessDataFile);
+            @unlink($this->currentProcessDataFile);
         }
 
         return $this->provideDataForDelivery($dataArray);
@@ -313,7 +313,7 @@ abstract class AbstractParticipant implements Participant
      *
      * @param   array       $dataArray      data array
      * @param   FieldsSet   $fields         participant fields collection
-     * @return  Data                        extracted data
+     * @return  Data                        data
      ************************************************************************/
     private function constructData(array $dataArray, FieldsSet $fields) : Data
     {
@@ -323,23 +323,21 @@ abstract class AbstractParticipant implements Participant
         {
             if (is_array($item))
             {
-                $map = new ItemData;
-
-                foreach ($item as $key => $value)
-                {
-                    try
-                    {
-                        $field = $fields->findField($key);
-                        $map->set($field, $value);
-                    }
-                    catch (InvalidArgumentException $exception)
-                    {
-
-                    }
-                }
-
                 try
                 {
+                    $map = new ItemData;
+
+                    $fields->rewind();
+                    while ($fields->valid())
+                    {
+                        $field      = $fields->current();
+                        $fieldName  = $field->getParam('name');
+                        $value      = array_key_exists($fieldName, $item) ? $item[$fieldName] : null;
+
+                        $map->set($field, $value);
+                        $fields->next();
+                    }
+
                     $result->push($map);
                 }
                 catch (InvalidArgumentException $exception)
@@ -356,6 +354,7 @@ abstract class AbstractParticipant implements Participant
      *
      * @param   string  $code               participant code
      * @param   array   $data               provided data
+     * @return  void
      * @throws  RuntimeException            provided data saving error
      ************************************************************************/
     private function saveProvidedData(string $code, array $data) : void
@@ -417,7 +416,7 @@ abstract class AbstractParticipant implements Participant
 
             try
             {
-                (new XML())->writeToFile($dataFile, $partData);
+                (new XML)->writeToFile($dataFile, $partData);
             }
             catch (WriteDataException $exception)
             {
@@ -524,6 +523,7 @@ abstract class AbstractParticipant implements Participant
      *
      * @param   string  $message            message
      * @param   string  $type               message type
+     * @return  void
      ************************************************************************/
     private function addLogMessage(string $message, string $type) : void
     {

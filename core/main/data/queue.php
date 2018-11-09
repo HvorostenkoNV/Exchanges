@@ -23,6 +23,7 @@ interface Queue extends Data
      * push data to the end
      *
      * @param   mixed                       data
+     * @return  void
      ************************************************************************/
     public function push($data) : void;
 }

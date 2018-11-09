@@ -68,12 +68,15 @@ class Matcher
      ************************************************************************/
     public function matchItems(CollectedData $collectedData) : MatchedData
     {
-        $this->addLogMessage('start matching data', 'notice');
-
-        $result             = new MatchedData;
+        $logger             = Logger::getInstance();
+        $procedureCode      = $this->procedure->getCode();
+        $logMessagePrefix   = "Matcher for procedure \"$procedureCode\"";
         $collectedDataEmpty = true;
-        $matchedData        = $this->getMatchedItems($collectedData);
+        $result             = new MatchedData;
 
+        $logger->addNotice("$logMessagePrefix: start matching data");
+
+        $matchedData = $this->getMatchedItems($collectedData);
         foreach ($collectedData->getKeys() as $participant)
         {
             $participantCode    = $participant->getCode();
@@ -90,7 +93,7 @@ class Matcher
             }
             catch (UnknownParticipantException $exception)
             {
-                $this->addLogMessage("unknown participant \"$participantCode\" on constructing matched data", 'warning');
+                $logger->addWarning("$logMessagePrefix: unknown participant \"$participantCode\" on constructing matched data");
                 continue;
             }
 
@@ -107,13 +110,13 @@ class Matcher
                 catch (UnexpectedValueException $exception)
                 {
                     $error = $exception->getMessage();
-                    $this->addLogMessage("caught item in participant \"$participantCode\" without common ID on constructing matched data, \"$error\"", 'warning');
+                    $logger->addWarning("$logMessagePrefix: caught item in participant \"$participantCode\" without common ID on constructing matched data, \"$error\"");
                     continue;
                 }
                 catch (RuntimeException $exception)
                 {
                     $error = $exception->getMessage();
-                    $this->addLogMessage("unexpected error on constructing matched data, \"$error\"", 'warning');
+                    $logger->addWarning("$logMessagePrefix: unexpected error on constructing matched data, \"$error\"");
                     continue;
                 }
 
@@ -128,18 +131,18 @@ class Matcher
                 catch (InvalidArgumentException $exception)
                 {
                     $error = $exception->getMessage();
-                    $this->addLogMessage("unexpected error on constructing matched data, \"$error\"", 'warning');
+                    $logger->addWarning("$logMessagePrefix: unexpected error on constructing matched data, \"$error\"");
                 }
             }
         }
 
         if ($collectedDataEmpty)
         {
-            $this->addLogMessage('caught empty collected data', 'notice');
+            $logger->addNotice("$logMessagePrefix: caught empty collected data");
         }
         elseif ($result->count() <= 0)
         {
-            $this->addLogMessage('returning empty matched data while collected data is not empty', 'warning');
+            $logger->addWarning("$logMessagePrefix: returning empty matched data while collected data is not empty");
         }
 
         return $result;
@@ -768,29 +771,6 @@ class Matcher
                 return true;
             default:
                 return false;
-        }
-    }
-    /** **********************************************************************
-     * add message to log
-     *
-     * @param   string  $message                    message
-     * @param   string  $type                       message type
-     ************************************************************************/
-    private function addLogMessage(string $message, string $type) : void
-    {
-        $logger         = Logger::getInstance();
-        $procedureCode  = $this->procedure->getCode();
-        $fullMessage    = "Matcher for procedure \"$procedureCode\": $message";
-
-        switch ($type)
-        {
-            case 'warning':
-                $logger->addWarning($fullMessage);
-                break;
-            case 'notice':
-            default:
-                $logger->addNotice($fullMessage);
-                break;
         }
     }
 }

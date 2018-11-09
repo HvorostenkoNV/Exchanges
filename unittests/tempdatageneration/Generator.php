@@ -48,6 +48,7 @@ class Generator
     /** **********************************************************************
      * generate project temp data
      *
+     * @return  void
      * @throws  GenerationException                 generating error
      ************************************************************************/
     public function generate() : void
@@ -78,6 +79,8 @@ class Generator
     }
     /** **********************************************************************
      * clear project temp data
+     *
+     * @return void
      ************************************************************************/
     public function clean() : void
     {

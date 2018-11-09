@@ -21,6 +21,9 @@ final class ParticipantsTest extends AbstractTestCase
     private static $structureGenerator = null;
     /** **********************************************************************
      * construct
+     *
+     * @return void
+     * @throws
      ************************************************************************/
     public static function setUpBeforeClass() : void
     {
@@ -32,6 +35,8 @@ final class ParticipantsTest extends AbstractTestCase
     }
     /** **********************************************************************
      * destruct
+     *
+     * @return void
      ************************************************************************/
     public static function tearDownAfterClass() : void
     {
@@ -43,6 +48,7 @@ final class ParticipantsTest extends AbstractTestCase
      * check getting participant code
      *
      * @test
+     * @return void
      * @throws
      ************************************************************************/
     public function gettingCode() : void
@@ -70,6 +76,7 @@ final class ParticipantsTest extends AbstractTestCase
      * check getting participant fields
      *
      * @test
+     * @return void
      * @throws
      ************************************************************************/
     public function gettingFields() : void
@@ -115,6 +122,7 @@ final class ParticipantsTest extends AbstractTestCase
      * check participant getting provided data
      *
      * @test
+     * @return void
      * @throws
      ************************************************************************/
     public function gettingProvidedData() : void
@@ -166,6 +174,7 @@ final class ParticipantsTest extends AbstractTestCase
      *
      * @test
      * @depends gettingProvidedData
+     * @return  void
      * @throws
      ************************************************************************/
     public function gettingIncorrectProvidedData() : void
@@ -197,6 +206,7 @@ final class ParticipantsTest extends AbstractTestCase
      *
      * @test
      * @depends gettingProvidedData
+     * @return  void
      * @throws
      ************************************************************************/
     public function providingData() : void

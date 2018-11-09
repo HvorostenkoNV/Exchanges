@@ -14,6 +14,7 @@ interface Map extends Data
      * delete value by key
      *
      * @param   mixed   $key                value key
+     * @return  void
      ************************************************************************/
     public function delete($key) : void;
     /** **********************************************************************
@@ -48,6 +49,7 @@ interface Map extends Data
      *
      * @param   mixed   $key                key
      * @param   mixed   $value              value
+     * @return  void
      ************************************************************************/
     public function set($key, $value) : void;
 }

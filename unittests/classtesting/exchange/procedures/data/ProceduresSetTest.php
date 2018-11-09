@@ -19,6 +19,9 @@ final class ProceduresSetTest extends SetDataAbstractTest
     private static $structureGenerator = null;
     /** **********************************************************************
      * construct
+     *
+     * @return void
+     * @throws
      ************************************************************************/
     public static function setUpBeforeClass() : void
     {
@@ -29,6 +32,8 @@ final class ProceduresSetTest extends SetDataAbstractTest
     }
     /** **********************************************************************
      * destruct
+     *
+     * @return void
      ************************************************************************/
     public static function tearDownAfterClass() : void
     {

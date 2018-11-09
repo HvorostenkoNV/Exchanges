@@ -83,6 +83,7 @@ abstract class AbstractTestCase extends TestCase
      * reset singleton instance of class
      *
      * @param   string  $className          full class name
+     * @return  void
      ************************************************************************/
     protected static function resetSingletonInstance(string $className) : void
     {

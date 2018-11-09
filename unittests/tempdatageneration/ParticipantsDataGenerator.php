@@ -33,6 +33,7 @@ class ParticipantsDataGenerator
     /** **********************************************************************
      * generate project temp files structure
      *
+     * @return  void
      * @throws  DBRecordsGenerationException                    generating error
      ************************************************************************/
     public function generate() : void
@@ -150,6 +151,8 @@ class ParticipantsDataGenerator
     }
     /** **********************************************************************
      * clear temp files structure
+     *
+     * @return void
      ************************************************************************/
     public function clear() : void
     {

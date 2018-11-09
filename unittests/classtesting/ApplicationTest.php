@@ -18,6 +18,7 @@ final class ApplicationTest extends AbstractTestCase
      * check application is singleton
      *
      * @test
+     * @return void
      * @throws
      ************************************************************************/
     public function isSingleton() : void

@@ -49,6 +49,7 @@ class Logger
      * add notice into log file
      *
      * @param   string  $message            message text
+     * @return  void
      ************************************************************************/
     public function addNotice(string $message) : void
     {
@@ -58,6 +59,7 @@ class Logger
      * add warning into log file
      *
      * @param   string  $message            message text
+     * @return  void
      ************************************************************************/
     public function addWarning(string $message) : void
     {
@@ -67,6 +69,7 @@ class Logger
      * add error into log file
      *
      * @param   string  $message            message text
+     * @return  void
      ************************************************************************/
     public function addError(string $message) : void
     {
@@ -78,6 +81,7 @@ class Logger
      *
      * @param   string  $type               message type
      * @param   string  $message            message text
+     * @return  void
      ************************************************************************/
     private function addString(string $type, string $message) : void
     {
@@ -100,6 +104,8 @@ class Logger
     }
     /** **********************************************************************
      * saving log file
+     *
+     * @return void
      ************************************************************************/
     public function write() : void
     {

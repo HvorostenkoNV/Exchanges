@@ -22,6 +22,7 @@ final class ManagerTest extends AbstractTestCase
      * check available fields types
      *
      * @test
+     * @return void
      * @throws
      ************************************************************************/
     public function availableFieldsTypes() : void
@@ -57,6 +58,7 @@ final class ManagerTest extends AbstractTestCase
      *
      * @test
      * @depends availableFieldsTypes
+     * @return  void
      * @throws
      ************************************************************************/
     public function fieldsConstructing() : void
@@ -80,6 +82,7 @@ final class ManagerTest extends AbstractTestCase
      *
      * @test
      * @depends fieldsConstructing
+     * @return  void
      * @throws
      ************************************************************************/
     public function incorrectFieldsConstructing() : void

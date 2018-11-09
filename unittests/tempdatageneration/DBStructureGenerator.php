@@ -38,6 +38,7 @@ class DBStructureGenerator
     /** **********************************************************************
      * generate project temp database structure
      *
+     * @return  void
      * @throws  DBRecordsGenerationException                generation error
      ************************************************************************/
     public function generate() : void
@@ -94,6 +95,8 @@ class DBStructureGenerator
     }
     /** **********************************************************************
      * clear temp database structure
+     *
+     * @return void
      ************************************************************************/
     public function clear() : void
     {
@@ -115,6 +118,10 @@ class DBStructureGenerator
             );
         }
         catch (DBConnectionException $exception)
+        {
+
+        }
+        catch (DBQueryException $exception)
         {
 
         }
@@ -267,6 +274,7 @@ class DBStructureGenerator
      *      participantCode => participantId,
      *      participantCode => participantId
      *  ]
+     * @return  void
      * @throws  DBRecordsGenerationException                generation error
      ************************************************************************/
     private function generateProcedureParticipantsRelations(int $procedureId, array $procedureParticipants, array $participantsDbStructure) : void
@@ -478,6 +486,7 @@ class DBStructureGenerator
      *      participantCode => participantId,
      *      participantCode => participantId
      *  ]
+     * @return  void
      * @throws  DBRecordsGenerationException                generation error
      ************************************************************************/
     private function generateProcedureMatchingRules(int $procedureId, array $procedureMatchingRulesStructure, array $procedureFieldsDbStructure, array $participantsDbStructure) : void
@@ -555,6 +564,7 @@ class DBStructureGenerator
      *      participantCode => participantId,
      *      participantCode => participantId
      *  ]
+     * @return  void
      * @throws  DBRecordsGenerationException                generation error
      ************************************************************************/
     private function generateIncorrectProcedureMatchingRules(int $procedureId, array $procedureFieldsDbStructure, array $participantsDbStructure) : void
@@ -680,6 +690,7 @@ class DBStructureGenerator
      *              participantFieldName    => participantFieldId
      *          ]
      *  ]
+     * @return  void
      * @throws  DBRecordsGenerationException                generation error
      ************************************************************************/
     private function generateProcedureCombiningRules(int $procedureId, array $procedureCombiningRulesStructure, array $participantFieldsDbStructure) : void

@@ -29,6 +29,7 @@ class ProceduresSet extends SetData
      * drop item from set
      *
      * @param   Procedure $object           item for drop
+     * @return  void
      ************************************************************************/
     public function delete($object) : void
     {
@@ -38,6 +39,7 @@ class ProceduresSet extends SetData
      * push item to set
      *
      * @param   Procedure $object           pushed item
+     * @return  void
      * @throws  InvalidArgumentException    object is not Field
      ************************************************************************/
     public function push($object) :void

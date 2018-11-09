@@ -20,6 +20,9 @@ final class CollectedDataTest extends MapDataAbstractTest
     private static $structureGenerator = null;
     /** **********************************************************************
      * construct
+     *
+     * @return void
+     * @throws
      ************************************************************************/
     public static function setUpBeforeClass() : void
     {
@@ -30,6 +33,8 @@ final class CollectedDataTest extends MapDataAbstractTest
     }
     /** **********************************************************************
      * destruct
+     *
+     * @return void
      ************************************************************************/
     public static function tearDownAfterClass() : void
     {

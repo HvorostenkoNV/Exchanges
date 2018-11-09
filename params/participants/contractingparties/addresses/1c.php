@@ -9,6 +9,5 @@ declare(strict_types=1);
 return
     [
         'receivedDataPath'  => 'contractingparties'.DIRECTORY_SEPARATOR.'addresses'.DIRECTORY_SEPARATOR.'1c'.DIRECTORY_SEPARATOR.'received',
-        'returnedDataPath'  => 'contractingparties'.DIRECTORY_SEPARATOR.'addresses'.DIRECTORY_SEPARATOR.'1c'.DIRECTORY_SEPARATOR.'returned',
-        'processedDataPath' => 'contractingparties'.DIRECTORY_SEPARATOR.'addresses'.DIRECTORY_SEPARATOR.'1c'.DIRECTORY_SEPARATOR.'processed'
+        'returnedDataPath'  => 'contractingparties'.DIRECTORY_SEPARATOR.'addresses'.DIRECTORY_SEPARATOR.'1c'.DIRECTORY_SEPARATOR.'returned'
     ];
